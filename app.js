@@ -11,6 +11,7 @@ const PAGE = 60;
 const FORMAT = 1;              // data の形の版（BorderSiteExport.FormatVersion と同じ）
 const STALE_HOURS = 36;        // これより古ければ「更新が止まっている」と出す
 const RELOAD_MINUTES = 10;     // 開き直したとき、これだけたっていれば読み直す
+const STALE_RECORD_DAYS = 7;   // 最新の記録がこれより古い帯には「最近の記録が少ない」と出す（ふだんは報告が集まるのに2〜3日かかる）
 
 const state = {
   summary: null,
@@ -80,7 +81,6 @@ async function load() {
   state.summary = summary;
   state.loadedAt = Date.now();
   state.history.clear();
-  $('source').textContent = summary.source;
   renderUpdated();
   pickDay();
   renderDays();
@@ -210,7 +210,15 @@ function renderHero() {
   // 3枚とも同じ文なら、カードごとに繰り返さず下に1回だけ出す（スマホで縦に長くならないように）。
   const same = (key) => cards[0][key] && cards.every((c) => c[key] === cards[0][key]);
   const sharedCaution = same('caution'), sharedBasis = same('basis');
+  // 報告が少ない帯（S2 など）は、最新の記録が何日も前になる。取れていないのではなく、元の集計に数字が無い（2026-10-14 に確かめた）。
+  // 見た人が「壊れている」と思わないよう、古いことをはっきり書く。
+  const staleDays = cls.latestDate ? dayNumber(state.day) - dayNumber(cls.latestDate) : Infinity;
   shared.replaceChildren(
+    ...(staleDays > STALE_RECORD_DAYS
+      ? [el('p', { class: 'stale' }, cls.latestDate
+        ? `この帯は最近の記録が少なく、最新は ${mdw(cls.latestDate)} です。予想は古めの記録から出しているので、外れやすくなります。`
+        : 'この帯は最近の記録がありません。')]
+      : []),
     ...(sharedCaution ? [el('p', { class: 'caution' }, cards[0].caution)] : []),
     ...(sharedBasis ? [el('p', { class: 'basis' }, `予想の元: ${cards[0].basis}`)] : []));
 
@@ -387,19 +395,46 @@ function renderChart() {
 }
 
 // ---- 表 ----
+const pad2 = (n) => String(Number(n)).padStart(2, '0');
+
+// 日付の検索（利用者の指示「検索は日付、曜日は別で検索できるようにして」、2026-10-14）。曜日は別の選択欄で絞る。
+// 文字の一部が合うかでは見ない（「10/3」で 10/30・10/31 まで出てしまうため）。年・月・日として読む。
+// 読めた形なら「日付（yyyy-mm-dd）→ 合うか」を返し、空なら全部、読めなければ null。
+function dateMatcher(raw) {
+  const t = raw.normalize('NFKC').replace(/\s+/g, '');
+  if (!t) return () => true;
+  let m;
+  if ((m = t.match(/^(\d{4})[/\-.年](\d{1,2})[/\-.月](\d{1,2})日?$/))) {          // 2026/10/3・2026-10-03・2026年10月3日
+    const iso = `${m[1]}-${pad2(m[2])}-${pad2(m[3])}`;
+    return (d) => d === iso;
+  }
+  if ((m = t.match(/^(\d{4})[/\-.年](\d{1,2})月?$/))) {                            // 2026/10・2026年10月
+    const prefix = `${m[1]}-${pad2(m[2])}-`;
+    return (d) => d.startsWith(prefix);
+  }
+  if ((m = t.match(/^(\d{1,2})[/\-.月](\d{1,2})日?$/))) {                          // 10/3・10月3日（どの年も）
+    const suffix = `-${pad2(m[1])}-${pad2(m[2])}`;
+    return (d) => d.endsWith(suffix);
+  }
+  if ((m = t.match(/^(\d{1,2})(?:月|\/)$/))) {                                     // 10月・10/
+    const month = `-${pad2(m[1])}-`;
+    return (d) => d.slice(4, 8) === month;
+  }
+  if ((m = t.match(/^(\d{4})年?$/))) {                                              // 2026・2026年
+    return (d) => d.startsWith(`${m[1]}-`);
+  }
+  return null;
+}
+
 function filtered() {
   const rows = state.history.get(state.band) || [];
   const score = Number($('score').value), dow = Number($('dow').value);
-  const words = $('q').value.trim().normalize('NFKC').toLowerCase().split(/\s+/).filter(Boolean);
+  const match = dateMatcher($('date').value);
+  if (!match) return null;
   let list = rows.filter((r) => {
-    const d = dowOf(r[0]);
-    if (dow >= 0 && d !== dow) return false;
+    if (dow >= 0 && dowOf(r[0]) !== dow) return false;
     if (score && r[SCORES.indexOf(score) + 1] == null) return false;
-    if (words.length) {
-      const text = `${r[0]} ${r[0].replace(/-/g, '/')} ${md(r[0])} ${DOW[d]}曜 ${DOW[d]} ${r.slice(1).map((v) => v ?? '').join(' ')}`.toLowerCase();
-      if (!words.every((w) => text.includes(w))) return false;
-    }
-    return true;
+    return match(r[0]);
   });
   const { key, asc } = state.sort;
   const val = (r) => (key === 'date' ? r[0] : r[SCORES.indexOf(key) + 1] ?? -1);
@@ -410,8 +445,11 @@ function filtered() {
 function renderTable() {
   const rows = state.history.get(state.band) || [];
   const score = Number($('score').value);
-  const list = filtered();
-  $('count').textContent = list.length === rows.length
+  const found = filtered();
+  const list = found ?? [];
+  $('count').textContent = found === null
+    ? '日付の形が読めません（例: 10/3、10月、2026/9、2026/10/3）'
+    : list.length === rows.length
     ? `${state.band} の記録 ${fmt(rows.length)} 日ぶん（直近1年）`
     : `${fmt(list.length)} 日 ／ ${state.band} の ${fmt(rows.length)} 日（直近1年）`;
 
@@ -467,10 +505,10 @@ $('range').addEventListener('click', (e) => {
 
 let timer;
 const refilter = () => { state.shown = PAGE; renderTable(); };
-$('q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(refilter, 150); });
+$('date').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(refilter, 150); });
 ['score', 'dow'].forEach((id) => $(id).addEventListener('change', refilter));
 $('clear').addEventListener('click', () => {
-  $('q').value = ''; $('score').value = '0'; $('dow').value = '-1';
+  $('date').value = ''; $('score').value = '0'; $('dow').value = '-1';
   refilter();
 });
 $('more').addEventListener('click', () => { state.shown += PAGE; renderTable(); });

@@ -80,12 +80,14 @@
       <h2 id="table-title">これまでの実際のボーダー <small>直近1年</small></h2>
     </div>
     <div class="filters">
-      <input id="q" type="search" inputmode="search" placeholder="日付・曜日・ポイントで探す（例: 10/3、月、60000）" aria-label="検索">
-      <label>スコア
-        <select id="score"><option value="0">すべて</option><option value="2">+2</option><option value="4">+4</option><option value="6">+6</option></select>
+      <label class="date">日付
+        <input id="date" type="search" inputmode="text" placeholder="例: 10/3、10月、2026/9" aria-label="日付で探す">
       </label>
       <label>曜日
         <select id="dow"><option value="-1">すべて</option><option value="1">月</option><option value="2">火</option><option value="3">水</option><option value="4">木</option><option value="5">金</option><option value="6">土</option><option value="0">日</option></select>
+      </label>
+      <label>スコア
+        <select id="score"><option value="0">すべて</option><option value="2">+2</option><option value="4">+4</option><option value="6">+6</option></select>
       </label>
       <button id="clear" type="button" class="ghost">条件を消す</button>
     </div>
@@ -108,7 +110,6 @@
 
 <footer class="foot">
   <p><strong>IRIAM 公式とは関係のない、非公式のサイトです。</strong>予想は当てもので、外れることがあります。</p>
-  <p>実際のボーダーの元の数字は <span id="source">なまずツール（有志の集計）</span> です。ここでは直近1年ぶんだけを載せています。</p>
   <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
 </footer>
 <script src="app.js"></script>
