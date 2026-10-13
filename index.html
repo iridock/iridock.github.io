@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0e16">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="IRIAM のデイリーランクスコアのボーダー（+2・+4・+6）の予想と、直近1年の実際のボーダー。非公式。">
+<meta property="og:title" content="IriDock ボーダー予想">
+<meta property="og:description" content="IRIAM のデイリーランクのボーダー（+2・+4・+6）の予想。毎日更新。非公式。">
+<meta property="og:type" content="website">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+<title>IriDock ボーダー予想</title>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img src="icon.svg" alt="" width="28" height="28">
+    <span class="name">IriDock</span>
+    <span class="product">ボーダー予想</span>
+    <span class="badge" title="IRIAM 公式とは関係のない、非公式のサイトです">非公式</span>
+  </div>
+  <p id="updated" class="updated"></p>
+</header>
+
+<main>
+  <p id="notice" class="notice" role="status" hidden></p>
+
+  <nav class="bands" aria-label="ランク帯">
+    <div id="bands" class="chips" role="group" aria-label="ランク帯を選ぶ"></div>
+  </nav>
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-head">
+      <div>
+        <h1 id="hero-title"><span id="band-name">—</span> のボーダー予想</h1>
+        <p id="hero-sub" class="sub"></p>
+      </div>
+      <div id="days" class="seg" role="group" aria-label="予想する日"></div>
+    </div>
+    <div id="cards" class="cards"></div>
+    <div id="shared" class="shared"></div>
+    <p class="hint">予想は過去の記録から計算した見当で、<strong>実際の数字ではありません</strong>。「ここまで上げれば取れる」は、過去の 95% の日で届いていたポイントです。</p>
+  </section>
+
+  <div class="split">
+    <section class="panel chart-panel" aria-labelledby="chart-title">
+      <div class="panel-head">
+        <h2 id="chart-title">推移 <small>実際のボーダー</small></h2>
+        <div id="range" class="seg small" role="group" aria-label="期間">
+          <button type="button" data-days="30" aria-pressed="true">30日</button>
+          <button type="button" data-days="90" aria-pressed="false">90日</button>
+          <button type="button" data-days="365" aria-pressed="false">1年</button>
+        </div>
+      </div>
+      <div id="chartbox" class="chartbox">
+        <svg id="chart" role="img" aria-label="ボーダーの推移のグラフ"></svg>
+        <div id="tip" class="tip" hidden></div>
+      </div>
+      <p class="legend">
+        <span class="key k2">+2</span><span class="key k4">+4</span><span class="key k6">+6</span>
+        <span class="key kf">○ 予想</span>
+      </p>
+    </section>
+
+    <section class="panel overview-panel" aria-labelledby="overview-title">
+      <div class="panel-head">
+        <h2 id="overview-title">全ランク帯の予想 <small id="overview-date"></small></h2>
+      </div>
+      <ol id="overview" class="overview"></ol>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="table-title">
+    <div class="panel-head">
+      <h2 id="table-title">これまでの実際のボーダー <small>直近1年</small></h2>
+    </div>
+    <div class="filters">
+      <input id="q" type="search" inputmode="search" placeholder="日付・曜日・ポイントで探す（例: 10/3、月、60000）" aria-label="検索">
+      <label>スコア
+        <select id="score"><option value="0">すべて</option><option value="2">+2</option><option value="4">+4</option><option value="6">+6</option></select>
+      </label>
+      <label>曜日
+        <select id="dow"><option value="-1">すべて</option><option value="1">月</option><option value="2">火</option><option value="3">水</option><option value="4">木</option><option value="5">金</option><option value="6">土</option><option value="0">日</option></select>
+      </label>
+      <button id="clear" type="button" class="ghost">条件を消す</button>
+    </div>
+    <p id="count" class="sub"></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th scope="col"><button type="button" class="sort" data-sort="date">日付</button></th>
+          <th scope="col">曜</th>
+          <th scope="col" class="n"><button type="button" class="sort" data-sort="2">+2</button></th>
+          <th scope="col" class="n"><button type="button" class="sort" data-sort="4">+4</button></th>
+          <th scope="col" class="n"><button type="button" class="sort" data-sort="6">+6</button></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <button id="more" type="button" class="ghost more" hidden>もっと見る</button>
+  </section>
+</main>
+
+<footer class="foot">
+  <p><strong>IRIAM 公式とは関係のない、非公式のサイトです。</strong>予想は当てもので、外れることがあります。</p>
+  <p>実際のボーダーの元の数字は <span id="source">なまずツール（有志の集計）</span> です。ここでは直近1年ぶんだけを載せています。</p>
+  <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
