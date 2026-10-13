@@ -83,7 +83,6 @@ async function load() {
   state.history.clear();
   renderUpdated();
   pickDay();
-  renderDays();
   renderBands();
 
   const names = summary.classes.map((c) => c.rankClass);
@@ -100,9 +99,9 @@ function renderUpdated() {
   const at = new Date(state.summary.generatedAt);
   const jst = new Date(at.getTime() + 9 * 3600000);
   const text = `${jst.getUTCMonth() + 1}/${jst.getUTCDate()} ${String(jst.getUTCHours()).padStart(2, '0')}:${String(jst.getUTCMinutes()).padStart(2, '0')}`;
-  $('updated').textContent = `更新 ${text}（毎日 昼ごろ）`;
+  $('updated').textContent = `${text} 更新（毎日お昼ごろに更新）`;
   const hours = (Date.now() - at.getTime()) / 3600000;
-  if (hours > STALE_HOURS) notice(`データの更新が止まっているようです（最後の更新: ${text}）。予想が古いかもしれません。`);
+  if (hours > STALE_HOURS) notice(`データの更新が止まっているようです（最後の更新は ${text}）。ボーダー予想が古いかもしれません。`);
   else notice('');
 }
 
@@ -114,25 +113,19 @@ function pickDay() {
   if (state.day && days.includes(state.day) && state.day >= today) return;
   state.day = days.find((d) => d === today) ?? days.find((d) => d > today) ?? days[days.length - 1];
   if (state.day < today) {
-    notice(`今日（${mdw(today)}）の予想はまだありません。いちばん新しい ${mdw(state.day)} の予想を出しています。`);
+    notice(`今日（${mdw(today)}）のボーダー予想はまだありません。いちばん新しい ${mdw(state.day)} の予想を出しています。`);
   }
 }
 
+// 「今日」「明日」「あさって」を付けた日付。
 function dayLabel(iso) {
   const diff = dayNumber(iso) - dayNumber(jstToday());
-  const prefix = diff === 0 ? '今日 ' : diff === 1 ? '明日 ' : diff === -1 ? '昨日 ' : '';
-  return `${prefix}${mdw(iso)}`;
+  const word = ['今日', '明日', 'あさって'][diff];
+  return word ? `${mdw(iso)} ${word}` : mdw(iso);
 }
 
-function renderDays() {
-  const box = $('days');
-  const days = state.summary.days.filter((d) => d.date >= jstToday() || d.date === state.day);
-  box.hidden = days.length < 2;
-  box.replaceChildren(...days.map((d) => {
-    const b = el('button', { type: 'button', 'data-day': d.date, 'aria-pressed': String(d.date === state.day) }, dayLabel(d.date));
-    return b;
-  }));
-}
+// 予想を出す日（今日より前の日は出さない。今日の予想がまだ無いときだけ、いちばん新しい日を残す）。
+const forecastDays = () => state.summary.days.filter((d) => d.date >= jstToday() || d.date === state.day);
 
 // ランク帯は、見出しの中の選ぶ欄1つで選ぶ（利用者の指示「ランクの選択ももっとシンプルに」、2026-10-14。前は15個の札が横に並んでいた）。
 // S・A・B・C・D のまとまりごとに区切って並べる。
@@ -158,6 +151,7 @@ async function selectBand(name) {
   if (decodeURIComponent(location.hash.slice(1)) !== name) history.replaceState(null, '', '#' + encodeURIComponent(name));
   $('band').value = name;
   renderHero();
+  renderWeek();
   renderOverview();
 
   const ticket = ++state.ticket;
@@ -194,18 +188,22 @@ function lastActual(cls, score) {
   return null;
 }
 
+// 日の種類（「水曜・ふつうの日」の「ふつうの日」のほう。祝日・休みの前の日 など）。
+const dayKind = (info) => (info?.dayText ?? '').split('・').slice(1).join('・');
+
 function renderHero() {
   const cls = current();
   const info = state.summary.days.find((d) => d.date === state.day);
+  const kind = dayKind(info);
   $('hero-sub').textContent = info
-    ? `${md(info.date)}（${info.dayText}）の +2・+4・+6${cls.latestDate ? `　／　最新の記録 ${mdw(cls.latestDate)}` : ''}`
+    ? `${dayLabel(info.date)}の予想${kind ? `（${kind}）` : ''}${cls.latestDate ? `　／　実際のボーダーの記録は ${mdw(cls.latestDate)} まで` : ''}`
     : '';
 
   const cards = (state.day && cls.forecasts[state.day]) || [];
   const box = $('cards');
   const shared = $('shared');
   if (cards.length === 0) {
-    box.replaceChildren(el('p', { class: 'empty' }, 'この帯は、予想を作れるだけの記録がありません。下の実際のボーダーを参考にしてください。'));
+    box.replaceChildren(el('p', { class: 'empty' }, 'この帯は、ボーダー予想を出せるだけの記録がありません。下の「これまでの実際のボーダー」を参考にしてください。'));
     shared.replaceChildren();
     return;
   }
@@ -217,42 +215,47 @@ function renderHero() {
   // 報告が少ない帯（S2 など）は、最新の記録が何日も前になる。取れていないのではなく、元の集計に数字が無い（2026-10-14 に確かめた）。
   // 見た人が「壊れている」と思わないよう、古いことをはっきり書く。
   const staleDays = cls.latestDate ? dayNumber(state.day) - dayNumber(cls.latestDate) : Infinity;
+  const ahead = dayNumber(state.day) - dayNumber(jstToday());
   shared.replaceChildren(
     ...(staleDays > STALE_RECORD_DAYS
       ? [el('p', { class: 'stale' }, cls.latestDate
-        ? `この帯は最近の記録が少なく、最新は ${mdw(cls.latestDate)} です。予想は古めの記録から出しているので、外れやすくなります。`
-        : 'この帯は最近の記録がありません。')]
+        ? `この帯は最近の報告が少なく、実際のボーダーの記録は ${mdw(cls.latestDate)} までです。古めの記録から予想しているので、外れやすくなっています。`
+        : 'この帯は最近の実際のボーダーの記録がありません。')]
       : []),
+    ...(ahead >= 2 ? [el('p', { class: 'caution' }, `${ahead} 日先の予想です。先の日ほど外れやすくなります。`)] : []),
     ...(sharedCaution ? [el('p', { class: 'caution' }, cards[0].caution)] : []));
 
   box.replaceChildren(...cards.map((c) => {
-    const card = el('article', { class: `card s${c.score}`, 'aria-label': `+${c.score} のボーダーの予想` });
+    const card = el('article', { class: `card s${c.score}`, 'aria-label': `+${c.score} のボーダー予想` });
     const head = el('div', { class: 'card-head' });
-    head.append(el('span', { class: 'pill' }, `+${c.score}`), el('span', { class: 'tag-forecast' }, '予想'));
+    head.append(el('span', { class: 'pill' }, `+${c.score}`), el('span', { class: 'tag-forecast' }, 'ボーダー予想'));
     card.append(head);
 
     const big = el('p', { class: 'big' }, fmt(c.points));
     big.append(el('small', {}, 'pt'));
     card.append(big);
 
+    // 「95%の確率で取れるライン」= ここまで届いていれば、過去の記録で 95% の日にそのスコアが取れていたポイント
+    // （利用者の指示、2026-10-14。前は「ここまで上げれば取れる（95%）」で、伝わりにくかった）。
     if (c.safe95 != null) {
       const safe = el('div', { class: 'safe' });
-      safe.append(el('span', {}, 'ここまで上げれば取れる（95%）'), el('b', {}, `${fmt(c.safe95)} pt`));
+      safe.append(el('span', {}, '95%の確率で取れるライン'), el('b', {}, `${fmt(c.safe95)} pt`));
       card.append(safe);
       const ratio = Math.max(0, Math.min(1, c.points / c.safe95));
-      const meter = el('div', { class: 'meter', role: 'img', 'aria-label': `予想は「取れる」ラインの ${Math.round(ratio * 100)}%` });
+      const meter = el('div', { class: 'meter', role: 'img', 'aria-label': `ボーダー予想は「95%の確率で取れるライン」の ${Math.round(ratio * 100)}% の高さ` });
       const fill = el('span');
       fill.style.width = `${(ratio * 100).toFixed(1)}%`;
       meter.append(fill);
       card.append(meter);
     } else {
       const safe = el('div', { class: 'safe' });
-      safe.append(el('span', {}, '取れるラインは、まだ測れていません'));
+      safe.append(el('span', {}, '95%の確率で取れるラインは、まだ出せません（記録が足りないため）'));
       card.append(safe);
     }
 
+    // 前は「最新の実際: 10/7（水）」で、何の数字か伝わりにくかった。
     const last = lastActual(cls, c.score);
-    if (last) card.append(el('p', { class: 'last' }, `最新の実際: ${mdw(last.date)} ${fmt(last.points)} pt`));
+    if (last) card.append(el('p', { class: 'last' }, `${mdw(last.date)} の実際のボーダーは ${fmt(last.points)} pt`));
     if (c.caution && !sharedCaution) card.append(el('p', { class: 'caution' }, c.caution));
     return card;
   }));
@@ -275,7 +278,7 @@ function sparkline(cls) {
 }
 
 function renderOverview() {
-  $('overview-date').textContent = state.day ? `${mdw(state.day)}・予想` : '';
+  $('overview-date').textContent = state.day ? dayLabel(state.day) : '';
   const list = $('overview');
   list.replaceChildren(...state.summary.classes.map((cls) => {
     const li = el('li');
@@ -304,12 +307,13 @@ function renderChart() {
 
   const cls = current();
   const rows = state.history.get(state.band) || [];
-  const end = dayNumber(state.day || jstToday());
+  // 期間は今日（日本時間）までの実際と、今日から先の1週間の予想。選んだ日に関わらず同じ範囲で描く（日を選ぶたびに横軸が動かないように）。
+  const end = dayNumber(jstToday());
   const start = end - state.range;
   const list = rows.filter((r) => dayNumber(r[0]) >= start && dayNumber(r[0]) <= end).slice().reverse();   // 古い順
-  const forecasts = Object.entries(cls.forecasts)
-    .filter(([d]) => dayNumber(d) >= start && dayNumber(d) <= end + 1)
-    .map(([d, cards]) => ({ date: d, cards }));
+  const forecasts = forecastDays()
+    .filter((d) => cls.forecasts[d.date])
+    .map((d) => ({ date: d.date, cards: cls.forecasts[d.date] }));
   const last = Math.max(end, ...forecasts.map((f) => dayNumber(f.date)));
 
   const values = [];
@@ -354,14 +358,16 @@ function renderChart() {
     } else if (pts.length === 1) {
       svg.append(svgEl('circle', { class: 'dot', cx: pts[0][0], cy: pts[0][1], r: 3, fill: color }));
     }
-    // 予想は、最後の実際から点線でつなぐ（実際の線と見分けるため）。
+    // 予想は、最後の実際から1週間ぶんを順に点線でつなぐ（実際の線と見分けるため）。選んでいる日の丸は大きく。
     const tail = pts[pts.length - 1];
-    for (const f of forecasts) {
-      const card = f.cards.find((c) => c.score === s);
-      if (!card) continue;
-      const fx = x(dayNumber(f.date)), fy = y(card.points);
-      if (tail) svg.append(svgEl('line', { class: 'fcl', stroke: color, x1: tail[0], y1: tail[1], x2: fx, y2: fy }));
-      svg.append(svgEl('circle', { class: 'fc', cx: fx, cy: fy, r: f.date === state.day ? 5 : 3.5, stroke: color }));
+    const fpts = forecasts
+      .map((f) => ({ date: f.date, card: f.cards.find((c) => c.score === s) }))
+      .filter((f) => f.card)
+      .map((f) => ({ date: f.date, at: [x(dayNumber(f.date)), y(f.card.points)] }));
+    const path = [...(tail ? [tail] : []), ...fpts.map((f) => f.at)];
+    if (path.length > 1) svg.append(svgEl('polyline', { class: 'fcl', stroke: color, points: path.map(([px, py]) => `${px.toFixed(1)},${py.toFixed(1)}`).join(' ') }));
+    for (const f of fpts) {
+      svg.append(svgEl('circle', { class: 'fc', cx: f.at[0], cy: f.at[1], r: f.date === state.day ? 5 : 3, stroke: color }));
     }
   });
 
@@ -381,7 +387,7 @@ function renderChart() {
     const cx = x(dayNumber(best.date));
     cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx); cursor.setAttribute('visibility', 'visible');
     const tip = $('tip');
-    tip.replaceChildren(el('b', {}, `${mdw(best.date)}${best.forecast ? '・予想' : ''}`),
+    tip.replaceChildren(el('b', {}, `${mdw(best.date)} ${best.forecast ? 'のボーダー予想' : 'の実際のボーダー'}`),
       ...SCORES.map((s) => {
         const row = el('span', { class: `row c${s}` });
         row.append(el('span', {}, `+${s}`), el('span', {}, fmt(best.values[s])));
@@ -455,16 +461,17 @@ function renderTable() {
   const { from, to } = period();
   const span = from || to ? `${from ? mdw(from) : '最初'} 〜 ${to ? mdw(to) : '最新'}　` : '';
   $('count').textContent = list.length === rows.length
-    ? `${state.band} の記録 ${fmt(rows.length)} 日ぶん（直近1年）`
-    : `${span}${fmt(list.length)} 日 ／ ${state.band} の ${fmt(rows.length)} 日（直近1年）`;
+    ? `${state.band} の実際のボーダー ${fmt(rows.length)} 日分（直近1年）`
+    : `${span}${fmt(list.length)} 日分 ／ ${state.band} の実際のボーダー ${fmt(rows.length)} 日分（直近1年）`;
 
-  for (const b of document.querySelectorAll('th .sort')) {
+  // 表は2つある（1週間の予想・実際）。実際の表（#actual）の中だけを見る。
+  for (const b of document.querySelectorAll('#actual th .sort')) {
     const key = b.dataset.sort === 'date' ? 'date' : Number(b.dataset.sort);
     if (key === state.sort.key) b.setAttribute('aria-sort', state.sort.asc ? 'ascending' : 'descending');
     else b.removeAttribute('aria-sort');
   }
   const hide = (s) => score !== 0 && score !== s;
-  document.querySelectorAll('thead th.n').forEach((th, i) => { th.hidden = hide(SCORES[i]); });
+  document.querySelectorAll('#actual thead th.n').forEach((th, i) => { th.hidden = hide(SCORES[i]); });
 
   $('rows').replaceChildren(...list.slice(0, state.shown).map((r) => {
     const d = dowOf(r[0]);
@@ -480,6 +487,48 @@ function renderTable() {
   $('more').hidden = list.length <= state.shown;
 }
 
+// ---- 1週間のボーダー予想（利用者の指示「ボーダー予想は本日から一週間分みれるようにして」、2026-10-14） ----
+// 大きい数字がボーダー予想、小さい数字が「95%の確率で取れるライン」。行を押すと、その日が上のカードに大きく出る。
+function renderWeek() {
+  const cls = current();
+  $('week-rows').replaceChildren(...forecastDays().map((d) => {
+    const cards = cls.forecasts[d.date] || [];
+    const on = d.date === state.day;
+    const tr = el('tr', { 'data-day': d.date, class: on ? 'on' : '', tabindex: '0', 'aria-current': String(on) });
+    const th = el('th', { scope: 'row' });
+    th.append(el('span', { class: 'wd' }, mdw(d.date)));
+    const word = ['今日', '明日', 'あさって'][dayNumber(d.date) - dayNumber(jstToday())];
+    if (word) th.append(el('span', { class: 'rel' }, word));
+    const kind = dayKind(d);
+    if (kind && kind !== 'ふつうの日') th.append(el('span', { class: 'kind' }, kind));
+    tr.append(th);
+    for (const s of SCORES) {
+      const c = cards.find((x) => x.score === s);
+      const td = el('td', { class: `n c${s}` });
+      if (c) {
+        td.append(el('span', { class: 'wf' }, fmt(c.points)));
+        if (c.safe95 != null) td.append(el('span', { class: 'ws', title: '95%の確率で取れるライン' }, fmt(c.safe95)));
+      } else {
+        td.append(el('span', { class: 'none' }, '—'));
+      }
+      tr.append(td);
+    }
+    return tr;
+  }));
+}
+
+function selectDay(date) {
+  if (!date || date === state.day) return;
+  state.day = date;
+  renderHero();
+  renderWeek();
+  renderOverview();
+  renderChart();
+  // スマホでは上のカードが画面の外にあるので、そこまで戻す。
+  const hero = document.querySelector('.hero');
+  if (hero.getBoundingClientRect().top < 0) hero.scrollIntoView({ behavior: 'smooth' });
+}
+
 // ---- 操作 ----
 $('band').addEventListener('change', (e) => selectBand(e.target.value));
 $('overview').addEventListener('click', (e) => {
@@ -488,14 +537,11 @@ $('overview').addEventListener('click', (e) => {
   selectBand(b.dataset.band);
   if (window.matchMedia('(max-width: 860px)').matches) document.querySelector('.hero').scrollIntoView({ behavior: 'smooth' });
 });
-$('days').addEventListener('click', (e) => {
-  const b = e.target.closest('button[data-day]');
-  if (!b) return;
-  state.day = b.dataset.day;
-  for (const x of document.querySelectorAll('#days button')) x.setAttribute('aria-pressed', String(x === b));
-  renderHero();
-  renderOverview();
-  renderChart();
+$('week-rows').addEventListener('click', (e) => selectDay(e.target.closest('tr[data-day]')?.dataset.day));
+$('week-rows').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  selectDay(e.target.closest('tr[data-day]')?.dataset.day);
 });
 $('range').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-days]');
@@ -521,7 +567,7 @@ $('clear').addEventListener('click', () => {
   refilter();
 });
 $('more').addEventListener('click', () => { state.shown += PAGE; renderTable(); });
-document.querySelector('thead').addEventListener('click', (e) => {
+document.querySelector('#actual thead').addEventListener('click', (e) => {
   const b = e.target.closest('.sort');
   if (!b) return;
   const key = b.dataset.sort === 'date' ? 'date' : Number(b.dataset.sort);

@@ -7,9 +7,9 @@
 <meta name="theme-color" content="#0a0e16">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="description" content="デイリーランクスコアのボーダー（+2・+4・+6）の予想と、直近1年の実際のボーダー。">
+<meta name="description" content="デイリーランクスコアのボーダー（+2・+4・+6）の1週間の予想と、直近1年の実際のボーダー。">
 <meta property="og:title" content="IriDock ボーダー予想">
-<meta property="og:description" content="デイリーランクのボーダー（+2・+4・+6）の予想。毎日更新。">
+<meta property="og:description" content="デイリーランクのボーダー（+2・+4・+6）の1週間の予想。毎日更新。">
 <meta property="og:type" content="website">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -35,18 +35,36 @@
         <h1 id="hero-title"><select id="band" class="band-pick" aria-label="ランク帯を選ぶ"></select> のボーダー予想</h1>
         <p id="hero-sub" class="sub"></p>
       </div>
-      <div id="days" class="seg" role="group" aria-label="予想する日"></div>
     </div>
     <div id="cards" class="cards"></div>
     <div id="shared" class="shared"></div>
-    <p class="hint">予想は過去の記録から計算した見当で、<strong>実際の数字ではありません</strong>。「ここまで上げれば取れる」は、過去の 95% の日で届いていたポイントです。</p>
+    <p class="hint">ボーダー予想は、過去の記録から計算した目安です（<strong>実際の数字ではありません</strong>）。
+      「95%の確率で取れるライン」まで届いていれば、過去の記録では 20 日のうち 19 日、そのスコアが取れていました。</p>
+  </section>
+
+  <section class="panel week-panel" aria-labelledby="week-title">
+    <div class="panel-head">
+      <h2 id="week-title">1週間のボーダー予想 <small>日付を押すと、上に大きく出ます</small></h2>
+    </div>
+    <div class="tablewrap">
+      <table id="week" class="week">
+        <thead><tr>
+          <th scope="col">日付</th>
+          <th scope="col" class="n c2">+2</th>
+          <th scope="col" class="n c4">+4</th>
+          <th scope="col" class="n c6">+6</th>
+        </tr></thead>
+        <tbody id="week-rows"></tbody>
+      </table>
+    </div>
+    <p class="hint">大きい数字がボーダー予想、小さい数字が「95%の確率で取れるライン」です。先の日ほど外れやすくなります。</p>
   </section>
 
   <div class="split">
     <section class="panel chart-panel" aria-labelledby="chart-title">
       <div class="panel-head">
-        <h2 id="chart-title">推移 <small>実際のボーダー</small></h2>
-        <div id="range" class="seg small" role="group" aria-label="期間">
+        <h2 id="chart-title">これまでの推移 <small>線は実際のボーダー、点線と ○ は予想</small></h2>
+        <div id="range" class="seg small" role="group" aria-label="グラフの期間">
           <button type="button" data-days="30" aria-pressed="true">30日</button>
           <button type="button" data-days="90" aria-pressed="false">90日</button>
           <button type="button" data-days="365" aria-pressed="false">1年</button>
@@ -64,7 +82,7 @@
 
     <section class="panel overview-panel" aria-labelledby="overview-title">
       <div class="panel-head">
-        <h2 id="overview-title">全ランク帯の予想 <small id="overview-date"></small></h2>
+        <h2 id="overview-title">全ランク帯のボーダー予想 <small id="overview-date"></small></h2>
       </div>
       <ol id="overview" class="overview"></ol>
     </section>
@@ -96,14 +114,14 @@
       <label>スコア
         <select id="score"><option value="0">すべて</option><option value="2">+2</option><option value="4">+4</option><option value="6">+6</option></select>
       </label>
-      <button id="clear" type="button" class="ghost">条件を消す</button>
+      <button id="clear" type="button" class="ghost">条件を元に戻す</button>
     </div>
     <p id="count" class="sub"></p>
     <div class="tablewrap">
-      <table>
+      <table id="actual">
         <thead><tr>
           <th scope="col"><button type="button" class="sort" data-sort="date">日付</button></th>
-          <th scope="col">曜</th>
+          <th scope="col">曜日</th>
           <th scope="col" class="n"><button type="button" class="sort" data-sort="2">+2</button></th>
           <th scope="col" class="n"><button type="button" class="sort" data-sort="4">+4</button></th>
           <th scope="col" class="n"><button type="button" class="sort" data-sort="6">+6</button></th>
@@ -116,7 +134,7 @@
 </main>
 
 <footer class="foot">
-  <p>予想は当てもので、外れることがあります。</p>
+  <p>ボーダー予想は目安です。外れることがあります。</p>
   <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
 </footer>
 <script src="app.js"></script>

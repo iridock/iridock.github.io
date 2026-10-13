@@ -308,6 +308,18 @@ main {
 .c4 { color: var(--c4); }
 .c6 { color: var(--c6); }
 
+/* ---- 1週間のボーダー予想（2026-10-14「ボーダー予想は本日から一週間分みれるようにして」） ---- */
+.week-panel { margin-bottom: 14px; }
+table.week th[scope="row"] { font-weight: 700; color: var(--text); }
+table.week .wd { font-variant-numeric: tabular-nums; }
+table.week .rel { margin-left: 6px; font-size: 11.5px; font-weight: 700; color: var(--accent); }
+table.week .kind { margin-left: 6px; font-size: 11.5px; color: var(--warn); }
+table.week td .wf { display: block; font-size: 15px; font-weight: 700; }
+table.week td .ws { display: block; font-size: 11.5px; color: var(--faint); }
+table.week tbody tr { cursor: pointer; }
+table.week tbody tr.on { background: var(--panel-2); box-shadow: inset 3px 0 0 var(--accent); }
+table.week tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
 /* ---- 全ランク帯の一覧 ---- */
 .overview { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 340px; overflow-y: auto; }
 .overview li { margin: 0; }
@@ -410,6 +422,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .big { margin-top: 6px; }
   #chart { height: 220px; }
   .brand .product { display: none; }
+  table.week th, table.week td { padding: 8px 8px; }
+  table.week .rel, table.week .kind { display: block; margin-left: 0; }
+  table.week td .wf { font-size: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
