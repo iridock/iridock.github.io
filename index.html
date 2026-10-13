@@ -29,14 +29,10 @@
 <main>
   <p id="notice" class="notice" role="status" hidden></p>
 
-  <nav class="bands" aria-label="ランク帯">
-    <div id="bands" class="chips" role="group" aria-label="ランク帯を選ぶ"></div>
-  </nav>
-
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-head">
       <div>
-        <h1 id="hero-title"><span id="band-name">—</span> のボーダー予想</h1>
+        <h1 id="hero-title"><select id="band" class="band-pick" aria-label="ランク帯を選ぶ"></select> のボーダー予想</h1>
         <p id="hero-sub" class="sub"></p>
       </div>
       <div id="days" class="seg" role="group" aria-label="予想する日"></div>
@@ -79,9 +75,21 @@
       <h2 id="table-title">これまでの実際のボーダー <small>直近1年</small></h2>
     </div>
     <div class="filters">
-      <label class="date">日付
-        <input id="date" type="search" inputmode="text" placeholder="例: 10/3、10月、2026/9" aria-label="日付で探す">
-      </label>
+      <div class="range-pick">
+        <span class="flabel">期間</span>
+        <input id="from" type="date" aria-label="この日から">
+        <span class="tilde" aria-hidden="true">〜</span>
+        <input id="to" type="date" aria-label="この日まで">
+      </div>
+      <div id="presets" class="seg small" role="group" aria-label="期間をすぐ選ぶ">
+        <button type="button" data-preset="7" aria-pressed="false">直近7日</button>
+        <button type="button" data-preset="30" aria-pressed="false">直近30日</button>
+        <button type="button" data-preset="month" aria-pressed="false">今月</button>
+        <button type="button" data-preset="last" aria-pressed="false">先月</button>
+        <button type="button" data-preset="all" aria-pressed="true">すべて</button>
+      </div>
+    </div>
+    <div class="filters">
       <label>曜日
         <select id="dow"><option value="-1">すべて</option><option value="1">月</option><option value="2">火</option><option value="3">水</option><option value="4">木</option><option value="5">金</option><option value="6">土</option><option value="0">日</option></select>
       </label>
