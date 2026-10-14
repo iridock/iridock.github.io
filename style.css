@@ -300,6 +300,9 @@ main {
 #chart .fc { fill: var(--panel); stroke-width: 2.5; }
 #chart .fcl { fill: none; stroke-width: 1.5; stroke-dasharray: 3 4; opacity: 0.8; }
 #chart .cursor { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; }
+/* 予想の幅（予想〜95%の確率で取れるライン）。先の日ほど太くなる（案 B、2026-10-14） */
+#chart .band { opacity: 0.14; }
+#chart .fsl { fill: none; stroke-width: 1; opacity: 0.5; }
 #chart .dot { stroke: var(--panel); stroke-width: 1.5; }
 
 .tip {
@@ -334,6 +337,8 @@ main {
 .k4 { color: var(--c4); }
 .k6 { color: var(--c6); }
 .kf::before { display: none; }
+.kb { color: var(--muted); }
+.kb::before { height: 9px; opacity: 0.4; }
 .c2 { color: var(--c2); }
 .c4 { color: var(--c4); }
 .c6 { color: var(--c6); }
@@ -349,6 +354,34 @@ table.week td .ws { display: block; font-size: 11.5px; color: var(--faint); }
 table.week tbody tr { cursor: pointer; }
 table.week tbody tr.on { background: var(--panel-2); box-shadow: inset 3px 0 0 var(--accent); }
 table.week tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* 前の同じ曜日の実際との比べ（案 D、2026-10-14） */
+table.week td .wc { display: block; font-size: 11px; font-weight: 700; color: var(--muted); }
+table.week td .wc.up { color: #ff9b8a; }
+table.week td .wc.down { color: #8fd3ff; }
+
+/* ---- 曜日×週の色分け表（案 C、2026-10-14）。色はスコアの色の濃さ。点線の枠は予想 ---- */
+.heat-panel { margin-bottom: 14px; }
+.heatwrap { overflow-x: auto; }
+table.heat { table-layout: fixed; border-collapse: separate; border-spacing: 4px; min-width: 290px; }
+table.heat th, table.heat td { padding: 4px 1px; text-align: center; white-space: nowrap; }
+table.heat thead th { position: static; background: none; border: 0; }
+table.heat .hw { display: block; font-size: 13px; font-weight: 800; color: var(--text); }
+table.heat th.sat .hw { color: var(--c2); }
+table.heat th.sun .hw { color: #ff8a8a; }
+table.heat .ha { display: block; font-size: 11px; font-weight: 600; color: var(--faint); }
+table.heat tbody tr { border: 0; }
+table.heat tbody tr:hover { background: none; }
+table.heat td { height: 46px; border-radius: 8px; background: rgba(255, 255, 255, 0.025); }
+table.heat td .hd { display: block; font-size: 10.5px; line-height: 1.3; color: var(--muted); }
+table.heat td .hv { display: block; font-size: 12.5px; line-height: 1.3; font-weight: 700; }
+table.heat td.dark .hd, table.heat td.dark .hv { color: #0a0e16; }
+table.heat td.blank .hv { color: var(--faint); font-weight: 400; }
+table.heat td.later { background: none; }
+table.heat td.later .hd { color: var(--faint); }
+table.heat td.fc { outline: 1.5px dashed var(--text); outline-offset: -3px; cursor: pointer; }
+table.heat td.today { box-shadow: inset 0 0 0 2px var(--accent); }
+table.heat td.on { outline: 2px solid var(--accent); outline-offset: -3px; }
+table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 
 /* ---- 全ランク帯の一覧 ---- */
 .overview { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 340px; overflow-y: auto; }

@@ -23,7 +23,11 @@ const state = {
   sort: { key: 'date', asc: false },
   shown: PAGE,
   ticket: 0,
+  heatScore: 2,                // 曜日×週の色分け表で色にするスコア
 };
+const HEAT_WEEKS = 12;         // 曜日×週の色分け表に並べる過去の週の数（今週を含む）
+const MONDAY_FIRST = [1, 2, 3, 4, 5, 6, 0];
+const RGB = { 2: '86,180,233', 4: '60,199,160', 6: '242,163,58' };   // style.css の --c2・--c4・--c6 と同じ色
 
 const nf = new Intl.NumberFormat('ja-JP');
 const compact = new Intl.NumberFormat('ja-JP', { notation: 'compact', maximumFractionDigits: 1 });
@@ -66,6 +70,26 @@ function notice(text) {
 }
 
 const current = () => state.summary.classes.find((c) => c.rankClass === state.band);
+
+// 見ている帯の実際のボーダーを日付で引く（帯の記録ごとに1回だけ表を作る）。記録をまだ読み込んでいなければ null。
+const byDateCache = new WeakMap();
+function actualRow(iso) {
+  const rows = state.history.get(state.band);
+  if (!rows) return null;
+  let map = byDateCache.get(rows);
+  if (!map) { map = new Map(rows.map((r) => [r[0], r])); byDateCache.set(rows, map); }
+  return map.get(iso) ?? null;
+}
+
+// 前の同じ曜日の実際のボーダー（先週。記録がまだ集まっていなければ2週前）。どちらも無ければ null。
+function prevSameWeekday(iso, score) {
+  for (const back of [7, 14]) {
+    const date = isoOfDay(dayNumber(iso) - back);
+    const points = actualRow(date)?.[SCORES.indexOf(score) + 1];
+    if (points != null) return { date, points };
+  }
+  return null;
+}
 
 // ---- 読み込み ----
 async function load() {
@@ -171,6 +195,8 @@ async function selectBand(name) {
   }
   if (ticket !== state.ticket) return;   // 途中で別の帯に変えられた
   state.shown = PAGE;
+  renderWeek();   // 前の同じ曜日との比べは、実際のボーダーを読み込んでから出せる
+  renderHeat();
   // 期間の欄は、その帯の記録がある範囲でしか選べないようにする（カレンダーで、記録の無い日を選ばずに済むように）。
   if (rows.length > 0) {
     for (const id of ['from', 'to']) { $(id).min = rows[rows.length - 1][0]; $(id).max = rows[0][0]; }
@@ -319,7 +345,7 @@ function renderChart() {
 
   const values = [];
   for (const r of list) for (let i = 1; i <= 3; i++) if (r[i] != null) values.push(r[i]);
-  for (const f of forecasts) for (const c of f.cards) values.push(c.points);
+  for (const f of forecasts) for (const c of f.cards) { values.push(c.points); if (c.safe95 != null) values.push(c.safe95); }
   if (values.length === 0) {
     const t = svgEl('text', { class: 'tick', x: W / 2, y: H / 2, 'text-anchor': 'middle' });
     t.textContent = 'この期間の記録がありません';
@@ -346,6 +372,20 @@ function renderChart() {
     const t = svgEl('text', { class: 'tick', x: x(n), y: H - 6, 'text-anchor': i === 0 ? 'start' : i === steps ? 'end' : 'middle' });
     t.textContent = md(isoOfDay(n));
     svg.append(t);
+  }
+
+  // 予想の幅（予想〜95%の確率で取れるライン）を帯で塗る。先の日ほど太くなるので、どこまで上げれば安全かと、
+  // 先の日ほど当てにならないことが目で分かる（利用者が選んだ案 B、2026-10-14）。線より先に描いて、下に敷く。
+  for (const s of SCORES) {
+    const pts = forecasts
+      .map((f) => ({ n: dayNumber(f.date), card: f.cards.find((c) => c.score === s) }))
+      .filter((f) => f.card && f.card.safe95 != null);
+    if (pts.length < 2) continue;
+    const at = (f, v) => `${x(f.n).toFixed(1)},${y(v).toFixed(1)}`;
+    const upper = pts.map((f) => at(f, f.card.safe95));
+    const lower = pts.map((f) => at(f, f.card.points)).reverse();
+    svg.append(svgEl('polygon', { class: 'band', fill: `var(--c${s})`, points: [...upper, ...lower].join(' ') }));
+    svg.append(svgEl('polyline', { class: 'fsl', stroke: `var(--c${s})`, points: upper.join(' ') }));
   }
 
   SCORES.forEach((s, idx) => {
@@ -377,7 +417,12 @@ function renderChart() {
   svg.append(cursor);
   const points = [
     ...list.map((r) => ({ date: r[0], values: { 2: r[1], 4: r[2], 6: r[3] }, forecast: false })),
-    ...forecasts.map((f) => ({ date: f.date, values: Object.fromEntries(f.cards.map((c) => [c.score, c.points])), forecast: true })),
+    ...forecasts.map((f) => ({
+      date: f.date,
+      values: Object.fromEntries(f.cards.map((c) => [c.score, c.points])),
+      safe: Object.fromEntries(f.cards.map((c) => [c.score, c.safe95])),
+      forecast: true,
+    })),
   ];
   const show = (clientX) => {
     const rect = svg.getBoundingClientRect();
@@ -391,7 +436,8 @@ function renderChart() {
     tip.replaceChildren(el('b', {}, `${mdw(best.date)} ${best.forecast ? 'のボーダー予想' : 'の実際のボーダー'}`),
       ...SCORES.map((s) => {
         const row = el('span', { class: `row c${s}` });
-        row.append(el('span', {}, `+${s}`), el('span', {}, fmt(best.values[s])));
+        const safe = best.forecast && best.safe?.[s] != null ? `（95% ${fmt(best.safe[s])}）` : '';
+        row.append(el('span', {}, `+${s}`), el('span', {}, fmt(best.values[s]) + safe));
         return row;
       }));
     tip.hidden = false;
@@ -502,9 +548,78 @@ function renderWeek() {
       if (c) {
         td.append(el('span', { class: 'wf' }, fmt(c.points)));
         if (c.safe95 != null) td.append(el('span', { class: 'ws', title: '95%の確率で取れるライン' }, fmt(c.safe95)));
+        // 前の同じ曜日の実際と比べた上がり下がり（利用者が選んだ案 D、2026-10-14）。今週は高めか低めかの感覚をつかむため。
+        const prev = prevSameWeekday(d.date, s);
+        if (prev) {
+          const pct = Math.round((c.points / prev.points - 1) * 100);
+          td.append(el('span', {
+            class: `wc${pct > 0 ? ' up' : pct < 0 ? ' down' : ''}`,
+            title: `${mdw(prev.date)} の実際のボーダー ${fmt(prev.points)} pt と比べて`,
+          }, pct > 0 ? `▲${pct}%` : pct < 0 ? `▼${-pct}%` : '±0%'));
+        }
       } else {
         td.append(el('span', { class: 'none' }, '—'));
       }
+      tr.append(td);
+    }
+    return tr;
+  }));
+}
+
+// ---- 曜日×週の色分け表（利用者が選んだ案 C、2026-10-14） ----
+// 横は月〜日、縦は直近12週と、予想のある来週まで。色が濃いほどボーダーが高い（表の中の最小〜最大で濃さを決める）。
+// 今日から先は予想を点線の枠で入れ、過去の同じ曜日と並べて見比べられるようにする。月曜・月初が高いといった癖も見える。
+function renderHeat() {
+  const cls = current();
+  const score = state.heatScore;
+  const idx = SCORES.indexOf(score) + 1;
+  const today = dayNumber(jstToday());
+  const mondayOf = (n) => n - ((new Date(n * 86400000).getUTCDay() + 6) % 7);
+  const forecastNs = Object.keys(cls.forecasts).map(dayNumber).filter((n) => n >= today);
+  const lastWeek = mondayOf(Math.max(today, ...forecastNs));
+
+  const weeks = [];
+  for (let w = mondayOf(today) - (HEAT_WEEKS - 1) * 7; w <= lastWeek; w += 7) {
+    weeks.push(MONDAY_FIRST.map((_, i) => {
+      const n = w + i;
+      const iso = isoOfDay(n);
+      const fc = n >= today ? cls.forecasts[iso]?.find((c) => c.score === score) : null;
+      const actual = n < today ? actualRow(iso)?.[idx] ?? null : null;
+      return { n, iso, value: fc ? fc.points : actual, forecast: !!fc };
+    }));
+  }
+
+  const values = weeks.flat().filter((c) => c.value != null).map((c) => c.value);
+  const lo = Math.min(...values), hi = Math.max(...values);
+  const average = MONDAY_FIRST.map((_, i) => {
+    const v = weeks.map((w) => w[i]).filter((c) => !c.forecast && c.value != null).map((c) => c.value);
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  });
+
+  $('heat-head').replaceChildren(...MONDAY_FIRST.map((d, i) => {
+    const th = el('th', { scope: 'col', class: d === 0 ? 'sun' : d === 6 ? 'sat' : '' });
+    th.append(el('span', { class: 'hw' }, DOW[d]), el('span', { class: 'ha', title: `直近${HEAT_WEEKS}週の${DOW[d]}曜の平均` }, average[i] == null ? '—' : short(Math.round(average[i]))));
+    return th;
+  }));
+
+  $('heat-rows').replaceChildren(...weeks.map((week) => {
+    const tr = el('tr');
+    for (const c of week) {
+      const names = [];
+      if (c.forecast) names.push('fc');
+      if (c.n === today) names.push('today');
+      if (c.forecast && c.iso === state.day) names.push('on');
+      if (c.value == null) names.push(c.n >= today ? 'later' : 'blank');   // .empty はお知らせの枠の名前なので使わない
+      const td = el('td', { class: names.join(' ') });
+      if (c.value != null) {
+        const t = hi > lo ? (c.value - lo) / (hi - lo) : 0.5;
+        const alpha = 0.08 + 0.77 * t;
+        td.style.backgroundColor = `rgba(${RGB[score]},${alpha.toFixed(2)})`;
+        if (alpha >= 0.55) td.classList.add('dark');
+        td.title = `${mdw(c.iso)} ${c.forecast ? 'のボーダー予想' : 'の実際のボーダー'} +${score}: ${fmt(c.value)} pt`;
+      }
+      if (c.forecast) { td.dataset.day = c.iso; td.tabIndex = 0; }
+      td.append(el('span', { class: 'hd' }, md(c.iso)), el('span', { class: 'hv' }, c.value == null ? (c.n >= today ? '' : '—') : short(c.value)));
       tr.append(td);
     }
     return tr;
@@ -518,6 +633,7 @@ function selectDay(date) {
   renderWeek();
   renderOverview();
   renderChart();
+  renderHeat();
   // スマホでは上のカードが画面の外にあるので、そこまで戻す。
   const hero = document.querySelector('.hero');
   if (hero.getBoundingClientRect().top < 0) hero.scrollIntoView({ behavior: 'smooth' });
@@ -541,6 +657,19 @@ $('week-rows').addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   e.preventDefault();
   selectDay(e.target.closest('tr[data-day]')?.dataset.day);
+});
+$('heat-score').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-score]');
+  if (!b) return;
+  state.heatScore = Number(b.dataset.score);
+  for (const x of document.querySelectorAll('#heat-score button')) x.setAttribute('aria-pressed', String(x === b));
+  renderHeat();
+});
+$('heat-rows').addEventListener('click', (e) => selectDay(e.target.closest('td[data-day]')?.dataset.day));
+$('heat-rows').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  selectDay(e.target.closest('td[data-day]')?.dataset.day);
 });
 $('range').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-days]');
