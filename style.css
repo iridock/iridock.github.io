@@ -69,6 +69,36 @@ button, select, input { font: inherit; color: inherit; }
 .brand .product { color: var(--muted); font-weight: 600; }
 .updated { margin: 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 
+/* いま見ている帯と、いちばん上へ戻るボタン（2026-10-14「上の固定ヘッダーにTOPへ戻るボタン(アイコン)と選択しているランクを表示してほしい」） */
+.bar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; min-width: 0; }
+.bar-band {
+  padding: 2px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  font-weight: 800;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.bar-band:empty { display: none; }
+.to-top {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--accent);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.to-top:hover { border-color: var(--accent); }
+.to-top svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
 main {
   max-width: 1180px;
   margin: 0 auto;
@@ -422,6 +452,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .big { margin-top: 6px; }
   #chart { height: 220px; }
   .brand .product { display: none; }
+  /* スマホの幅では更新日時を出さない（利用者の指示「スマホぐらい小さくしているときは更新日時はけしていい」）。帯の札と↑ボタンを1行に収めるため。 */
+  .updated { display: none; }
+  .topbar { flex-wrap: nowrap; padding-top: 8px; padding-bottom: 8px; }
   table.week th, table.week td { padding: 8px 8px; }
   table.week .rel, table.week .kind { display: block; margin-left: 0; }
   table.week td .wf { font-size: 14px; }

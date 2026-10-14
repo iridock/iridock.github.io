@@ -23,7 +23,14 @@
     <span class="name">IriDock</span>
     <span class="product">ボーダー予想</span>
   </div>
-  <p id="updated" class="updated"></p>
+  <!-- 下まで読んでも、いま見ている帯と、上へ戻る手段が見えるように（利用者の指示、2026-10-14「上の固定ヘッダーにTOPへ戻るボタン(アイコン)と選択しているランクを表示してほしい」） -->
+  <div class="bar-right">
+    <p id="updated" class="updated"></p>
+    <span id="bar-band" class="bar-band" title="選んでいるランク帯"></span>
+    <button id="to-top" type="button" class="to-top" aria-label="いちばん上へ戻る" title="いちばん上へ戻る">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
+    </button>
+  </div>
 </header>
 
 <main>
@@ -102,8 +109,6 @@
       <div id="presets" class="seg small" role="group" aria-label="期間をすぐ選ぶ">
         <button type="button" data-preset="7" aria-pressed="false">直近7日</button>
         <button type="button" data-preset="30" aria-pressed="false">直近30日</button>
-        <button type="button" data-preset="month" aria-pressed="false">今月</button>
-        <button type="button" data-preset="last" aria-pressed="false">先月</button>
         <button type="button" data-preset="all" aria-pressed="true">すべて</button>
       </div>
     </div>

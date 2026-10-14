@@ -150,6 +150,7 @@ async function selectBand(name) {
   store.set('band', name);
   if (decodeURIComponent(location.hash.slice(1)) !== name) history.replaceState(null, '', '#' + encodeURIComponent(name));
   $('band').value = name;
+  $('bar-band').textContent = name;   // 上の帯（下まで読んでも、どの帯を見ているか分かるように）
   renderHero();
   renderWeek();
   renderOverview();
@@ -405,19 +406,12 @@ function renderChart() {
 // ---- 表 ----
 // 期間で絞る（利用者の指示「日付検索は日付の検索をもっと楽にして。あと範囲でできるようにして」、2026-10-14）。
 // 日付はカレンダーから選び、よく使う期間はボタン1つで入れる。前の「10/3 と打つ」欄はやめた。曜日は別の選ぶ欄。
-const isoOf = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+// ボタンは「直近7日・直近30日・すべて」だけ（「今月」「先月」は外した。利用者の指示「実際のボーダーに今月、先月の選択肢はいらない」、2026-10-14）。
 
 // ボタンの期間（日本時間の今日から数える）。
 function presetRange(key) {
   const today = jstToday();
-  const t = new Date(today + 'T00:00:00Z');
   if (key === '7' || key === '30') return [isoOfDay(dayNumber(today) - Number(key) + 1), today];
-  if (key === 'month') return [`${today.slice(0, 8)}01`, today];
-  if (key === 'last') {
-    const first = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - 1, 1));
-    const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), 0));
-    return [isoOf(first), isoOf(last)];
-  }
   return ['', ''];
 }
 
@@ -531,6 +525,11 @@ function selectDay(date) {
 
 // ---- 操作 ----
 $('band').addEventListener('change', (e) => selectBand(e.target.value));
+// いちばん上へ戻る（動きを減らす設定の人には、すっと動かさずにすぐ戻す）。
+$('to-top').addEventListener('click', () => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+});
 $('overview').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-band]');
   if (!b) return;
