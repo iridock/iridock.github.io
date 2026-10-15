@@ -86,16 +86,6 @@ function actualRow(iso) {
   return map.get(iso) ?? null;
 }
 
-// 前の同じ曜日の実際のボーダー（先週。記録がまだ集まっていなければ2週前）。どちらも無ければ null。
-function prevSameWeekday(iso, score) {
-  for (const back of [7, 14]) {
-    const date = isoOfDay(dayNumber(iso) - back);
-    const points = actualRow(date)?.[SCORES.indexOf(score) + 1];
-    if (points != null) return { date, points };
-  }
-  return null;
-}
-
 // ---- 読み込み ----
 async function load() {
   // 3つまとめて読む。予想が読めなければ何も出せないが、実績・過去分の結果が読めなくても予想は出す。
@@ -567,15 +557,7 @@ function renderWeek() {
       if (c) {
         td.append(el('span', { class: 'wf' }, fmt(c.points)));
         if (c.safe95 != null) td.append(el('span', { class: 'ws', title: '95%の確率で取れるライン' }, fmt(c.safe95)));
-        // 前の同じ曜日の実際と比べた上がり下がり（利用者が選んだ案 D、2026-10-14）。今週は高めか低めかの感覚をつかむため。
-        const prev = prevSameWeekday(d.date, s);
-        if (prev) {
-          const pct = Math.round((c.points / prev.points - 1) * 100);
-          td.append(el('span', {
-            class: `wc${pct > 0 ? ' up' : pct < 0 ? ' down' : ''}`,
-            title: `${mdw(prev.date)} の実際のボーダー ${fmt(prev.points)} pt と比べて`,
-          }, pct > 0 ? `▲${pct}%` : pct < 0 ? `▼${-pct}%` : '±0%'));
-        }
+        // 前の同じ曜日の実際と比べた ▲▼ は出さない（2026-10-14 に案 D として入れたが、利用者の指示 2026-10-16「1週間のボーダー予想の▲▼の機能もいらない」で外した）。
       } else {
         td.append(el('span', { class: 'none' }, '—'));
       }
@@ -592,15 +574,13 @@ const ANSWER_TREND = 14;       // 日ごとの推移に出す日数
 const pct1 = (v) => `${v.toFixed(1)}%`;
 function renderAnswers() {
   const a = state.results?.summary;
-  const parts = [];
-  if (a?.recent7) parts.push(`直近7日 ${pct1(a.recent7.medianError)}（${fmt(a.recent7.count)} 本）`);
-  if (a?.recent30) parts.push(`直近30日 ${pct1(a.recent30.medianError)}（${fmt(a.recent30.count)} 本）`);
-  const line = a?.recent30?.withLine > 0
-    ? `。「95%の確率で取れるライン」の内に入ったのは、直近30日で ${pct1(a.recent30.covered * 100 / a.recent30.withLine)}`
-    : '';
-  $('answer-summary').textContent = parts.length > 0
-    ? `全ランク帯の外れの真ん中: ${parts.join('・')}${line}。`
+  // 「全ランク帯の外れの真ん中: 直近7日 …・直近30日 …。「95%の確率で取れるライン」の内に入ったのは、直近30日で …」のまとめは出さない
+  // （利用者の指示、2026-10-16「…の説明もいらない」）。答え合わせがまだ1日も無いときだけ、表が空の理由を書く。
+  const summary = $('answer-summary');
+  summary.textContent = a?.recent30 || a?.recent7
+    ? ''
     : 'まだ答え合わせできた日がありません。10/15 から、その日最後のボーダー予想をとっておき、実際のボーダーが届いたらここに出します。';
+  summary.hidden = summary.textContent === '';
   $('answer-trend').replaceChildren(...(a?.days || []).slice(0, ANSWER_TREND).map((d) =>
     el('span', { class: 'chip', role: 'listitem', title: `${mdw(d.date)} の予想 ${fmt(d.count)} 本の外れの真ん中` }, `${md(d.date)} ${pct1(d.medianError)}`)));
 
@@ -623,9 +603,9 @@ function renderAnswers() {
       } else if (r[4] == null) {
         td.append(el('span', { class: 'pending' }, '結果待ち'), el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`));
       } else {
-        const over = r[3] != null && r[4] > r[3];
+        // 実際が「95%の確率で取れるライン」を越えた日の ▲ と色分けは付けない（利用者の指示、2026-10-16「▲ は実際が…を越えた日です。の説明もいらないし、機能もいらない」）。
         td.append(
-          el('span', { class: `wa${over ? ' over' : ''}`, title: over ? '実際が「95%の確率で取れるライン」を越えた日' : '実際のボーダー' }, `${fmt(r[4])}${over ? ' ▲' : ''}`),
+          el('span', { class: 'wa', title: '実際のボーダー' }, fmt(r[4])),
           el('span', { class: 'wp' }, `予想 ${fmt(r[2])}（${r[5] > 0 ? '+' : ''}${pct1(r[5])}）`));
       }
       tr.append(td);
