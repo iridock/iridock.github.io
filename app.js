@@ -119,8 +119,11 @@ async function load() {
     notice('まだボーダーの記録がありません。');
     return;
   }
+  // 開き直したときは、前に選んでいた帯を先に使う（利用者の指示、2026-10-16「再度開いたときに指定してたランク…は記憶しておいてほしい」）。
+  // 前は URL の #帯 を先にしていたので、#S1 付きで保存したブックマークやホーム画面のアイコンから開くと、いつも S1 に戻っていた。
+  // 覚えた帯が無い人（はじめての人・共有された #帯 のリンク）には #帯 を使う。開いている間の #帯 の切り替えは hashchange が受け持つ。
   const fromHash = decodeURIComponent(location.hash.slice(1));
-  const pick = [fromHash, state.band, store.get('band'), names[0]].find((n) => n && names.includes(n));
+  const pick = [state.band, store.get('band'), fromHash, names[0]].find((n) => n && names.includes(n));
   selectBand(pick);
 }
 
@@ -570,20 +573,10 @@ function renderWeek() {
 // ---- これまでの答え合わせ（利用者の指示、2026-10-15） ----
 // その日最後のボーダー予想と、実際のボーダーの差。数字はバッチが計算したもの（ここでは計算しない）。
 const ANSWER_ROWS = 30;        // 帯の表に出す日数
-const ANSWER_TREND = 14;       // 日ごとの推移に出す日数
 const pct1 = (v) => `${v.toFixed(1)}%`;
+// 表の上のまとめの文（全ランク帯の外れの真ん中など）・日ごとの外れの真ん中の札・「まだ答え合わせできた日がありません…」は出さない
+// （利用者の指示、2026-10-16「…の説明もいらない」「日ごとの外れの真ん中の札…いらない」「まだ答え合わせできた日がありません…の文…いらない」）。
 function renderAnswers() {
-  const a = state.results?.summary;
-  // 「全ランク帯の外れの真ん中: 直近7日 …・直近30日 …。「95%の確率で取れるライン」の内に入ったのは、直近30日で …」のまとめは出さない
-  // （利用者の指示、2026-10-16「…の説明もいらない」）。答え合わせがまだ1日も無いときだけ、表が空の理由を書く。
-  const summary = $('answer-summary');
-  summary.textContent = a?.recent30 || a?.recent7
-    ? ''
-    : 'まだ答え合わせできた日がありません。10/15 から、その日最後のボーダー予想をとっておき、実際のボーダーが届いたらここに出します。';
-  summary.hidden = summary.textContent === '';
-  $('answer-trend').replaceChildren(...(a?.days || []).slice(0, ANSWER_TREND).map((d) =>
-    el('span', { class: 'chip', role: 'listitem', title: `${mdw(d.date)} の予想 ${fmt(d.count)} 本の外れの真ん中` }, `${md(d.date)} ${pct1(d.medianError)}`)));
-
   const rows = state.answers.get(state.band);
   const byDate = new Map();
   for (const r of rows || []) {
@@ -689,6 +682,43 @@ function selectDay(date) {
   const hero = document.querySelector('.hero');
   if (hero.getBoundingClientRect().top < 0) hero.scrollIntoView({ behavior: 'smooth' });
 }
+
+// ---- パネルの開け閉め（利用者の指示、2026-10-16「各パネルに閉じれる機能つけようか。再度開いたときに…パネルの開けしめは記憶しておいてほしい」） ----
+// 見出しの右に「閉じる／開く」を置く。閉じても見出しは残す（上のボーダー予想は、見出しの中のランク帯の選ぶ欄も残す）。
+// どのパネルを閉じたかは、見出しの id でこのブラウザに覚える。
+const FOLD_KEY = 'folded';
+function foldedSet() {
+  try { return new Set(JSON.parse(store.get(FOLD_KEY) || '[]')); } catch { return new Set(); }
+}
+function setFolded(section, button, folded) {
+  section.classList.toggle('folded', folded);
+  // 読み上げ用の名前は、見出しの文字の部分だけから作る（上のボーダー予想の見出しには、ランク帯の選ぶ欄が入っている）。
+  const heading = $(section.getAttribute('aria-labelledby'));
+  const title = [...(heading?.childNodes ?? [])].filter((n) => n.nodeType === Node.TEXT_NODE)
+    .map((n) => n.textContent).join('').trim().replace(/^の/, '') || 'パネル';
+  button.textContent = folded ? '開く' : '閉じる';
+  button.setAttribute('aria-expanded', String(!folded));
+  button.setAttribute('aria-label', `${title}を${folded ? '開く' : '閉じる'}`);
+}
+function setupFolds() {
+  const saved = foldedSet();
+  for (const section of document.querySelectorAll('main section[aria-labelledby]')) {
+    const head = section.querySelector('.panel-head, .hero-head');
+    if (!head) continue;
+    const key = section.getAttribute('aria-labelledby');
+    const button = el('button', { type: 'button', class: 'fold' });
+    head.append(button);
+    setFolded(section, button, saved.has(key));
+    button.addEventListener('click', () => {
+      const now = foldedSet();
+      const folded = !section.classList.contains('folded');
+      if (folded) now.add(key); else now.delete(key);
+      store.set(FOLD_KEY, JSON.stringify([...now]));
+      setFolded(section, button, folded);
+    });
+  }
+}
+setupFolds();
 
 // ---- 操作 ----
 $('band').addEventListener('change', (e) => selectBand(e.target.value));

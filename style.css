@@ -289,6 +289,27 @@ main {
 .panel h2 { margin: 0; font-size: 16px; }
 .panel h2 small { color: var(--faint); font-weight: 600; font-size: 12px; margin-left: 6px; }
 
+/* ---- パネルの開け閉め（2026-10-16）。閉じても見出しは残す ---- */
+.fold {
+  margin-left: auto;
+  padding: 4px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fold:hover { background: var(--panel-2); color: inherit; }
+/* パネルのボタンは右上に固定する（流れに入れると、スマホの幅で見出しの次の行に落ち、閉じても高さを取った）。 */
+.panel { position: relative; }
+.panel > .panel-head { padding-right: 72px; }
+.panel > .panel-head > .fold { position: absolute; top: 14px; right: 14px; }
+.panel.folded > :not(.panel-head), .hero.folded > :not(.hero-head) { display: none; }
+.panel.folded .panel-head > :not(h2):not(.fold) { display: none; }
+.panel.folded .panel-head, .hero.folded .hero-head { margin-bottom: 0; }
+
 /* ---- グラフ ---- */
 .chartbox { position: relative; }
 #chart { display: block; width: 100%; height: 260px; touch-action: pan-y; }
@@ -356,8 +377,6 @@ table.week tbody tr:focus-visible { outline: 2px solid var(--accent); outline-of
 /* 前の同じ曜日の実際との比べ（案 D、2026-10-14） */
 
 /* これまでの答え合わせ（2026-10-15）。見た目は1週間の予想の表にそろえる（行は押せないので、押せる見た目にはしない）。 */
-.trend { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
-.trend .chip { font-size: 12px; font-variant-numeric: tabular-nums; padding: 3px 9px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); }
 table.answers th[scope="row"] { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 table.answers td .wa { display: block; font-size: 15px; font-weight: 700; }
 table.answers td .wp { display: block; font-size: 11.5px; color: var(--faint); }
