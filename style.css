@@ -359,6 +359,15 @@ table.week td .wc { display: block; font-size: 11px; font-weight: 700; color: va
 table.week td .wc.up { color: #ff9b8a; }
 table.week td .wc.down { color: #8fd3ff; }
 
+/* これまでの答え合わせ（2026-10-15）。見た目は1週間の予想の表にそろえる（行は押せないので、押せる見た目にはしない）。 */
+.trend { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+.trend .chip { font-size: 12px; font-variant-numeric: tabular-nums; padding: 3px 9px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); }
+table.answers th[scope="row"] { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+table.answers td .wa { display: block; font-size: 15px; font-weight: 700; }
+table.answers td .wa.over { color: var(--warn); }
+table.answers td .wp { display: block; font-size: 11.5px; color: var(--faint); }
+table.answers td .pending { display: block; font-size: 12.5px; color: var(--muted); }
+
 /* ---- 曜日×週の色分け表（案 C、2026-10-14）。色はスコアの色の濃さ。点線の枠は予想 ---- */
 .heat-panel { margin-bottom: 14px; }
 .heatwrap { overflow-x: auto; }
@@ -491,6 +500,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   table.week th, table.week td { padding: 8px 8px; }
   table.week .rel, table.week .kind { display: block; margin-left: 0; }
   table.week td .wf { font-size: 14px; }
+  table.answers th, table.answers td { padding: 8px 8px; }
+  table.answers td .wa { font-size: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

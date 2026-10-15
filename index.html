@@ -67,6 +67,29 @@
     <p class="hint">大きい数字がボーダー予想、小さい数字が「95%の確率で取れるライン」です。▲▼ は、前の同じ曜日（先週。まだ記録が無ければ2週前）の実際のボーダーと比べた上がり下がりです。先の日ほど外れやすくなります。</p>
   </section>
 
+  <!-- これまでの答え合わせ（利用者の指示、2026-10-15「その日最終の予想結果をとっておいて、その結果が出たときにどれぐらいの差があって、
+       どれぐらいよくなっていっているかを知りたい」）。数字はバッチが計算したものを出すだけ。 -->
+  <section class="panel answer-panel" aria-labelledby="answer-title">
+    <div class="panel-head">
+      <h2 id="answer-title">これまでの答え合わせ <small>その日最後のボーダー予想と、実際のボーダー</small></h2>
+    </div>
+    <p id="answer-summary" class="sub"></p>
+    <div id="answer-trend" class="trend" role="list" aria-label="日ごとの外れの真ん中（全ランク帯）"></div>
+    <div class="tablewrap">
+      <table id="answers" class="answers">
+        <thead><tr>
+          <th scope="col">日付</th>
+          <th scope="col" class="n c2">+2</th>
+          <th scope="col" class="n c4">+4</th>
+          <th scope="col" class="n c6">+6</th>
+        </tr></thead>
+        <tbody id="answer-rows"></tbody>
+      </table>
+    </div>
+    <p id="answer-empty" class="sub" hidden></p>
+    <p class="hint">大きい数字が実際のボーダー、小さい数字がその日最後のボーダー予想と、実際との差です（＋は予想が高すぎ、−は低すぎ）。▲ は実際が「95%の確率で取れるライン」を越えた日です。外れの真ん中が小さくなっていけば、ボーダー予想が良くなっています。</p>
+  </section>
+
   <!-- 曜日×週の色分け表（利用者が選んだ案 C、2026-10-14「なんかこれみれば視覚的に予想しやすいみたいなの提案ある」）。
        今週・来週の予想も点線の枠で並べ、過去の同じ曜日と見比べられるようにする。 -->
   <section class="panel heat-panel" aria-labelledby="heat-title">

@@ -20,6 +20,7 @@ const state = {
   day: null,
   range: 30,
   history: new Map(),          // 帯 → 新しい順の [日付, +2, +4, +6]
+  answers: new Map(),          // 帯 → 答え合わせの新しい順の [日付, スコア, その日最後の予想, 95%のライン, 実際, 差%]
   sort: { key: 'date', asc: false },
   shown: PAGE,
   ticket: 0,
@@ -105,6 +106,7 @@ async function load() {
   state.summary = summary;
   state.loadedAt = Date.now();
   state.history.clear();
+  state.answers.clear();
   renderUpdated();
   pickDay();
   renderBands();
@@ -178,6 +180,7 @@ async function selectBand(name) {
   renderHero();
   renderWeek();
   renderOverview();
+  renderAnswers();   // 全ランク帯のまとめは先に出す（帯の1件ずつは、帯の記録を読み込んでから）
 
   const ticket = ++state.ticket;
   const cls = current();
@@ -188,6 +191,7 @@ async function selectBand(name) {
       const h = await getJson(`data/history/${encodeURIComponent(cls.file)}.json`);
       rows = h.rows;
       state.history.set(name, rows);
+      state.answers.set(name, h.answers || []);
     } catch {
       rows = [];
       if (ticket === state.ticket) $('count').textContent = '実際のボーダーを読み込めませんでした。';
@@ -203,6 +207,7 @@ async function selectBand(name) {
   }
   renderChart();
   renderTable();
+  renderAnswers();
 }
 
 // ---- 予想の大きな数字 ----
@@ -564,6 +569,58 @@ function renderWeek() {
     }
     return tr;
   }));
+}
+
+// ---- これまでの答え合わせ（利用者の指示、2026-10-15） ----
+// その日最後のボーダー予想と、実際のボーダーの差。数字はバッチが計算したもの（ここでは計算しない）。
+const ANSWER_ROWS = 30;        // 帯の表に出す日数
+const ANSWER_TREND = 14;       // 日ごとの推移に出す日数
+const pct1 = (v) => `${v.toFixed(1)}%`;
+function renderAnswers() {
+  const a = state.summary.answers;
+  const parts = [];
+  if (a?.recent7) parts.push(`直近7日 ${pct1(a.recent7.medianError)}（${fmt(a.recent7.count)} 本）`);
+  if (a?.recent30) parts.push(`直近30日 ${pct1(a.recent30.medianError)}（${fmt(a.recent30.count)} 本）`);
+  const line = a?.recent30?.withLine > 0
+    ? `。「95%の確率で取れるライン」の内に入ったのは、直近30日で ${pct1(a.recent30.covered * 100 / a.recent30.withLine)}`
+    : '';
+  $('answer-summary').textContent = parts.length > 0
+    ? `全ランク帯の外れの真ん中: ${parts.join('・')}${line}。`
+    : 'まだ答え合わせできた日がありません。10/15 から、その日最後のボーダー予想をとっておき、実際のボーダーが届いたらここに出します。';
+  $('answer-trend').replaceChildren(...(a?.days || []).slice(0, ANSWER_TREND).map((d) =>
+    el('span', { class: 'chip', role: 'listitem', title: `${mdw(d.date)} の予想 ${fmt(d.count)} 本の外れの真ん中` }, `${md(d.date)} ${pct1(d.medianError)}`)));
+
+  const rows = state.answers.get(state.band);
+  const byDate = new Map();
+  for (const r of rows || []) {
+    if (!byDate.has(r[0])) byDate.set(r[0], new Map());
+    byDate.get(r[0]).set(r[1], r);
+  }
+  const dates = [...byDate.keys()].sort().reverse().slice(0, ANSWER_ROWS);
+  $('answer-rows').replaceChildren(...dates.map((date) => {
+    const d = dowOf(date);
+    const tr = el('tr', { class: d === 0 ? 'sun' : d === 6 ? 'sat' : '' });
+    tr.append(el('th', { scope: 'row' }, mdw(date)));
+    for (const s of SCORES) {
+      const r = byDate.get(date).get(s);
+      const td = el('td', { class: `n c${s}` });
+      if (!r) {
+        td.append(el('span', { class: 'none' }, '—'));
+      } else if (r[4] == null) {
+        td.append(el('span', { class: 'pending' }, '結果待ち'), el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`));
+      } else {
+        const over = r[3] != null && r[4] > r[3];
+        td.append(
+          el('span', { class: `wa${over ? ' over' : ''}`, title: over ? '実際が「95%の確率で取れるライン」を越えた日' : '実際のボーダー' }, `${fmt(r[4])}${over ? ' ▲' : ''}`),
+          el('span', { class: 'wp' }, `予想 ${fmt(r[2])}（${r[5] > 0 ? '+' : ''}${pct1(r[5])}）`));
+      }
+      tr.append(td);
+    }
+    return tr;
+  }));
+  const empty = $('answer-empty');
+  empty.textContent = rows ? `${state.band} の答え合わせは、まだありません。` : '読み込み中…';
+  empty.hidden = dates.length > 0;
 }
 
 // ---- 曜日×週の色分け表（利用者が選んだ案 C、2026-10-14） ----
