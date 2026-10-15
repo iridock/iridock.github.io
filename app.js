@@ -738,13 +738,18 @@ setupFolds();
 // 利用者が選んだ形: 表示・並べ替えの対象はパネル6つ（上のボーダー予想は常に先頭）、並べ替えは ↑↓ ボタン、
 // 配色は画面全体を和の色の組み合わせで（明るい地も1つ）。選んだものはすぐ画面に当て、このブラウザに覚える。
 // 配色の色の値は style.css の [data-theme]、最初に当てるのは theme.js（本文を描く前に当て、いつもの配色が一瞬見えないように）。
+// 暗い地 6 つ → 明るい地 3 つ（利用者の指示、2026-10-16「もう３種類色が欲しい」で 茜・桜・青磁 を足した）。
+// id は保存されているので変えない（夜桜は sakura、明るい桜は sakurairo）。色の値は tools/make-site-themes.py。
 const THEMES = [
   { id: 'ai', name: '藍', reading: 'あい' },
   { id: 'sumi', name: '墨と朱', reading: 'すみとしゅ' },
+  { id: 'akane', name: '茜', reading: 'あかね' },
   { id: 'sakura', name: '夜桜', reading: 'よざくら' },
-  { id: 'matcha', name: '抹茶', reading: 'まっちゃ' },
   { id: 'fuji', name: '藤', reading: 'ふじ' },
+  { id: 'matcha', name: '抹茶', reading: 'まっちゃ' },
   { id: 'washi', name: '和紙', reading: 'わし・明るい地' },
+  { id: 'sakurairo', name: '桜', reading: 'さくら・明るい地' },
+  { id: 'seiji', name: '青磁', reading: 'せいじ・明るい地' },
 ];
 const LAYOUT_KEY = 'layout';
 const panelOf = (id) => document.querySelector(`#panels > section[aria-labelledby="${id}"]`);

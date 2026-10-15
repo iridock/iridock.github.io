@@ -3,13 +3,17 @@
 // サイトの決まり（CSP）でページの中に書いたスクリプトは動かないので、別のファイルにして head で読む。
 // 配色そのもの（色の値）は style.css の [data-theme="…"] にある。ここに置くのは、ブラウザの上の帯の色（theme-color）と明るさだけ。
 (function () {
+  // bar は各配色の地の色（tools/make-site-themes.py の bg と同じ）。配色を足したら、ここと app.js の THEMES にも足す。
   var themes = {
-    ai: { bar: '#0a0e16', scheme: 'dark' },
-    sumi: { bar: '#11100e', scheme: 'dark' },
-    sakura: { bar: '#140d12', scheme: 'dark' },
-    matcha: { bar: '#0c120d', scheme: 'dark' },
-    fuji: { bar: '#100d18', scheme: 'dark' },
+    ai: { bar: '#0c1730', scheme: 'dark' },
+    sumi: { bar: '#1d1b19', scheme: 'dark' },
+    akane: { bar: '#2a0f13', scheme: 'dark' },
+    sakura: { bar: '#24101d', scheme: 'dark' },
+    fuji: { bar: '#1e1838', scheme: 'dark' },
+    matcha: { bar: '#13261a', scheme: 'dark' },
     washi: { bar: '#f4efe4', scheme: 'light' },
+    sakurairo: { bar: '#fbedf1', scheme: 'light' },
+    seiji: { bar: '#e5f1eb', scheme: 'light' },
   };
   function apply(id) {
     if (!themes[id]) id = 'ai';
