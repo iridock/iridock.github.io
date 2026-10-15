@@ -228,13 +228,6 @@ function selectBand(name) {
 }
 
 // ---- 予想の大きな数字 ----
-// いちばん新しい実際のボーダー（実績は新しい順）。
-function lastActual(cls, score) {
-  const i = SCORES.indexOf(score) + 1;
-  const row = (state.history.get(cls.rankClass) || []).find((r) => r[i] != null);
-  return row ? { date: row[0], points: row[i] } : null;
-}
-
 // 一覧の小さなグラフに使う、直近 SPARK_DAYS 日の実績（古い順）。
 function sparkOf(rankClass) {
   const from = dayNumber(jstToday()) - SPARK_DAYS;
@@ -248,9 +241,9 @@ function renderHero() {
   const cls = current();
   const info = state.forecasts.days.find((d) => d.date === state.day);
   const kind = dayKind(info);
-  $('hero-sub').textContent = info
-    ? `${dayLabel(info.date)}の予想${kind ? `（${kind}）` : ''}${cls.latestDate ? `　／　実際のボーダーの記録は ${mdw(cls.latestDate)} まで` : ''}`
-    : '';
+  // 「実際のボーダーの記録は 〇 まで」は出さない（利用者の指示、2026-10-16「webのボーダー予想のところに実際のボーダーの記録は 10/14（水） までとか
+  // 10/14（水） の実際のボーダーは 221,450 ptの文言いらない」）。記録が古い帯だけは、下の注意の文で知らせる。
+  $('hero-sub').textContent = info ? `${dayLabel(info.date)}の予想${kind ? `（${kind}）` : ''}` : '';
 
   const cards = (state.day && cls.forecasts[state.day]) || [];
   const box = $('cards');
@@ -306,9 +299,7 @@ function renderHero() {
       card.append(safe);
     }
 
-    // 前は「最新の実際: 10/7（水）」で、何の数字か伝わりにくかった。
-    const last = lastActual(cls, c.score);
-    if (last) card.append(el('p', { class: 'last' }, `${mdw(last.date)} の実際のボーダーは ${fmt(last.points)} pt`));
+    // カードに「〇/〇 の実際のボーダーは 〇 pt」は出さない（利用者の指示、2026-10-16。上の見出しの横の文言と一緒に外した）。
     if (c.caution && !sharedCaution) card.append(el('p', { class: 'caution' }, c.caution));
     return card;
   }));
