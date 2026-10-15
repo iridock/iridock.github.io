@@ -2,28 +2,32 @@
 // IriDock ボーダー予想（公開サイト）。data/ の JSON を読んで表示するだけ。ここでは計算しない
 // （予想は毎日のバッチが、アプリの画面と同じ計算で作る。サイトで計算すると数字がずれる）。
 // データは文字として出すだけにする（innerHTML を使わない）。
+// data/ は3つに分かれている（利用者の指示「過去分の結果のやつと、予想と、実績のjsonをわけよう」、2026-10-16）:
+//   forecasts.json … 予想（今日から1週間）、actuals.json … 実績（直近1年）、results.json … 過去分の結果（予想の答え合わせ）。
 
 const $ = (id) => document.getElementById(id);
 const SVG = 'http://www.w3.org/2000/svg';
 const DOW = ['日', '月', '火', '水', '木', '金', '土'];
 const SCORES = [2, 4, 6];
 const PAGE = 60;
-const FORMAT = 1;              // data の形の版（BorderSiteExport.FormatVersion と同じ）
+const FORMAT = 2;              // data の形の版（BorderSiteExport.FormatVersion と同じ）
 const STALE_HOURS = 36;        // これより古ければ「更新が止まっている」と出す
 const RELOAD_MINUTES = 10;     // 開き直したとき、これだけたっていれば読み直す
 const STALE_RECORD_DAYS = 7;   // 最新の記録がこれより古い帯には「最近の記録が少ない」と出す（ふだんは報告が集まるのに2〜3日かかる）
+const SPARK_DAYS = 30;         // 一覧の小さなグラフの日数（実績から作る）
 
 const state = {
-  summary: null,
+  forecasts: null,             // forecasts.json（予想）
+  results: null,               // results.json（過去分の結果）。読めなければ null
+  actualsFailed: false,        // actuals.json（実績）を読めなかった
   loadedAt: 0,
   band: null,
   day: null,
   range: 30,
-  history: new Map(),          // 帯 → 新しい順の [日付, +2, +4, +6]
-  answers: new Map(),          // 帯 → 答え合わせの新しい順の [日付, スコア, その日最後の予想, 95%のライン, 実際, 差%]
+  history: new Map(),          // 帯 → 新しい順の [日付, +2, +4, +6]（actuals.json）
+  answers: new Map(),          // 帯 → 答え合わせの新しい順の [日付, スコア, その日最後の予想, 95%のライン, 実際, 差%]（results.json）
   sort: { key: 'date', asc: false },
   shown: PAGE,
-  ticket: 0,
   heatScore: 2,                // 曜日×週の色分け表で色にするスコア
 };
 const HEAT_WEEKS = 12;         // 曜日×週の色分け表に並べる過去の週の数（今週を含む）
@@ -70,7 +74,7 @@ function notice(text) {
   n.hidden = !text;
 }
 
-const current = () => state.summary.classes.find((c) => c.rankClass === state.band);
+const current = () => state.forecasts.classes.find((c) => c.rankClass === state.band);
 
 // 見ている帯の実際のボーダーを日付で引く（帯の記録ごとに1回だけ表を作る）。記録をまだ読み込んでいなければ null。
 const byDateCache = new WeakMap();
@@ -94,35 +98,44 @@ function prevSameWeekday(iso, score) {
 
 // ---- 読み込み ----
 async function load() {
-  let summary;
+  // 3つまとめて読む。予想が読めなければ何も出せないが、実績・過去分の結果が読めなくても予想は出す。
+  let forecasts, actuals, results;
   try {
-    summary = await getJson('data/summary.json');
-    if (summary.version !== FORMAT) throw new Error('format');
+    [forecasts, actuals, results] = await Promise.all([
+      getJson('data/forecasts.json'),
+      getJson('data/actuals.json').catch(() => null),
+      getJson('data/results.json').catch(() => null),
+    ]);
+    if (forecasts.version !== FORMAT) throw new Error('format');
   } catch {
     notice('データを読み込めませんでした。時間をおいて開き直してください。');
     return;
   }
 
-  state.summary = summary;
+  state.forecasts = forecasts;
+  state.results = results?.version === FORMAT ? results : null;
+  state.actualsFailed = actuals?.version !== FORMAT;
   state.loadedAt = Date.now();
   state.history.clear();
   state.answers.clear();
+  for (const c of state.actualsFailed ? [] : actuals.classes) state.history.set(c.rankClass, c.rows);
+  for (const c of state.results?.classes ?? []) state.answers.set(c.rankClass, c.rows);
   renderUpdated();
   pickDay();
   renderBands();
 
-  const names = summary.classes.map((c) => c.rankClass);
+  const names = forecasts.classes.map((c) => c.rankClass);
   if (names.length === 0) {
     notice('まだボーダーの記録がありません。');
     return;
   }
   const fromHash = decodeURIComponent(location.hash.slice(1));
   const pick = [fromHash, state.band, store.get('band'), names[0]].find((n) => n && names.includes(n));
-  await selectBand(pick);
+  selectBand(pick);
 }
 
 function renderUpdated() {
-  const at = new Date(state.summary.generatedAt);
+  const at = new Date(state.forecasts.generatedAt);
   const jst = new Date(at.getTime() + 9 * 3600000);
   const text = `${jst.getUTCMonth() + 1}/${jst.getUTCDate()} ${String(jst.getUTCHours()).padStart(2, '0')}:${String(jst.getUTCMinutes()).padStart(2, '0')}`;
   $('updated').textContent = `${text} 更新（毎日お昼ごろに更新）`;
@@ -133,7 +146,7 @@ function renderUpdated() {
 
 // 見ている人の今日（日本時間）に合う予想を選ぶ。無ければ、いちばん近い日。
 function pickDay() {
-  const days = state.summary.days.map((d) => d.date);
+  const days = state.forecasts.days.map((d) => d.date);
   if (days.length === 0) { state.day = null; return; }
   const today = jstToday();
   if (state.day && days.includes(state.day) && state.day >= today) return;
@@ -151,14 +164,14 @@ function dayLabel(iso) {
 }
 
 // 予想を出す日（今日より前の日は出さない。今日の予想がまだ無いときだけ、いちばん新しい日を残す）。
-const forecastDays = () => state.summary.days.filter((d) => d.date >= jstToday() || d.date === state.day);
+const forecastDays = () => state.forecasts.days.filter((d) => d.date >= jstToday() || d.date === state.day);
 
 // ランク帯は、見出しの中の選ぶ欄1つで選ぶ（利用者の指示「ランクの選択ももっとシンプルに」、2026-10-14。前は15個の札が横に並んでいた）。
 // S・A・B・C・D のまとまりごとに区切って並べる。
 function renderBands() {
   const select = $('band');
   const groups = new Map();
-  for (const c of state.summary.classes) {
+  for (const c of state.forecasts.classes) {
     const g = c.rankClass.charAt(0);
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g).push(c.rankClass);
@@ -190,7 +203,7 @@ function countBand(name) {
   countEvent(`band-${name}`, `ランク帯 ${name} を表示`);
 }
 
-async function selectBand(name) {
+function selectBand(name) {
   if (!name) return;
   state.band = name;
   countBand(name);
@@ -198,29 +211,12 @@ async function selectBand(name) {
   if (decodeURIComponent(location.hash.slice(1)) !== name) history.replaceState(null, '', '#' + encodeURIComponent(name));
   $('band').value = name;
   $('bar-band').textContent = name;   // 上の帯（下まで読んでも、どの帯を見ているか分かるように）
+  // 実績（actuals.json）は最初に全部の帯をまとめて読んでいる（前は帯を開くたびに読んでいた）。
+  const rows = state.history.get(name) || [];
+  state.shown = PAGE;
   renderHero();
   renderWeek();
   renderOverview();
-  renderAnswers();   // 全ランク帯のまとめは先に出す（帯の1件ずつは、帯の記録を読み込んでから）
-
-  const ticket = ++state.ticket;
-  const cls = current();
-  let rows = state.history.get(name);
-  if (!rows) {
-    $('count').textContent = '読み込み中…';
-    try {
-      const h = await getJson(`data/history/${encodeURIComponent(cls.file)}.json`);
-      rows = h.rows;
-      state.history.set(name, rows);
-      state.answers.set(name, h.answers || []);
-    } catch {
-      rows = [];
-      if (ticket === state.ticket) $('count').textContent = '実際のボーダーを読み込めませんでした。';
-    }
-  }
-  if (ticket !== state.ticket) return;   // 途中で別の帯に変えられた
-  state.shown = PAGE;
-  renderWeek();   // 前の同じ曜日との比べは、実際のボーダーを読み込んでから出せる
   renderHeat();
   // 期間の欄は、その帯の記録がある範囲でしか選べないようにする（カレンダーで、記録の無い日を選ばずに済むように）。
   if (rows.length > 0) {
@@ -232,13 +228,17 @@ async function selectBand(name) {
 }
 
 // ---- 予想の大きな数字 ----
+// いちばん新しい実際のボーダー（実績は新しい順）。
 function lastActual(cls, score) {
-  for (let i = cls.spark.length - 1; i >= 0; i--) {
-    const row = cls.spark[i];
-    const v = row[SCORES.indexOf(score) + 1];
-    if (v != null) return { date: row[0], points: v };
-  }
-  return null;
+  const i = SCORES.indexOf(score) + 1;
+  const row = (state.history.get(cls.rankClass) || []).find((r) => r[i] != null);
+  return row ? { date: row[0], points: row[i] } : null;
+}
+
+// 一覧の小さなグラフに使う、直近 SPARK_DAYS 日の実績（古い順）。
+function sparkOf(rankClass) {
+  const from = dayNumber(jstToday()) - SPARK_DAYS;
+  return (state.history.get(rankClass) || []).filter((r) => dayNumber(r[0]) > from).slice().reverse();
 }
 
 // 日の種類（「水曜・ふつうの日」の「ふつうの日」のほう。祝日・休みの前の日 など）。
@@ -246,7 +246,7 @@ const dayKind = (info) => (info?.dayText ?? '').split('・').slice(1).join('・'
 
 function renderHero() {
   const cls = current();
-  const info = state.summary.days.find((d) => d.date === state.day);
+  const info = state.forecasts.days.find((d) => d.date === state.day);
   const kind = dayKind(info);
   $('hero-sub').textContent = info
     ? `${dayLabel(info.date)}の予想${kind ? `（${kind}）` : ''}${cls.latestDate ? `　／　実際のボーダーの記録は ${mdw(cls.latestDate)} まで` : ''}`
@@ -318,7 +318,7 @@ function renderHero() {
 function sparkline(cls) {
   const W = 76, H = 26, P = 2;
   const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
-  const pts = cls.spark.filter((r) => r[1] != null);
+  const pts = sparkOf(cls.rankClass).filter((r) => r[1] != null);
   if (pts.length < 2) return svg;
   const xs = pts.map((r) => dayNumber(r[0]));
   const ys = pts.map((r) => r[1]);
@@ -333,7 +333,7 @@ function sparkline(cls) {
 function renderOverview() {
   $('overview-date').textContent = state.day ? dayLabel(state.day) : '';
   const list = $('overview');
-  list.replaceChildren(...state.summary.classes.map((cls) => {
+  list.replaceChildren(...state.forecasts.classes.map((cls) => {
     const li = el('li');
     const b = el('button', { type: 'button', 'data-band': cls.rankClass, 'aria-current': String(cls.rankClass === state.band) });
     b.append(el('span', { class: 'band' }, cls.rankClass));
@@ -526,9 +526,11 @@ function renderTable() {
   const list = filtered();
   const { from, to } = period();
   const span = from || to ? `${from ? mdw(from) : '最初'} 〜 ${to ? mdw(to) : '最新'}　` : '';
-  $('count').textContent = list.length === rows.length
-    ? `${state.band} の実際のボーダー ${fmt(rows.length)} 日分（直近1年）`
-    : `${span}${fmt(list.length)} 日分 ／ ${state.band} の実際のボーダー ${fmt(rows.length)} 日分（直近1年）`;
+  $('count').textContent = state.actualsFailed
+    ? '実際のボーダーを読み込めませんでした。時間をおいて開き直してください。'
+    : list.length === rows.length
+      ? `${state.band} の実際のボーダー ${fmt(rows.length)} 日分（直近1年）`
+      : `${span}${fmt(list.length)} 日分 ／ ${state.band} の実際のボーダー ${fmt(rows.length)} 日分（直近1年）`;
 
   // 表は2つある（1週間の予想・実際）。実際の表（#actual）の中だけを見る。
   for (const b of document.querySelectorAll('#actual th .sort')) {
@@ -598,7 +600,7 @@ const ANSWER_ROWS = 30;        // 帯の表に出す日数
 const ANSWER_TREND = 14;       // 日ごとの推移に出す日数
 const pct1 = (v) => `${v.toFixed(1)}%`;
 function renderAnswers() {
-  const a = state.summary.answers;
+  const a = state.results?.summary;
   const parts = [];
   if (a?.recent7) parts.push(`直近7日 ${pct1(a.recent7.medianError)}（${fmt(a.recent7.count)} 本）`);
   if (a?.recent30) parts.push(`直近30日 ${pct1(a.recent30.medianError)}（${fmt(a.recent30.count)} 本）`);
@@ -640,7 +642,7 @@ function renderAnswers() {
     return tr;
   }));
   const empty = $('answer-empty');
-  empty.textContent = rows ? `${state.band} の答え合わせは、まだありません。` : '読み込み中…';
+  empty.textContent = state.results ? `${state.band} の答え合わせは、まだありません。` : '答え合わせを読み込めませんでした。時間をおいて開き直してください。';
   empty.hidden = dates.length > 0;
 }
 
@@ -784,19 +786,19 @@ document.querySelector('#actual thead').addEventListener('click', (e) => {
 
 window.addEventListener('hashchange', () => {
   const name = decodeURIComponent(location.hash.slice(1));
-  if (state.summary && name && name !== state.band && state.summary.classes.some((c) => c.rankClass === name)) selectBand(name);
+  if (state.forecasts && name && name !== state.band && state.forecasts.classes.some((c) => c.rankClass === name)) selectBand(name);
 });
 
 // 開き直したときに、最新に追いつく（毎日昼ごろに更新される）。
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && state.summary && Date.now() - state.loadedAt > RELOAD_MINUTES * 60000) load();
+  if (!document.hidden && state.forecasts && Date.now() - state.loadedAt > RELOAD_MINUTES * 60000) load();
 });
 
 // 幅が変わったら、グラフを描き直す（文字がつぶれないよう、実際の幅で描いている）。
 let resizeTimer;
 new ResizeObserver(() => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => { if (state.summary && state.band) renderChart(); }, 120);
+  resizeTimer = setTimeout(() => { if (state.forecasts && state.band) renderChart(); }, 120);
 }).observe($('chartbox'));
 
 load();
