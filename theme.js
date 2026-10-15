@@ -5,15 +5,15 @@
 (function () {
   // bar は各配色の地の色（tools/make-site-themes.py の bg と同じ）。配色を足したら、ここと app.js の THEMES にも足す。
   var themes = {
-    ai: { bar: '#0c1730', scheme: 'dark' },
-    sumi: { bar: '#1d1b19', scheme: 'dark' },
-    akane: { bar: '#2a0f13', scheme: 'dark' },
-    sakura: { bar: '#24101d', scheme: 'dark' },
-    fuji: { bar: '#1e1838', scheme: 'dark' },
-    matcha: { bar: '#13261a', scheme: 'dark' },
-    washi: { bar: '#f4efe4', scheme: 'light' },
-    sakurairo: { bar: '#fbedf1', scheme: 'light' },
-    seiji: { bar: '#e5f1eb', scheme: 'light' },
+    ai: { bar: '#081c2c', scheme: 'dark' },
+    sumi: { bar: '#211816', scheme: 'dark' },
+    akane: { bar: '#2b1212', scheme: 'dark' },
+    sakura: { bar: '#28131f', scheme: 'dark' },
+    fuji: { bar: '#1f1629', scheme: 'dark' },
+    matcha: { bar: '#0e1f0f', scheme: 'dark' },
+    washi: { bar: '#f6f1e5', scheme: 'light' },
+    sakurairo: { bar: '#feecef', scheme: 'light' },
+    seiji: { bar: '#e7f5eb', scheme: 'light' },
   };
   function apply(id) {
     if (!themes[id]) id = 'ai';

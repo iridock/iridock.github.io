@@ -12,273 +12,282 @@
    地・パネル・枠・文字まで、その配色の色の系統に染める（利用者の指示、2026-10-16「背景色とか全部合わせて変わるようにしてほしいな」。
    前は暗い配色がどれもほぼ黒で、差し色くらいしか違わなかった）。並びは暗い地 6 つ → 明るい地 3 つ。
    下の定義は tools/make-site-themes.py が作る。値を変えるときは、ここを手で直さず、その道具の THEMES を直して流す。 */
-/* 藍（あい）: 濃い紺の地。前からの配色（+2・+4・+6 は Okabe-Ito の空色・青緑・橙を暗い地向けに明るくしたもの）。最初の設定。 */
+/* 藍（あい）: 濃い紺の地に、藍の差し色。最初の設定。 『配色総鑑』No.347（主の色 #005b8d・+2/+4/+6 #00b49b・#b984af・#a6a159 をトーン合わせ）。 */
 :root, [data-theme="ai"] {
-  --bg: #0c1730;
-  --bg-glow: #16264a;
-  --bg-glow-2: #10203e;
-  --panel: #12203d;
-  --panel-2: #172849;
-  --line: #223559;
-  --line-2: #2c446f;
-  --text: #e8eefb;
-  --muted: #9eb0d2;
-  --faint: #6e82a8;
-  --accent: #6aa6ff;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%236aa6ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #f5c451;
-  --warn-bg: rgba(245, 196, 81, 0.1);
-  --warn-line: rgba(245, 196, 81, 0.38);
-  --c2: #56b4e9; --c2-rgb: 86, 180, 233;
-  --c4: #3cc7a0; --c4-rgb: 60, 199, 160;
-  --c6: #f2a33a; --c6-rgb: 242, 163, 58;
-  --sun: #ff8a8a;
-  --bar-bg: rgba(12, 23, 48, 0.85);
-  --tip-bg: rgba(18, 32, 61, 0.96);
-  --cell: rgba(232, 238, 251, 0.04);
-  --hover: rgba(232, 238, 251, 0.03);
-  --on-strong: #0c1730;
+  --bg: #081c2c;
+  --bg-glow: #082d45;
+  --bg-glow-2: #082437;
+  --panel: #0d2537;
+  --panel-2: #122e42;
+  --line: #1f3e55;
+  --line-2: #2d4f6a;
+  --text: #eaf1f8;
+  --muted: #a8bed0;
+  --faint: #778c9d;
+  --accent: #76c0f8;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%2376c0f8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #fec766;
+  --warn-bg: rgba(254, 199, 102, 0.1);
+  --warn-line: rgba(254, 199, 102, 0.38);
+  --c2: #62ecd1; --c2-rgb: 98, 236, 209;
+  --c4: #c487b9; --c4-rgb: 196, 135, 185;
+  --c6: #c1bb6d; --c6-rgb: 193, 187, 109;
+  --sat: #7cbdff;
+  --sun: #fb9890;
+  --bar-bg: rgba(8, 28, 44, 0.85);
+  --tip-bg: rgba(13, 37, 55, 0.96);
+  --cell: rgba(234, 241, 248, 0.04);
+  --hover: rgba(234, 241, 248, 0.03);
+  --on-strong: #081c2c;
   --shadow: rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 
-/* 墨と朱（すみとしゅ）: 温かい炭の灰色の地に、朱色の差し色。+2 浅葱・+4 若竹・+6 山吹。 */
+/* 墨と朱（すみとしゅ）: 炭の灰色の地に、朱の差し色。 『配色総鑑』No.274（主の色 #f15a30・+2/+4/+6 #5a82b3・#9a72aa・#8b835b をトーン合わせ）。 */
 [data-theme="sumi"] {
-  --bg: #1d1b19;
-  --bg-glow: #2a2622;
-  --bg-glow-2: #24211e;
-  --panel: #262320;
-  --panel-2: #2e2a27;
-  --line: #3c3732;
-  --line-2: #4b453e;
-  --text: #f1ebe1;
-  --muted: #b2a99c;
-  --faint: #857c70;
-  --accent: #f06e4c;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23f06e4c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #f0c04a;
-  --warn-bg: rgba(240, 192, 74, 0.1);
-  --warn-line: rgba(240, 192, 74, 0.38);
-  --c2: #5eb7d3; --c2-rgb: 94, 183, 211;
-  --c4: #62b88b; --c4-rgb: 98, 184, 139;
-  --c6: #f3b23a; --c6-rgb: 243, 178, 58;
-  --sun: #f2867a;
-  --bar-bg: rgba(29, 27, 25, 0.85);
-  --tip-bg: rgba(38, 35, 32, 0.96);
-  --cell: rgba(241, 235, 225, 0.04);
-  --hover: rgba(241, 235, 225, 0.03);
-  --on-strong: #1d1b19;
+  --bg: #211816;
+  --bg-glow: #342723;
+  --bg-glow-2: #291f1c;
+  --panel: #2a201e;
+  --panel-2: #332825;
+  --line: #443734;
+  --line-2: #564844;
+  --text: #f3efee;
+  --muted: #c2b8b5;
+  --faint: #908784;
+  --accent: #fe987c;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23fe987c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #fec766;
+  --warn-bg: rgba(254, 199, 102, 0.1);
+  --warn-line: rgba(254, 199, 102, 0.38);
+  --c2: #b2d4ff; --c2-rgb: 178, 212, 255;
+  --c4: #b78bc9; --c4-rgb: 183, 139, 201;
+  --c6: #c8b86b; --c6-rgb: 200, 184, 107;
+  --sat: #7cbdff;
+  --sun: #fb9890;
+  --bar-bg: rgba(33, 24, 22, 0.85);
+  --tip-bg: rgba(42, 32, 30, 0.96);
+  --cell: rgba(243, 239, 238, 0.04);
+  --hover: rgba(243, 239, 238, 0.03);
+  --on-strong: #211816;
   --shadow: rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 
-/* 茜（あかね）: 深い茜色の地に、金茶の差し色。+2 勿忘草・+4 青磁・+6 杏。 */
+/* 茜（あかね）: 深い茜色の地に、茜の差し色。 『配色総鑑』No.282（主の色 #da525d・+2/+4/+6 #b984af・#96d1aa・#c59f6b をトーン合わせ）。 */
 [data-theme="akane"] {
-  --bg: #2a0f13;
-  --bg-glow: #42181e;
-  --bg-glow-2: #36131a;
-  --panel: #36141a;
-  --panel-2: #411920;
-  --line: #57232b;
-  --line-2: #6d2e38;
-  --text: #fcefec;
-  --muted: #d8aca8;
-  --faint: #a47d79;
-  --accent: #e8b44e;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23e8b44e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #f6cf6a;
-  --warn-bg: rgba(246, 207, 106, 0.1);
-  --warn-line: rgba(246, 207, 106, 0.38);
-  --c2: #86b6ea; --c2-rgb: 134, 182, 234;
-  --c4: #72c8a2; --c4-rgb: 114, 200, 162;
-  --c6: #f6a35c; --c6-rgb: 246, 163, 92;
-  --sun: #ffb0a2;
-  --bar-bg: rgba(42, 15, 19, 0.85);
-  --tip-bg: rgba(54, 20, 26, 0.96);
-  --cell: rgba(252, 239, 236, 0.04);
-  --hover: rgba(252, 239, 236, 0.03);
-  --on-strong: #2a0f13;
+  --bg: #2b1212;
+  --bg-glow: #431d1c;
+  --bg-glow-2: #361717;
+  --panel: #361919;
+  --panel-2: #412120;
+  --line: #542e2d;
+  --line-2: #693e3d;
+  --text: #f8edec;
+  --muted: #d0b2b0;
+  --faint: #9d8180;
+  --accent: #ff9497;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ff9497' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #fec766;
+  --warn-bg: rgba(254, 199, 102, 0.1);
+  --warn-line: rgba(254, 199, 102, 0.38);
+  --c2: #de9fd3; --c2-rgb: 222, 159, 211;
+  --c4: #9be5b5; --c4-rgb: 155, 229, 181;
+  --c6: #c39554; --c6-rgb: 195, 149, 84;
+  --sat: #7cbdff;
+  --sun: #fb9890;
+  --bar-bg: rgba(43, 18, 18, 0.85);
+  --tip-bg: rgba(54, 25, 25, 0.96);
+  --cell: rgba(248, 237, 236, 0.04);
+  --hover: rgba(248, 237, 236, 0.03);
+  --on-strong: #2b1212;
   --shadow: rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 
-/* 夜桜（よざくら）: 深い赤紫の地に、桜色の差し色。+2 勿忘草・+4 青磁・+6 杏。 */
+/* 夜桜（よざくら）: 深い赤紫の地に、桜色の差し色。 『配色総鑑』No.248（主の色 #f37f94・+2/+4/+6 #b5b1d8・#704357・#bc892b をトーン合わせ）。 */
 [data-theme="sakura"] {
-  --bg: #24101d;
-  --bg-glow: #3a1830;
-  --bg-glow-2: #2e1426;
-  --panel: #2f1627;
-  --panel-2: #3a1c31;
-  --line: #4e2843;
-  --line-2: #613552;
-  --text: #fbeef4;
-  --muted: #d0a9bd;
-  --faint: #9c7a8d;
-  --accent: #ff9ec0;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ff9ec0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #f3c766;
-  --warn-bg: rgba(243, 199, 102, 0.1);
-  --warn-line: rgba(243, 199, 102, 0.38);
-  --c2: #86b6ea; --c2-rgb: 134, 182, 234;
-  --c4: #6cc3a2; --c4-rgb: 108, 195, 162;
-  --c6: #f4a964; --c6-rgb: 244, 169, 100;
-  --sun: #ffa0b0;
-  --bar-bg: rgba(36, 16, 29, 0.85);
-  --tip-bg: rgba(47, 22, 39, 0.96);
-  --cell: rgba(251, 238, 244, 0.04);
-  --hover: rgba(251, 238, 244, 0.03);
-  --on-strong: #24101d;
+  --bg: #28131f;
+  --bg-glow: #3f1d31;
+  --bg-glow-2: #321727;
+  --panel: #321a28;
+  --panel-2: #3d2131;
+  --line: #4f2e41;
+  --line-2: #633e53;
+  --text: #f7edf2;
+  --muted: #ccb2c0;
+  --faint: #99818e;
+  --accent: #fe92a5;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23fe92a5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #fec766;
+  --warn-bg: rgba(254, 199, 102, 0.1);
+  --warn-line: rgba(254, 199, 102, 0.38);
+  --c2: #cfcafe; --c2-rgb: 207, 202, 254;
+  --c4: #cf84a5; --c4-rgb: 207, 132, 165;
+  --c6: #e2ad54; --c6-rgb: 226, 173, 84;
+  --sat: #7cbdff;
+  --sun: #fb9890;
+  --bar-bg: rgba(40, 19, 31, 0.85);
+  --tip-bg: rgba(50, 26, 40, 0.96);
+  --cell: rgba(247, 237, 242, 0.04);
+  --hover: rgba(247, 237, 242, 0.03);
+  --on-strong: #28131f;
   --shadow: rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 
-/* 藤（ふじ）: 深い紫の地に、藤色の差し色。+2 露草・+4 青磁・+6 蜜柑。 */
+/* 藤（ふじ）: 深い紫の地に、藤色の差し色。 『配色総鑑』No.338（主の色 #c0a9b3・+2/+4/+6 #004f46・#a62c37・#fcb315 をトーン合わせ）。 */
 [data-theme="fuji"] {
-  --bg: #1e1838;
-  --bg-glow: #2d2452;
-  --bg-glow-2: #251e46;
-  --panel: #261f45;
-  --panel-2: #2e2652;
-  --line: #3d3368;
-  --line-2: #4c4180;
-  --text: #f1edfb;
-  --muted: #b8afd8;
-  --faint: #8a80ad;
-  --accent: #c8b4f7;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23c8b4f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #f1c75e;
-  --warn-bg: rgba(241, 199, 94, 0.1);
-  --warn-line: rgba(241, 199, 94, 0.38);
-  --c2: #76adee; --c2-rgb: 118, 173, 238;
-  --c4: #62c6aa; --c4-rgb: 98, 198, 170;
-  --c6: #f2a24e; --c6-rgb: 242, 162, 78;
-  --sun: #ff9aa6;
-  --bar-bg: rgba(30, 24, 56, 0.85);
-  --tip-bg: rgba(38, 31, 69, 0.96);
-  --cell: rgba(241, 237, 251, 0.04);
-  --hover: rgba(241, 237, 251, 0.03);
-  --on-strong: #1e1838;
+  --bg: #1f1629;
+  --bg-glow: #312242;
+  --bg-glow-2: #271b35;
+  --panel: #281d34;
+  --panel-2: #31253f;
+  --line: #413352;
+  --line-2: #534366;
+  --text: #f2eef7;
+  --muted: #c0b5cd;
+  --faint: #8e849b;
+  --accent: #c5a9e6;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23c5a9e6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #fec766;
+  --warn-bg: rgba(254, 199, 102, 0.1);
+  --warn-line: rgba(254, 199, 102, 0.38);
+  --c2: #80e7d6; --c2-rgb: 128, 231, 214;
+  --c4: #e47b7c; --c4-rgb: 228, 123, 124;
+  --c6: #e4ac4c; --c6-rgb: 228, 172, 76;
+  --sat: #7cbdff;
+  --sun: #fb9890;
+  --bar-bg: rgba(31, 22, 41, 0.85);
+  --tip-bg: rgba(40, 29, 52, 0.96);
+  --cell: rgba(242, 238, 247, 0.04);
+  --hover: rgba(242, 238, 247, 0.03);
+  --on-strong: #1f1629;
   --shadow: rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 
-/* 抹茶（まっちゃ）: 深い緑の地に、抹茶色の差し色。+2 浅葱・+4 青磁・+6 柑子。 */
+/* 抹茶（まっちゃ）: 深い緑の地に、抹茶色の差し色。 『配色総鑑』No.265（主の色 #a6a159・+2/+4/+6 #1e0e3f・#d46d7a・#ffdd00 をトーン合わせ）。 */
 [data-theme="matcha"] {
-  --bg: #13261a;
-  --bg-glow: #1d3a26;
-  --bg-glow-2: #183020;
-  --panel: #193020;
-  --panel-2: #1f3a27;
-  --line: #2c4d35;
-  --line-2: #3a6145;
-  --text: #eef5e8;
-  --muted: #a9c2a8;
-  --faint: #7b977d;
-  --accent: #b8d87c;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23b8d87c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #efc85a;
-  --warn-bg: rgba(239, 200, 90, 0.1);
-  --warn-line: rgba(239, 200, 90, 0.38);
-  --c2: #68b6dc; --c2-rgb: 104, 182, 220;
-  --c4: #5fc8b4; --c4-rgb: 95, 200, 180;
-  --c6: #f2a446; --c6-rgb: 242, 164, 70;
-  --sun: #f2948a;
-  --bar-bg: rgba(19, 38, 26, 0.85);
-  --tip-bg: rgba(25, 48, 32, 0.96);
-  --cell: rgba(238, 245, 232, 0.04);
-  --hover: rgba(238, 245, 232, 0.03);
-  --on-strong: #13261a;
+  --bg: #0e1f0f;
+  --bg-glow: #153216;
+  --bg-glow-2: #112812;
+  --panel: #142815;
+  --panel-2: #1a321b;
+  --line: #274228;
+  --line-2: #365437;
+  --text: #ebf2eb;
+  --muted: #adc1ad;
+  --faint: #7c8f7c;
+  --accent: #a9c27f;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23a9c27f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #fec766;
+  --warn-bg: rgba(254, 199, 102, 0.1);
+  --warn-line: rgba(254, 199, 102, 0.38);
+  --c2: #b9acf2; --c2-rgb: 185, 172, 242;
+  --c4: #e8d266; --c4-rgb: 232, 210, 102;
+  --c6: #e37a87; --c6-rgb: 227, 122, 135;
+  --sat: #7cbdff;
+  --sun: #fb9890;
+  --bar-bg: rgba(14, 31, 15, 0.85);
+  --tip-bg: rgba(20, 40, 21, 0.96);
+  --cell: rgba(235, 242, 235, 0.04);
+  --hover: rgba(235, 242, 235, 0.03);
+  --on-strong: #0e1f0f;
   --shadow: rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 
-/* 和紙（わし）: 生成りの明るい地に、墨の文字と藍の差し色。+2 縹・+4 常磐・+6 柿。 */
+/* 和紙（わし）: 生成りの明るい地に、藍の差し色。昼の屋外向け。 『配色総鑑』No.299（主の色 #007190・+2/+4/+6 #819238・#c53c69・#eea78c をトーン合わせ）。 */
 [data-theme="washi"] {
-  --bg: #f4efe4;
-  --bg-glow: #fbf8f0;
-  --bg-glow-2: #efe7d6;
-  --panel: #fffcf5;
-  --panel-2: #f3ece0;
-  --line: #e2d8c6;
-  --line-2: #d3c6af;
-  --text: #2a251f;
-  --muted: #625a4f;
-  --faint: #8a7f70;
-  --accent: #1f5a96;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%231f5a96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #8a5a00;
-  --warn-bg: rgba(138, 90, 0, 0.12);
-  --warn-line: rgba(138, 90, 0, 0.35);
-  --c2: #2b72b5; --c2-rgb: 43, 114, 181;
-  --c4: #23866a; --c4-rgb: 35, 134, 106;
-  --c6: #c8621a; --c6-rgb: 200, 98, 26;
-  --sun: #c23a3a;
-  --bar-bg: rgba(244, 239, 228, 0.88);
-  --tip-bg: rgba(255, 252, 245, 0.97);
-  --cell: rgba(42, 37, 31, 0.045);
-  --hover: rgba(42, 37, 31, 0.035);
+  --bg: #f6f1e5;
+  --bg-glow: #fdfaf3;
+  --bg-glow-2: #f0e9d9;
+  --panel: #fefbf7;
+  --panel-2: #f4efe3;
+  --line: #e3dccc;
+  --line-2: #d5cbb8;
+  --text: #2a261e;
+  --muted: #5e5749;
+  --faint: #877f70;
+  --accent: #046784;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23046784' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #825b00;
+  --warn-bg: rgba(130, 91, 0, 0.12);
+  --warn-line: rgba(130, 91, 0, 0.35);
+  --c2: #973754; --c2-rgb: 151, 55, 84;
+  --c4: #434e00; --c4-rgb: 67, 78, 0;
+  --c6: #a96247; --c6-rgb: 169, 98, 71;
+  --sat: #0065b0;
+  --sun: #a83634;
+  --bar-bg: rgba(246, 241, 229, 0.88);
+  --tip-bg: rgba(254, 251, 247, 0.97);
+  --cell: rgba(42, 38, 30, 0.045);
+  --hover: rgba(42, 38, 30, 0.035);
   --on-strong: #ffffff;
-  --shadow: rgba(42, 37, 31, 0.15);
+  --shadow: rgba(42, 38, 30, 0.15);
   color-scheme: light;
 }
 
-/* 桜（さくら）: 淡い桜色の明るい地に、紅の差し色。+2 縹・+4 常磐・+6 柿。 */
+/* 桜（さくら）: 淡い桜色の明るい地に、紅の差し色。 『配色総鑑』No.257（主の色 #e31f26・+2/+4/+6 #006eb8・#a36aa5・#fcb315 をトーン合わせ）。 */
 [data-theme="sakurairo"] {
-  --bg: #fbedf1;
-  --bg-glow: #fff6f8;
-  --bg-glow-2: #f6e0e7;
-  --panel: #fffafb;
-  --panel-2: #f8e9ee;
-  --line: #efd3dc;
-  --line-2: #e3bfcb;
-  --text: #3a2a30;
-  --muted: #775c66;
-  --faint: #9f8790;
-  --accent: #c2335c;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23c2335c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #8a5a00;
-  --warn-bg: rgba(138, 90, 0, 0.12);
-  --warn-line: rgba(138, 90, 0, 0.35);
-  --c2: #2d6fb3; --c2-rgb: 45, 111, 179;
-  --c4: #2a8a6a; --c4-rgb: 42, 138, 106;
-  --c6: #cf661c; --c6-rgb: 207, 102, 28;
-  --sun: #c23a3a;
-  --bar-bg: rgba(251, 237, 241, 0.88);
-  --tip-bg: rgba(255, 250, 251, 0.97);
-  --cell: rgba(58, 42, 48, 0.045);
-  --hover: rgba(58, 42, 48, 0.035);
+  --bg: #feecef;
+  --bg-glow: #fef8f9;
+  --bg-glow-2: #fbe2e7;
+  --panel: #fefbfb;
+  --panel-2: #fceaed;
+  --line: #eed5da;
+  --line-2: #e1c3c9;
+  --text: #2f2225;
+  --muted: #675156;
+  --faint: #91797e;
+  --accent: #a52051;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23a52051' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #825b00;
+  --warn-bg: rgba(130, 91, 0, 0.12);
+  --warn-line: rgba(130, 91, 0, 0.35);
+  --c2: #2c7cc0; --c2-rgb: 44, 124, 192;
+  --c4: #642f67; --c4-rgb: 100, 47, 103;
+  --c6: #7c5500; --c6-rgb: 124, 85, 0;
+  --sat: #0065b0;
+  --sun: #a83634;
+  --bar-bg: rgba(254, 236, 239, 0.88);
+  --tip-bg: rgba(254, 251, 251, 0.97);
+  --cell: rgba(47, 34, 37, 0.045);
+  --hover: rgba(47, 34, 37, 0.035);
   --on-strong: #ffffff;
-  --shadow: rgba(58, 42, 48, 0.15);
+  --shadow: rgba(47, 34, 37, 0.15);
   color-scheme: light;
 }
 
-/* 青磁（せいじ）: 淡い青緑の明るい地に、深い青緑の差し色。+2 縹・+4 若竹・+6 柿。 */
+/* 青磁（せいじ）: 淡い青緑の明るい地に、青磁の差し色。 『配色総鑑』No.333（主の色 #96d1aa・+2/+4/+6 #006eb8・#f8ed43・#ae5224 をトーン合わせ）。 */
 [data-theme="seiji"] {
-  --bg: #e5f1eb;
-  --bg-glow: #f2f8f5;
-  --bg-glow-2: #d8eae2;
-  --panel: #f7fbf9;
-  --panel-2: #e8f2ed;
-  --line: #cfe2d9;
-  --line-2: #b7d3c6;
-  --text: #1f2d29;
-  --muted: #4d645e;
-  --faint: #7a908a;
-  --accent: #1d7867;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%231d7867' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #7d5600;
-  --warn-bg: rgba(125, 86, 0, 0.12);
-  --warn-line: rgba(125, 86, 0, 0.35);
-  --c2: #2b6cb0; --c2-rgb: 43, 108, 176;
-  --c4: #3d8a3d; --c4-rgb: 61, 138, 61;
-  --c6: #c0611d; --c6-rgb: 192, 97, 29;
-  --sun: #c0392b;
-  --bar-bg: rgba(229, 241, 235, 0.88);
-  --tip-bg: rgba(247, 251, 249, 0.97);
-  --cell: rgba(31, 45, 41, 0.045);
-  --hover: rgba(31, 45, 41, 0.035);
+  --bg: #e7f5eb;
+  --bg-glow: #f4fdf7;
+  --bg-glow-2: #dcefe2;
+  --panel: #f8fdf9;
+  --panel-2: #e5f3e9;
+  --line: #cfe2d4;
+  --line-2: #bbd3c2;
+  --text: #1f2922;
+  --muted: #4b5d51;
+  --faint: #738679;
+  --accent: #226e44;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23226e44' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #825b00;
+  --warn-bg: rgba(130, 91, 0, 0.12);
+  --warn-line: rgba(130, 91, 0, 0.35);
+  --c2: #0061a2; --c2-rgb: 0, 97, 162;
+  --c4: #827b05; --c4-rgb: 130, 123, 5;
+  --c6: #782d00; --c6-rgb: 120, 45, 0;
+  --sat: #0065b0;
+  --sun: #a83634;
+  --bar-bg: rgba(231, 245, 235, 0.88);
+  --tip-bg: rgba(248, 253, 249, 0.97);
+  --cell: rgba(31, 41, 34, 0.045);
+  --hover: rgba(31, 41, 34, 0.035);
   --on-strong: #ffffff;
-  --shadow: rgba(31, 45, 41, 0.15);
+  --shadow: rgba(31, 41, 34, 0.15);
   color-scheme: light;
 }
 
@@ -709,7 +718,7 @@ table.heat { table-layout: fixed; border-collapse: separate; border-spacing: 4px
 table.heat th, table.heat td { padding: 4px 1px; text-align: center; white-space: nowrap; }
 table.heat thead th { position: static; background: none; border: 0; }
 table.heat .hw { display: block; font-size: 13px; font-weight: 800; color: var(--text); }
-table.heat th.sat .hw { color: var(--c2); }
+table.heat th.sat .hw { color: var(--sat); }   /* 土曜は青（+2 の色は配色ごとに青とは限らない） */
 table.heat th.sun .hw { color: var(--sun); }
 table.heat .ha { display: block; font-size: 11px; font-weight: 600; color: var(--faint); }
 table.heat tbody tr { border: 0; }
@@ -793,7 +802,7 @@ tbody tr { border-bottom: 1px solid var(--line); }
 tbody tr:last-child { border-bottom: 0; }
 tbody tr:hover { background: var(--hover); }
 .n { text-align: right; }
-tr.sat td:nth-child(2) { color: var(--c2); }
+tr.sat td:nth-child(2) { color: var(--sat); }
 tr.sun td:nth-child(2) { color: var(--sun); }
 th .sort { border: 0; background: none; padding: 0; color: inherit; font-weight: inherit; cursor: pointer; }
 th .sort[aria-sort="ascending"]::after { content: " ▲"; font-size: 0.8em; }
