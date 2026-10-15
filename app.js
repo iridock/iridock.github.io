@@ -32,7 +32,8 @@ const state = {
 };
 const HEAT_WEEKS = 12;         // 曜日×週の色分け表に並べる過去の週の数（今週を含む）
 const MONDAY_FIRST = [1, 2, 3, 4, 5, 6, 0];
-const RGB = { 2: '86,180,233', 4: '60,199,160', 6: '242,163,58' };   // style.css の --c2・--c4・--c6 と同じ色
+// 色分け表の +2・+4・+6 の色。配色ごとに変わるので、style.css の --c2-rgb などから読む（前は藍の色の数をここに書いていた）。
+const rgbOf = (score) => getComputedStyle(document.documentElement).getPropertyValue(`--c${score}-rgb`).trim() || '86, 180, 233';
 
 const nf = new Intl.NumberFormat('ja-JP');
 const compact = new Intl.NumberFormat('ja-JP', { notation: 'compact', maximumFractionDigits: 1 });
@@ -616,6 +617,7 @@ function renderAnswers() {
 function renderHeat() {
   const cls = current();
   const score = state.heatScore;
+  const rgb = rgbOf(score);
   const idx = SCORES.indexOf(score) + 1;
   const today = dayNumber(jstToday());
   const mondayOf = (n) => n - ((new Date(n * 86400000).getUTCDay() + 6) % 7);
@@ -658,7 +660,7 @@ function renderHeat() {
       if (c.value != null) {
         const t = hi > lo ? (c.value - lo) / (hi - lo) : 0.5;
         const alpha = 0.08 + 0.77 * t;
-        td.style.backgroundColor = `rgba(${RGB[score]},${alpha.toFixed(2)})`;
+        td.style.backgroundColor = `rgba(${rgb},${alpha.toFixed(2)})`;
         if (alpha >= 0.55) td.classList.add('dark');
         td.title = `${mdw(c.iso)} ${c.forecast ? 'のボーダー予想' : 'の実際のボーダー'} +${score}: ${fmt(c.value)} pt`;
       }
@@ -692,22 +694,20 @@ function foldedSet() {
 }
 // ボタンは文字でなく矢印のアイコン（利用者の指示、2026-10-16「閉じる。開くはダサいから、アイコンでわかりやすいのでして」）。
 // 開いているときは ∧（たたむ）、閉じているときは ∨（開く）。向きは CSS で aria-expanded から回す。名前は読み上げとなぞったときの説明に入れる。
-function foldIcon() {
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  const path = document.createElementNS(ns, 'path');
-  path.setAttribute('d', 'M6 15l6-6 6 6');
-  svg.append(path);
+const ARROW_UP = 'M6 15l6-6 6 6';
+const ARROW_DOWN = 'M6 9l6 6 6-6';
+function icon(d) {
+  const svg = svgEl('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true' });
+  svg.append(svgEl('path', { d }));
   return svg;
 }
+const foldIcon = () => icon(ARROW_UP);
+// パネルの名前は、見出しの文字の部分だけから作る（上のボーダー予想の見出しには、ランク帯の選ぶ欄が入っている）。開け閉めの読み上げと設定の一覧で使う。
+const headingText = (heading) => [...(heading?.childNodes ?? [])].filter((n) => n.nodeType === Node.TEXT_NODE)
+  .map((n) => n.textContent).join('').trim().replace(/^の/, '');
 function setFolded(section, button, folded) {
   section.classList.toggle('folded', folded);
-  // 読み上げ用の名前は、見出しの文字の部分だけから作る（上のボーダー予想の見出しには、ランク帯の選ぶ欄が入っている）。
-  const heading = $(section.getAttribute('aria-labelledby'));
-  const title = [...(heading?.childNodes ?? [])].filter((n) => n.nodeType === Node.TEXT_NODE)
-    .map((n) => n.textContent).join('').trim().replace(/^の/, '') || 'パネル';
+  const title = headingText($(section.getAttribute('aria-labelledby'))) || 'パネル';
   button.setAttribute('aria-expanded', String(!folded));
   button.setAttribute('aria-label', `${title}を${folded ? '開く' : '閉じる'}`);
   button.title = folded ? '開く' : '閉じる';
@@ -732,6 +732,146 @@ function setupFolds() {
   }
 }
 setupFolds();
+
+// ---- 設定（利用者の指示、2026-10-16「上のヘッダのところに設定アイコンおいて。色の設定。各カードの表示非表示。順番の入れ替えを設定できるようにしよう。
+// もちろん設定したらブラウザに保存するようにしてね。色は和のイメージの色でお願い」） ----
+// 利用者が選んだ形: 表示・並べ替えの対象はパネル6つ（上のボーダー予想は常に先頭）、並べ替えは ↑↓ ボタン、
+// 配色は画面全体を和の色の組み合わせで（明るい地も1つ）。選んだものはすぐ画面に当て、このブラウザに覚える。
+// 配色の色の値は style.css の [data-theme]、最初に当てるのは theme.js（本文を描く前に当て、いつもの配色が一瞬見えないように）。
+const THEMES = [
+  { id: 'ai', name: '藍', reading: 'あい' },
+  { id: 'sumi', name: '墨と朱', reading: 'すみとしゅ' },
+  { id: 'sakura', name: '夜桜', reading: 'よざくら' },
+  { id: 'matcha', name: '抹茶', reading: 'まっちゃ' },
+  { id: 'fuji', name: '藤', reading: 'ふじ' },
+  { id: 'washi', name: '和紙', reading: 'わし・明るい地' },
+];
+const LAYOUT_KEY = 'layout';
+const panelOf = (id) => document.querySelector(`#panels > section[aria-labelledby="${id}"]`);
+const DEFAULT_ORDER = [...document.querySelectorAll('#panels > section[aria-labelledby]')].map((s) => s.getAttribute('aria-labelledby'));
+const panelName = (id) => headingText($(id)) || id;
+
+function loadLayout() {
+  let saved = {};
+  try { saved = JSON.parse(store.get(LAYOUT_KEY) || '{}') || {}; } catch { saved = {}; }
+  const known = new Set(DEFAULT_ORDER);
+  // 覚えた並びに無いパネル（あとでサイトに足したもの）は、後ろに足す。もう無いパネルは捨てる。
+  const order = (Array.isArray(saved.order) ? saved.order : []).filter((id, i, all) => known.has(id) && all.indexOf(id) === i);
+  for (const id of DEFAULT_ORDER) if (!order.includes(id)) order.push(id);
+  const hidden = new Set((Array.isArray(saved.hidden) ? saved.hidden : []).filter((id) => known.has(id)));
+  return { order, hidden };
+}
+function saveLayout(layout) {
+  store.set(LAYOUT_KEY, JSON.stringify({ order: layout.order, hidden: [...layout.hidden] }));
+}
+function applyLayout(layout = loadLayout()) {
+  const box = $('panels');
+  for (const id of layout.order) box.append(panelOf(id));
+  for (const id of DEFAULT_ORDER) {
+    const s = panelOf(id);
+    s.hidden = layout.hidden.has(id);
+    s.classList.remove('side-wide', 'side-narrow');
+  }
+  // 「推移」と「全ランク帯」が隣り合うときだけ、PC の幅で左右に並べる（推移が左。前の並びと同じ）。離れていれば、どちらも横いっぱい。
+  const visible = layout.order.filter((id) => !layout.hidden.has(id));
+  const a = visible.indexOf('chart-title');
+  const b = visible.indexOf('overview-title');
+  if (a >= 0 && b >= 0 && Math.abs(a - b) === 1) {
+    panelOf('chart-title').classList.add('side-wide');
+    panelOf('overview-title').classList.add('side-narrow');
+  }
+}
+applyLayout();
+
+const currentTheme = () => document.documentElement.getAttribute('data-theme') || 'ai';
+function setTheme(id) {
+  const applied = window.iridockTheme ? window.iridockTheme.apply(id) : (document.documentElement.setAttribute('data-theme', id), id);
+  store.set('theme', applied);
+  // 色分け表は色を数で塗っているので、塗り直す（グラフは色の変数で描いているので、そのまま変わる）。
+  if (state.forecasts && state.band) renderHeat();
+}
+
+function renderSettings(focus) {
+  const theme = currentTheme();
+  $('theme-list').replaceChildren(...THEMES.map((t) => {
+    const b = el('button', { type: 'button', class: 'theme-opt', 'data-pick': t.id, 'aria-pressed': String(t.id === theme) });
+    // 見本はその配色の data-theme を付けて、地・差し色・+2/+4/+6 の色で描く。
+    const sw = el('span', { class: 'swatch', 'data-theme': t.id, 'aria-hidden': 'true' });
+    sw.append(el('i', { class: 's2' }), el('i', { class: 's4' }), el('i', { class: 's6' }));
+    const name = el('span', { class: 'theme-name' }, t.name);
+    name.append(el('small', {}, t.reading));
+    b.append(sw, name);
+    return b;
+  }));
+  const layout = loadLayout();
+  $('layout-list').replaceChildren(...layout.order.map((id, i) => {
+    const on = !layout.hidden.has(id);
+    const li = el('li', { class: on ? '' : 'off', 'data-id': id });
+    const label = el('label');
+    const box = el('input', { type: 'checkbox', 'data-act': 'show', 'aria-label': `${panelName(id)}を出す` });
+    box.checked = on;
+    label.append(box, el('span', {}, panelName(id)));
+    const up = el('button', { type: 'button', class: 'move', 'data-act': 'up', 'aria-label': `${panelName(id)}を上へ`, title: '上へ' });
+    up.append(icon(ARROW_UP));
+    up.disabled = i === 0;
+    const down = el('button', { type: 'button', class: 'move', 'data-act': 'down', 'aria-label': `${panelName(id)}を下へ`, title: '下へ' });
+    down.append(icon(ARROW_DOWN));
+    down.disabled = i === layout.order.length - 1;
+    li.append(label, up, down);
+    return li;
+  }));
+  if (focus) $('layout-list').querySelector(`li[data-id="${focus.id}"] [data-act="${focus.act}"]`)?.focus();
+}
+
+$('open-settings').addEventListener('click', () => {
+  renderSettings();
+  $('settings').showModal();
+});
+$('close-settings').addEventListener('click', () => $('settings').close());
+// 外側（暗くした所）を押しても閉じる。キーボードで押したときは位置が 0 になるので、ダイアログそのものを押したときだけ見る。
+$('settings').addEventListener('click', (e) => {
+  if (e.target !== $('settings')) return;
+  const r = $('settings').getBoundingClientRect();
+  if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) $('settings').close();
+});
+$('theme-list').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pick]');
+  if (!b) return;
+  setTheme(b.dataset.pick);
+  renderSettings();
+  $('theme-list').querySelector(`[data-pick="${b.dataset.pick}"]`)?.focus();
+});
+$('layout-list').addEventListener('change', (e) => {
+  if (e.target.dataset.act !== 'show') return;
+  const id = e.target.closest('li').dataset.id;
+  const layout = loadLayout();
+  if (e.target.checked) layout.hidden.delete(id); else layout.hidden.add(id);
+  saveLayout(layout);
+  applyLayout(layout);
+  renderSettings({ id, act: 'show' });
+});
+$('layout-list').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const id = b.closest('li').dataset.id;
+  const layout = loadLayout();
+  const i = layout.order.indexOf(id);
+  const j = b.dataset.act === 'up' ? i - 1 : i + 1;
+  if (j < 0 || j >= layout.order.length) return;
+  [layout.order[i], layout.order[j]] = [layout.order[j], layout.order[i]];
+  saveLayout(layout);
+  applyLayout(layout);
+  // 動かした行の同じボタンに戻す（端に着いてそのボタンが押せなくなったら、反対のボタンに）。
+  const last = layout.order.length - 1;
+  const act = b.dataset.act === 'up' ? (j === 0 ? 'down' : 'up') : (j === last ? 'up' : 'down');
+  renderSettings({ id, act });
+});
+$('reset-settings').addEventListener('click', () => {
+  store.set(LAYOUT_KEY, '{}');
+  setTheme('ai');
+  applyLayout();
+  renderSettings();
+});
 
 // ---- 操作 ----
 $('band').addEventListener('change', (e) => selectBand(e.target.value));

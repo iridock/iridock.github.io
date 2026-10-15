@@ -1,8 +1,19 @@
 /* IriDock ボーダー予想（公開サイト）。暗めのダッシュボード（利用者の選択「a. ダッシュボード風」、2026-10-14）。
    スコアの色は、色覚の違いがあっても見分けやすい組み合わせ（Okabe-Ito の空色・青緑・橙を暗い背景向けに明るくしたもの）。 */
 :root {
+  --radius: 14px;
+  --gutter: 16px;
+}
+
+/* ---- 配色（利用者の指示、2026-10-16「色の設定…色は和のイメージの色でお願い」）----
+   設定で選ぶと、theme.js / app.js が <html data-theme="…"> を付け替える。設定の画面の見本にも同じ data-theme を付けて、その配色で描く。
+   色は変数だけで使う（直接書くと配色を変えても残る）。+2・+4・+6 の色は、どの配色でも 青・緑・橙 の順にして見分けやすくし、
+   色分け表は JavaScript で薄めて塗るので、同じ色を「赤, 緑, 青」の数（--c2-rgb など）でも持つ。
+   藍（あい）= 前からの配色。色覚の違いがあっても見分けやすい組み合わせ（Okabe-Ito の空色・青緑・橙を暗い背景向けに明るくしたもの）。 */
+:root, [data-theme="ai"] {
   --bg: #0a0e16;
   --bg-glow: #111a2c;
+  --bg-glow-2: #0f1a24;
   --panel: #111723;
   --panel-2: #161e2d;
   --line: #222c3f;
@@ -11,14 +22,166 @@
   --muted: #95a1b8;
   --faint: #66728a;
   --accent: #5b9bff;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235b9bff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #f5c451;
   --warn-bg: rgba(245, 196, 81, 0.1);
-  --c2: #56b4e9;
-  --c4: #3cc7a0;
-  --c6: #f2a33a;
-  --radius: 14px;
-  --gutter: 16px;
+  --warn-line: rgba(245, 196, 81, 0.38);
+  --c2: #56b4e9; --c2-rgb: 86, 180, 233;
+  --c4: #3cc7a0; --c4-rgb: 60, 199, 160;
+  --c6: #f2a33a; --c6-rgb: 242, 163, 58;
+  --sun: #ff8a8a;
+  --bar-bg: rgba(10, 14, 22, 0.82);
+  --tip-bg: rgba(17, 23, 35, 0.96);
+  --cell: rgba(255, 255, 255, 0.025);
+  --hover: rgba(255, 255, 255, 0.02);
+  --on-strong: #0a0e16;
+  --shadow: rgba(0, 0, 0, 0.35);
   color-scheme: dark;
+}
+/* 墨と朱（すみとしゅ）: 温かみのある墨色の地に、朱色の差し色。+2 浅葱・+4 若竹・+6 山吹。 */
+[data-theme="sumi"] {
+  --bg: #11100e;
+  --bg-glow: #1d1915;
+  --bg-glow-2: #181512;
+  --panel: #181614;
+  --panel-2: #1f1c19;
+  --line: #2e2a25;
+  --line-2: #3b362f;
+  --text: #efe8dc;
+  --muted: #a89f92;
+  --faint: #7a7165;
+  --accent: #ef6c4a;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ef6c4a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #f0c04a;
+  --warn-bg: rgba(240, 192, 74, 0.1);
+  --warn-line: rgba(240, 192, 74, 0.38);
+  --c2: #5eb7d3; --c2-rgb: 94, 183, 211;
+  --c4: #62b88b; --c4-rgb: 98, 184, 139;
+  --c6: #f3b23a; --c6-rgb: 243, 178, 58;
+  --sun: #f2867a;
+  --bar-bg: rgba(17, 16, 14, 0.84);
+  --tip-bg: rgba(24, 22, 20, 0.96);
+  --cell: rgba(255, 240, 220, 0.03);
+  --hover: rgba(255, 240, 220, 0.025);
+  --on-strong: #11100e;
+  --shadow: rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+/* 夜桜（よざくら）: 夜の紫がかった地に、撫子のような桜色。+2 勿忘草・+4 青磁・+6 杏。 */
+[data-theme="sakura"] {
+  --bg: #140d12;
+  --bg-glow: #251522;
+  --bg-glow-2: #1c1019;
+  --panel: #1b1219;
+  --panel-2: #221720;
+  --line: #36232f;
+  --line-2: #44303c;
+  --text: #f6eaf0;
+  --muted: #b79dab;
+  --faint: #87717e;
+  --accent: #f39cb6;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23f39cb6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #f3c766;
+  --warn-bg: rgba(243, 199, 102, 0.1);
+  --warn-line: rgba(243, 199, 102, 0.38);
+  --c2: #7fb2e5; --c2-rgb: 127, 178, 229;
+  --c4: #6cc3a2; --c4-rgb: 108, 195, 162;
+  --c6: #f4a964; --c6-rgb: 244, 169, 100;
+  --sun: #ff8f9f;
+  --bar-bg: rgba(20, 13, 18, 0.84);
+  --tip-bg: rgba(27, 18, 25, 0.96);
+  --cell: rgba(255, 230, 240, 0.03);
+  --hover: rgba(255, 230, 240, 0.025);
+  --on-strong: #140d12;
+  --shadow: rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+/* 抹茶（まっちゃ）: 深い緑の地に、抹茶色の差し色。+2 浅葱・+4 青磁・+6 柑子。 */
+[data-theme="matcha"] {
+  --bg: #0c120d;
+  --bg-glow: #16231a;
+  --bg-glow-2: #121c15;
+  --panel: #121a14;
+  --panel-2: #172119;
+  --line: #243329;
+  --line-2: #2f4135;
+  --text: #eaf0e3;
+  --muted: #9fb19f;
+  --faint: #6f8271;
+  --accent: #a7c96b;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23a7c96b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #efc85a;
+  --warn-bg: rgba(239, 200, 90, 0.1);
+  --warn-line: rgba(239, 200, 90, 0.38);
+  --c2: #62b2d8; --c2-rgb: 98, 178, 216;
+  --c4: #5ec4b0; --c4-rgb: 94, 196, 176;
+  --c6: #f2a446; --c6-rgb: 242, 164, 70;
+  --sun: #f28a7e;
+  --bar-bg: rgba(12, 18, 13, 0.84);
+  --tip-bg: rgba(18, 26, 20, 0.96);
+  --cell: rgba(235, 255, 235, 0.03);
+  --hover: rgba(235, 255, 235, 0.025);
+  --on-strong: #0c120d;
+  --shadow: rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+/* 藤（ふじ）: 深い紫の地に、藤色の差し色。+2 露草・+4 青磁・+6 蜜柑。 */
+[data-theme="fuji"] {
+  --bg: #100d18;
+  --bg-glow: #1e1730;
+  --bg-glow-2: #171226;
+  --panel: #161221;
+  --panel-2: #1c172a;
+  --line: #2c2540;
+  --line-2: #3a3152;
+  --text: #eeeaf7;
+  --muted: #a99fc2;
+  --faint: #797092;
+  --accent: #b7a1ea;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23b7a1ea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #f1c75e;
+  --warn-bg: rgba(241, 199, 94, 0.1);
+  --warn-line: rgba(241, 199, 94, 0.38);
+  --c2: #6fa9ec; --c2-rgb: 111, 169, 236;
+  --c4: #5fc4a7; --c4-rgb: 95, 196, 167;
+  --c6: #f2a24e; --c6-rgb: 242, 162, 78;
+  --sun: #ff8f9a;
+  --bar-bg: rgba(16, 13, 24, 0.84);
+  --tip-bg: rgba(22, 18, 33, 0.96);
+  --cell: rgba(240, 235, 255, 0.03);
+  --hover: rgba(240, 235, 255, 0.025);
+  --on-strong: #100d18;
+  --shadow: rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+/* 和紙（わし）: 生成りの明るい地に、墨の文字と藍の差し色。+2 縹・+4 常磐・+6 柿。昼の屋外向け。 */
+[data-theme="washi"] {
+  --bg: #f4efe4;
+  --bg-glow: #fbf8f0;
+  --bg-glow-2: #efe7d6;
+  --panel: #fffcf5;
+  --panel-2: #f3ece0;
+  --line: #e2d8c6;
+  --line-2: #d3c6af;
+  --text: #2a251f;
+  --muted: #625a4f;
+  --faint: #8a7f70;
+  --accent: #1f5a96;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%231f5a96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #8a5a00;
+  --warn-bg: rgba(201, 140, 20, 0.12);
+  --warn-line: rgba(170, 115, 10, 0.35);
+  --c2: #2b72b5; --c2-rgb: 43, 114, 181;
+  --c4: #23866a; --c4-rgb: 35, 134, 106;
+  --c6: #c8621a; --c6-rgb: 200, 98, 26;
+  --sun: #c23a3a;
+  --bar-bg: rgba(244, 239, 228, 0.88);
+  --tip-bg: rgba(255, 252, 245, 0.97);
+  --cell: rgba(60, 40, 10, 0.035);
+  --hover: rgba(60, 40, 10, 0.03);
+  --on-strong: #ffffff;
+  --shadow: rgba(60, 40, 10, 0.15);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -32,7 +195,7 @@ body {
   margin: 0;
   background:
     radial-gradient(1200px 500px at 15% -10%, var(--bg-glow), transparent 60%),
-    radial-gradient(900px 400px at 100% 0%, #0f1a24, transparent 55%),
+    radial-gradient(900px 400px at 100% 0%, var(--bg-glow-2), transparent 55%),
     var(--bg);
   background-attachment: fixed;
   color: var(--text);
@@ -57,7 +220,7 @@ button, select, input { font: inherit; color: inherit; }
   gap: 12px;
   flex-wrap: wrap;
   padding: 12px max(var(--gutter), env(safe-area-inset-left));
-  background: rgba(10, 14, 22, 0.82);
+  background: var(--bar-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
@@ -82,7 +245,7 @@ button, select, input { font: inherit; color: inherit; }
   white-space: nowrap;
 }
 .bar-band:empty { display: none; }
-.to-top {
+.to-top, .icon-btn {
   display: inline-grid;
   place-items: center;
   flex: none;
@@ -96,8 +259,8 @@ button, select, input { font: inherit; color: inherit; }
   cursor: pointer;
   transition: border-color 0.15s;
 }
-.to-top:hover { border-color: var(--accent); }
-.to-top svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.to-top:hover, .icon-btn:hover { border-color: var(--accent); }
+.to-top svg, .icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
 main {
   max-width: 1180px;
@@ -109,7 +272,7 @@ main {
   margin: 0 0 14px;
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  border: 1px solid var(--warn-line);
   background: var(--warn-bg);
   color: var(--warn);
   font-size: 14px;
@@ -123,7 +286,7 @@ main {
   font-weight: 800;
   color: var(--text);
   background-color: var(--panel-2);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235b9bff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: var(--pick-arrow);   /* 色を画像に書き込むので、配色ごとに作った「∨」を使う（変数の色は画像の中に届かない） */
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 0.5em auto;
@@ -228,7 +391,7 @@ main {
   margin: 0 0 8px;
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  border: 1px solid var(--warn-line);
   background: var(--warn-bg);
   color: var(--warn);
   font-size: 13px;
@@ -264,12 +427,17 @@ main {
 .seg.small button { padding: 4px 10px; font-size: 12.5px; }
 
 /* ---- 枠 ---- */
-.split {
+/* 6つのパネルの入れ物（設定で並べ替え・表示を変える。2026-10-16）。ふつうは横いっぱい。「推移」と「全ランク帯」が隣り合うときだけ、
+   PC の幅で左右に並べる（app.js の applyLayout が side-wide・side-narrow を付ける）。全ランク帯が先でも、推移を左に置くため dense で詰める。 */
+.panels {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  grid-auto-flow: row dense;
   gap: 14px;
-  margin-bottom: 14px;
 }
+.panels > .panel { grid-column: 1 / -1; }
+.panels > .panel.side-wide { grid-column: 1; }
+.panels > .panel.side-narrow { grid-column: 2; }
 
 .panel {
   padding: 16px;
@@ -315,6 +483,53 @@ main {
 .panel { position: relative; }
 .panel > .panel-head { padding-right: 44px; }
 .panel > .panel-head > .fold { position: absolute; top: 12px; right: 12px; }
+
+/* ---- 設定（2026-10-16）。ヘッダの歯車から開く。選んだものはすぐ画面に当てる ---- */
+.settings {
+  width: min(520px, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100dvh - 48px);
+  padding: 18px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 16px 48px var(--shadow);
+  overflow-y: auto;
+}
+.settings::backdrop { background: rgba(0, 0, 0, 0.5); }
+.settings-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.settings-head h2 { margin: 0; font-size: 18px; }
+.settings-block { margin-top: 14px; }
+.settings-block h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+.theme-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.theme-opt {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--panel-2);
+  cursor: pointer;
+  text-align: left;
+}
+.theme-opt[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.theme-opt .theme-name { font-size: 13px; font-weight: 700; }
+.theme-opt .theme-name small { display: block; color: var(--muted); font-weight: 600; font-size: 11px; }
+/* 見本は、その配色の data-theme を付けて描く（地・差し色・+2/+4/+6 の色）。 */
+.swatch { display: flex; align-items: center; gap: 5px; height: 34px; padding: 0 8px; border-radius: 7px; background: var(--bg); border-top: 3px solid var(--accent); }
+.swatch i { width: 12px; height: 12px; border-radius: 50%; }
+.swatch .s2 { background: var(--c2); } .swatch .s4 { background: var(--c4); } .swatch .s6 { background: var(--c6); }
+.layout-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.layout-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.layout-list label { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; font-size: 14px; }
+.layout-list input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.layout-list li.off label span { color: var(--faint); }
+.layout-list .move { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); color: var(--muted); cursor: pointer; }
+.layout-list .move:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.layout-list .move:disabled { opacity: 0.35; cursor: default; }
+.layout-list .move svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.settings-foot { margin: 16px 0 0; text-align: right; }
+@media (max-width: 420px) { .theme-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .panel.folded > :not(.panel-head), .hero.folded > :not(.hero-head) { display: none; }
 .panel.folded .panel-head > :not(h2):not(.fold) { display: none; }
 .panel.folded .panel-head, .hero.folded .hero-head { margin-bottom: 0; }
@@ -341,12 +556,12 @@ main {
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--line-2);
-  background: rgba(17, 23, 35, 0.96);
+  background: var(--tip-bg);
   font-size: 12.5px;
   line-height: 1.5;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 24px var(--shadow);
 }
 .tip b { display: block; margin-bottom: 2px; }
 .tip .row { display: flex; justify-content: space-between; gap: 12px; }
@@ -373,7 +588,6 @@ main {
 .c6 { color: var(--c6); }
 
 /* ---- 1週間のボーダー予想（2026-10-14「ボーダー予想は本日から一週間分みれるようにして」） ---- */
-.week-panel { margin-bottom: 14px; }
 table.week th[scope="row"] { font-weight: 700; color: var(--text); }
 table.week .wd { font-variant-numeric: tabular-nums; }
 table.week .rel { margin-left: 6px; font-size: 11.5px; font-weight: 700; color: var(--accent); }
@@ -392,21 +606,20 @@ table.answers td .wp { display: block; font-size: 11.5px; color: var(--faint); }
 table.answers td .pending { display: block; font-size: 12.5px; color: var(--muted); }
 
 /* ---- 曜日×週の色分け表（案 C、2026-10-14）。色はスコアの色の濃さ。点線の枠は予想 ---- */
-.heat-panel { margin-bottom: 14px; }
 .heatwrap { overflow-x: auto; }
 table.heat { table-layout: fixed; border-collapse: separate; border-spacing: 4px; min-width: 290px; }
 table.heat th, table.heat td { padding: 4px 1px; text-align: center; white-space: nowrap; }
 table.heat thead th { position: static; background: none; border: 0; }
 table.heat .hw { display: block; font-size: 13px; font-weight: 800; color: var(--text); }
 table.heat th.sat .hw { color: var(--c2); }
-table.heat th.sun .hw { color: #ff8a8a; }
+table.heat th.sun .hw { color: var(--sun); }
 table.heat .ha { display: block; font-size: 11px; font-weight: 600; color: var(--faint); }
 table.heat tbody tr { border: 0; }
 table.heat tbody tr:hover { background: none; }
-table.heat td { height: 46px; border-radius: 8px; background: rgba(255, 255, 255, 0.025); }
+table.heat td { height: 46px; border-radius: 8px; background: var(--cell); }
 table.heat td .hd { display: block; font-size: 10.5px; line-height: 1.3; color: var(--muted); }
 table.heat td .hv { display: block; font-size: 12.5px; line-height: 1.3; font-weight: 700; }
-table.heat td.dark .hd, table.heat td.dark .hv { color: #0a0e16; }
+table.heat td.dark .hd, table.heat td.dark .hv { color: var(--on-strong); }
 table.heat td.blank .hv { color: var(--faint); font-weight: 400; }
 table.heat td.later { background: none; }
 table.heat td.later .hd { color: var(--faint); }
@@ -480,10 +693,10 @@ th, td { padding: 8px 12px; text-align: left; white-space: nowrap; }
 thead th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-size: 12.5px; font-weight: 700; border-bottom: 1px solid var(--line); }
 tbody tr { border-bottom: 1px solid var(--line); }
 tbody tr:last-child { border-bottom: 0; }
-tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+tbody tr:hover { background: var(--hover); }
 .n { text-align: right; }
 tr.sat td:nth-child(2) { color: var(--c2); }
-tr.sun td:nth-child(2) { color: #ff8a8a; }
+tr.sun td:nth-child(2) { color: var(--sun); }
 th .sort { border: 0; background: none; padding: 0; color: inherit; font-weight: inherit; cursor: pointer; }
 th .sort[aria-sort="ascending"]::after { content: " ▲"; font-size: 0.8em; }
 th .sort[aria-sort="descending"]::after { content: " ▼"; font-size: 0.8em; }
@@ -508,7 +721,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 
 /* ---- せまい画面（スマホ） ---- */
 @media (max-width: 860px) {
-  .split { grid-template-columns: minmax(0, 1fr); }
+  .panels { grid-template-columns: minmax(0, 1fr); }
+  .panels > .panel.side-wide, .panels > .panel.side-narrow { grid-column: 1; }
   .overview { max-height: none; }
 }
 @media (max-width: 640px) {

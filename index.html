@@ -13,6 +13,7 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="icon.png" type="image/png">
 <link rel="apple-touch-icon" href="icon.png">
+<script src="theme.js"></script>
 <link rel="stylesheet" href="style.css">
 <title>IriDock ボーダー予想</title>
 </head>
@@ -27,6 +28,10 @@
   <div class="bar-right">
     <p id="updated" class="updated"></p>
     <span id="bar-band" class="bar-band" title="選んでいるランク帯"></span>
+    <!-- 設定（利用者の指示、2026-10-16「上のヘッダのところに設定アイコンおいて。色の設定。各カードの表示非表示。順番の入れ替え」） -->
+    <button id="open-settings" type="button" class="icon-btn" aria-label="設定" title="設定" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.05 10.11 L21.51 10.66 L21.51 13.34 L19.05 13.89 L18.32 15.65 L19.67 17.78 L17.78 19.67 L15.65 18.32 L13.89 19.05 L13.34 21.51 L10.66 21.51 L10.11 19.05 L8.35 18.32 L6.22 19.67 L4.33 17.78 L5.68 15.65 L4.95 13.89 L2.49 13.34 L2.49 10.66 L4.95 10.11 L5.68 8.35 L4.33 6.22 L6.22 4.33 L8.35 5.68 L10.11 4.95 L10.66 2.49 L13.34 2.49 L13.89 4.95 L15.65 5.68 L17.78 4.33 L19.67 6.22 L18.32 8.35Z"/><circle cx="12" cy="12" r="3.2"/></svg>
+    </button>
     <button id="to-top" type="button" class="to-top" aria-label="いちばん上へ戻る" title="いちばん上へ戻る">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
     </button>
@@ -49,6 +54,9 @@
     <p class="hint">ボーダー予想は、過去の記録から計算した目安です（<strong>実際の数字ではありません</strong>）。</p>
   </section>
 
+  <!-- 6つのパネルは、設定で並べ替え・表示を変えられる（2026-10-16）。並べ替えるので、1つの入れ物に横並びのまとまり（前の .split）を作らない。
+       「推移」と「全ランク帯」が隣り合うときだけ、PC の幅で左右に並べる（app.js の applyLayout）。 -->
+  <div id="panels" class="panels">
   <section class="panel week-panel" aria-labelledby="week-title">
     <div class="panel-head">
       <h2 id="week-title">1週間のボーダー予想 <small>日付を押すと、上に大きく出ます</small></h2>
@@ -108,7 +116,6 @@
     <p class="hint">色が濃いほどボーダーが高い日です。点線の枠はボーダー予想で、押すと上に大きく出ます。曜日の下の数字は、直近12週の実際のボーダーの平均です。</p>
   </section>
 
-  <div class="split">
     <section class="panel chart-panel" aria-labelledby="chart-title">
       <div class="panel-head">
         <h2 id="chart-title">これまでの推移 <small>線は実際のボーダー、点線と ○ は予想、塗りは 95%のラインまで</small></h2>
@@ -135,7 +142,6 @@
       </div>
       <ol id="overview" class="overview"></ol>
     </section>
-  </div>
 
   <section class="panel" aria-labelledby="table-title">
     <div class="panel-head">
@@ -178,7 +184,27 @@
     </div>
     <button id="more" type="button" class="ghost more" hidden>もっと見る</button>
   </section>
+  </div>
 </main>
+
+<!-- 設定（2026-10-16）。中身は app.js が作る。選んだものはすぐ画面に当て、このブラウザに覚える。 -->
+<dialog id="settings" class="settings" aria-labelledby="settings-title">
+  <div class="settings-head">
+    <h2 id="settings-title">設定</h2>
+    <button id="close-settings" type="button" class="icon-btn" aria-label="設定を閉じる" title="閉じる">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <section class="settings-block" aria-labelledby="theme-title">
+    <h3 id="theme-title">配色</h3>
+    <div id="theme-list" class="theme-list" role="group" aria-labelledby="theme-title"></div>
+  </section>
+  <section class="settings-block" aria-labelledby="layout-title">
+    <h3 id="layout-title">パネルの表示と並び</h3>
+    <ol id="layout-list" class="layout-list"></ol>
+  </section>
+  <p class="settings-foot"><button id="reset-settings" type="button" class="ghost">最初の設定に戻す</button></p>
+</dialog>
 
 <footer class="foot">
   <p>ボーダー予想は目安です。外れることがあります。</p>
