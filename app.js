@@ -690,15 +690,27 @@ const FOLD_KEY = 'folded';
 function foldedSet() {
   try { return new Set(JSON.parse(store.get(FOLD_KEY) || '[]')); } catch { return new Set(); }
 }
+// ボタンは文字でなく矢印のアイコン（利用者の指示、2026-10-16「閉じる。開くはダサいから、アイコンでわかりやすいのでして」）。
+// 開いているときは ∧（たたむ）、閉じているときは ∨（開く）。向きは CSS で aria-expanded から回す。名前は読み上げとなぞったときの説明に入れる。
+function foldIcon() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M6 15l6-6 6 6');
+  svg.append(path);
+  return svg;
+}
 function setFolded(section, button, folded) {
   section.classList.toggle('folded', folded);
   // 読み上げ用の名前は、見出しの文字の部分だけから作る（上のボーダー予想の見出しには、ランク帯の選ぶ欄が入っている）。
   const heading = $(section.getAttribute('aria-labelledby'));
   const title = [...(heading?.childNodes ?? [])].filter((n) => n.nodeType === Node.TEXT_NODE)
     .map((n) => n.textContent).join('').trim().replace(/^の/, '') || 'パネル';
-  button.textContent = folded ? '開く' : '閉じる';
   button.setAttribute('aria-expanded', String(!folded));
   button.setAttribute('aria-label', `${title}を${folded ? '開く' : '閉じる'}`);
+  button.title = folded ? '開く' : '閉じる';
 }
 function setupFolds() {
   const saved = foldedSet();
@@ -707,6 +719,7 @@ function setupFolds() {
     if (!head) continue;
     const key = section.getAttribute('aria-labelledby');
     const button = el('button', { type: 'button', class: 'fold' });
+    button.append(foldIcon());
     head.append(button);
     setFolded(section, button, saved.has(key));
     button.addEventListener('click', () => {

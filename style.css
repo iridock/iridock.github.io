@@ -290,22 +290,31 @@ main {
 .panel h2 small { color: var(--faint); font-weight: 600; font-size: 12px; margin-left: 6px; }
 
 /* ---- パネルの開け閉め（2026-10-16）。閉じても見出しは残す ---- */
+/* 文字でなく矢印のアイコン（「閉じる。開くはダサいから、アイコンでわかりやすいのでして」）。上の帯の ↑ ボタンと同じ形で少し小さく。
+   開いているときは ∧、閉じているときは回して ∨。 */
 .fold {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
   margin-left: auto;
-  padding: 4px 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 1px solid var(--line-2);
-  border-radius: 999px;
-  background: transparent;
+  border-radius: 9px;
+  background: var(--panel-2);
   color: var(--muted);
-  font-size: 12.5px;
   cursor: pointer;
-  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
 }
-.fold:hover { background: var(--panel-2); color: inherit; }
+.fold:hover { border-color: var(--accent); color: var(--accent); }
+.fold svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+.fold[aria-expanded="false"] svg { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .fold svg { transition: none; } }
 /* パネルのボタンは右上に固定する（流れに入れると、スマホの幅で見出しの次の行に落ち、閉じても高さを取った）。 */
 .panel { position: relative; }
-.panel > .panel-head { padding-right: 72px; }
-.panel > .panel-head > .fold { position: absolute; top: 14px; right: 14px; }
+.panel > .panel-head { padding-right: 44px; }
+.panel > .panel-head > .fold { position: absolute; top: 12px; right: 12px; }
 .panel.folded > :not(.panel-head), .hero.folded > :not(.hero-head) { display: none; }
 .panel.folded .panel-head > :not(h2):not(.fold) { display: none; }
 .panel.folded .panel-head, .hero.folded .hero-head { margin-bottom: 0; }
