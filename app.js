@@ -170,9 +170,30 @@ function renderBands() {
   }));
 }
 
+// ---- アクセス解析（GoatCounter。利用者の決定、2026-10-15「goatcounterにしよう」）----
+// ページの数え方では「何人来たか」までしか分からない（帯は # の後ろで切り替わり、数えられない）ので、
+// 帯を表示したらイベントを1回送り、どの帯がよく見られているかを数える。同じ帯を出し直しても数えない（開き直しの読み直しなど）。
+// count.js がまだ読み込まれていなければ、読み込まれたときに送る。読めない（広告ブロック・index.html にタグが無い）ときは何もしない。
+let countedBand = null;
+const pendingCounts = [];
+function countEvent(path, title) {
+  const gc = window.goatcounter;
+  if (gc && typeof gc.count === 'function') gc.count({ path, title, event: true });
+  else pendingCounts.push({ path, title });
+}
+document.querySelector('script[data-goatcounter]')?.addEventListener('load', () => {
+  for (const p of pendingCounts.splice(0)) countEvent(p.path, p.title);
+});
+function countBand(name) {
+  if (name === countedBand) return;
+  countedBand = name;
+  countEvent(`band-${name}`, `ランク帯 ${name} を表示`);
+}
+
 async function selectBand(name) {
   if (!name) return;
   state.band = name;
+  countBand(name);
   store.set('band', name);
   if (decodeURIComponent(location.hash.slice(1)) !== name) history.replaceState(null, '', '#' + encodeURIComponent(name));
   $('band').value = name;

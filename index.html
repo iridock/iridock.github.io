@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0e16">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; style-src 'self'; img-src 'self' data: https://iridock.goatcounter.com; connect-src 'self' https://iridock.goatcounter.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="description" content="デイリーランクスコアのボーダー（+2・+4・+6）の1週間の予想と、直近1年の実際のボーダー。">
 <meta property="og:title" content="IriDock ボーダー予想">
@@ -185,7 +185,12 @@
 <footer class="foot">
   <p>ボーダー予想は目安です。外れることがあります。</p>
   <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
+  <p>アクセス数を数えるために <a href="https://www.goatcounter.com/">GoatCounter</a> を使っています（Cookie は使いません）。</p>
 </footer>
+<!-- アクセス解析（GoatCounter。利用者の決定、2026-10-15）。版を固定し、改ざん防止の印（integrity）を付ける。
+     印は 2026-10-15 に落とした count.v5.js の sha384 と一致することを確かめた。版を上げるときは印も取り直す。 -->
+<script data-goatcounter="https://iridock.goatcounter.com/count" async src="https://gc.zgo.at/count.v5.js"
+        crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
 <script src="app.js"></script>
 </body>
 </html>
