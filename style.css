@@ -2,8 +2,9 @@
    和モダンの作りにした（2026-10-16「全体的に和モダンみたいな雰囲気にできる？また配色も含めてさ」）:
    名前の色の平らな地・角を立てたパネル・細い線・色を使う所を絞る（見出しの縦線・スコアの短い線）・数字は Jost。 */
 :root {
-  --radius: 6px;     /* 和モダンは角を立てる（前は 14px で、アプリのような丸い札に見えた） */
-  --r-sm: 3px;       /* ボタン・札・マス */
+  --radius: 18px;    /* iPhone のカード・ウィジェットのように大きく丸く（2026-10-16「カードや入力パーツのデザインもiphoneふうに」。和モダンのときは 6px） */
+  --r-md: 12px;      /* 表・一覧の入れ物・注意の箱 */
+  --r-sm: 9px;       /* 入力欄・切り替え・ボタン */
   --gutter: 16px;
 }
 
@@ -26,7 +27,8 @@
   --muted: #b0c1cb;
   --faint: #85959f;
   --accent: #91d4fe;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%2391d4fe' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23fcfaf4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23b0c1cb' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #fecf7f;
   --warn-bg: rgba(254, 207, 127, 0.12);
   --warn-line: rgba(254, 207, 127, 0.45);
@@ -44,6 +46,14 @@
   --on-bg: #fcfaf4;
   --on-bg-muted: #eae8df;
   --on-bg-line: #5486a5;
+  --fill: rgba(236, 245, 251, 0.1);
+  --fill-2: rgba(236, 245, 251, 0.22);
+  --thumb: #325264;
+  --switch: #438fbb;
+  --knob: #ffffff;
+  --tint: rgba(145, 212, 254, 0.18);
+  --on-bg-fill: rgba(252, 250, 244, 0.16);
+  --elev: none;
   --shadow: rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
@@ -60,7 +70,8 @@
   --muted: #bfbdbd;
   --faint: #949191;
   --accent: #ffb6a2;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ffb6a2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23fcfaf4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23bfbdbd' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #fecf7f;
   --warn-bg: rgba(254, 207, 127, 0.12);
   --warn-line: rgba(254, 207, 127, 0.45);
@@ -78,6 +89,14 @@
   --on-bg: #fcfaf4;
   --on-bg-muted: #eae8df;
   --on-bg-line: #81807f;
+  --fill: rgba(244, 243, 243, 0.1);
+  --fill-2: rgba(244, 243, 243, 0.22);
+  --thumb: #4e4d4d;
+  --switch: #d45b3b;
+  --knob: #ffffff;
+  --tint: rgba(255, 182, 162, 0.18);
+  --on-bg-fill: rgba(252, 250, 244, 0.16);
+  --elev: none;
   --shadow: rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
@@ -94,7 +113,8 @@
   --muted: #4f4d43;
   --faint: #716f64;
   --accent: #9b1e24;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%239b1e24' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23fcfaf4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%234f4d43' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
@@ -112,6 +132,14 @@
   --on-bg: #fcfaf4;
   --on-bg-muted: #eae8df;
   --on-bg-line: #d96863;
+  --fill: rgba(33, 31, 24, 0.06);
+  --fill-2: rgba(33, 31, 24, 0.14);
+  --thumb: #ffffff;
+  --switch: #bd4140;
+  --knob: #ffffff;
+  --tint: rgba(155, 30, 36, 0.1);
+  --on-bg-fill: rgba(252, 250, 244, 0.16);
+  --elev: 0 1px 2px rgba(33, 31, 24, 0.05), 0 4px 16px rgba(33, 31, 24, 0.08);
   --shadow: rgba(33, 31, 24, 0.18);
   color-scheme: light;
 }
@@ -128,7 +156,8 @@
   --muted: #c5b9c7;
   --faint: #9a8e9b;
   --accent: #feb3bd;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23feb3bd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23fcfaf4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23c5b9c7' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #fecf7f;
   --warn-bg: rgba(254, 207, 127, 0.12);
   --warn-line: rgba(254, 207, 127, 0.45);
@@ -146,6 +175,14 @@
   --on-bg: #fcfaf4;
   --on-bg-muted: #eae8df;
   --on-bg-line: #79547e;
+  --fill: rgba(247, 241, 248, 0.1);
+  --fill-2: rgba(247, 241, 248, 0.22);
+  --thumb: #5c435f;
+  --switch: #cc5c73;
+  --knob: #ffffff;
+  --tint: rgba(254, 179, 189, 0.18);
+  --on-bg-fill: rgba(252, 250, 244, 0.16);
+  --elev: none;
   --shadow: rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
@@ -162,7 +199,8 @@
   --muted: #4d4b57;
   --faint: #6f6d79;
   --accent: #5a4886;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235a4886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23191525' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%234d4b57' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
@@ -180,6 +218,14 @@
   --on-bg: #191525;
   --on-bg-muted: #322c43;
   --on-bg-line: #7b709d;
+  --fill: rgba(31, 30, 38, 0.06);
+  --fill-2: rgba(31, 30, 38, 0.14);
+  --thumb: #ffffff;
+  --switch: #7665a6;
+  --knob: #ffffff;
+  --tint: rgba(90, 72, 134, 0.1);
+  --on-bg-fill: rgba(25, 21, 37, 0.09);
+  --elev: 0 1px 2px rgba(31, 30, 38, 0.05), 0 4px 16px rgba(31, 30, 38, 0.08);
   --shadow: rgba(31, 30, 38, 0.18);
   color-scheme: light;
 }
@@ -196,7 +242,8 @@
   --muted: #4e4f3c;
   --faint: #6f705c;
   --accent: #5a5903;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235a5903' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23191908' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%234e4f3c' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
@@ -214,23 +261,32 @@
   --on-bg: #191908;
   --on-bg-muted: #323219;
   --on-bg-line: #99993d;
+  --fill: rgba(32, 32, 19, 0.06);
+  --fill-2: rgba(32, 32, 19, 0.14);
+  --thumb: #ffffff;
+  --switch: #78760f;
+  --knob: #ffffff;
+  --tint: rgba(90, 89, 3, 0.1);
+  --on-bg-fill: rgba(25, 25, 8, 0.09);
+  --elev: 0 1px 2px rgba(32, 32, 19, 0.05), 0 4px 16px rgba(32, 32, 19, 0.08);
   --shadow: rgba(32, 32, 19, 0.18);
   color-scheme: light;
 }
 
-/* 和紙（わし）: 生成り色の明るい地に、藍の差し色。昼の屋外向け。（地は生成り色 #fbfaf5。+2/+4/+6 は 『配色総鑑』No.299 の #819238・#c53c69・#eea78c を読める明るさにそろえた）。 */
+/* 和紙（わし）: 生成り色の明るい地に、藍の差し色。昼の屋外向け。（地は生成り色 #fbfaf5、パネルは白 #ffffff。+2/+4/+6 は 『配色総鑑』No.299 の #819238・#c53c69・#eea78c を読める明るさにそろえた）。 */
 [data-theme="washi"] {
   --bg: #fbfaf5;
-  --panel: #fafaf9;
-  --panel-2: #f0f0ef;
-  --line: #dededc;
-  --line-2: #cacac9;
-  --text: #1f1f1e;
+  --panel: #ffffff;
+  --panel-2: #f5f5f5;
+  --line: #e3e3e3;
+  --line-2: #cfcfcf;
+  --text: #1f1f1f;
   --head: #165e83;
-  --muted: #4d4d4b;
-  --faint: #6f6f6d;
+  --muted: #4d4d4d;
+  --faint: #6f6f6f;
   --accent: #005c84;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23005c84' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23191815' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%234d4d4d' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
@@ -241,14 +297,22 @@
   --sat: #2266a4;
   --sun: #a03f3c;
   --bar-bg: rgba(251, 250, 245, 0.88);
-  --tip-bg: rgba(250, 250, 249, 0.97);
-  --cell: rgba(31, 31, 30, 0.05);
-  --hover: rgba(31, 31, 30, 0.04);
+  --tip-bg: rgba(255, 255, 255, 0.97);
+  --cell: rgba(31, 31, 31, 0.05);
+  --hover: rgba(31, 31, 31, 0.04);
   --on-strong: #ffffff;
   --on-bg: #191815;
   --on-bg-muted: #31302d;
   --on-bg-line: #cdccc7;
-  --shadow: rgba(31, 31, 30, 0.18);
+  --fill: rgba(31, 31, 31, 0.06);
+  --fill-2: rgba(31, 31, 31, 0.14);
+  --thumb: #ffffff;
+  --switch: #2b7aa4;
+  --knob: #ffffff;
+  --tint: rgba(0, 92, 132, 0.1);
+  --on-bg-fill: rgba(25, 24, 21, 0.09);
+  --elev: 0 1px 2px rgba(31, 31, 31, 0.05), 0 4px 16px rgba(31, 31, 31, 0.08);
+  --shadow: rgba(31, 31, 31, 0.18);
   color-scheme: light;
 }
 
@@ -264,7 +328,8 @@
   --muted: #57494d;
   --faint: #796a6f;
   --accent: #9a1c2f;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%239a1c2f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23231218' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%2357494d' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
@@ -282,6 +347,14 @@
   --on-bg: #231218;
   --on-bg-muted: #412830;
   --on-bg-line: #c08f9f;
+  --fill: rgba(38, 28, 31, 0.06);
+  --fill-2: rgba(38, 28, 31, 0.14);
+  --thumb: #ffffff;
+  --switch: #bd404a;
+  --knob: #ffffff;
+  --tint: rgba(154, 28, 47, 0.1);
+  --on-bg-fill: rgba(35, 18, 24, 0.09);
+  --elev: 0 1px 2px rgba(38, 28, 31, 0.05), 0 4px 16px rgba(38, 28, 31, 0.08);
   --shadow: rgba(38, 28, 31, 0.18);
   color-scheme: light;
 }
@@ -298,7 +371,8 @@
   --muted: #3d534a;
   --faint: #5e756b;
   --accent: #04654b;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%2304654b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%23091d16' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pick-arrow-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5 5 2 8 5M2 9 5 12 8 9' fill='none' stroke='%233d534a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
@@ -316,6 +390,14 @@
   --on-bg: #091d16;
   --on-bg-muted: #1a372c;
   --on-bg-line: #53927b;
+  --fill: rgba(20, 35, 29, 0.06);
+  --fill-2: rgba(20, 35, 29, 0.14);
+  --thumb: #ffffff;
+  --switch: #238466;
+  --knob: #ffffff;
+  --tint: rgba(4, 101, 75, 0.1);
+  --on-bg-fill: rgba(9, 29, 22, 0.09);
+  --elev: 0 1px 2px rgba(20, 35, 29, 0.05), 0 4px 16px rgba(20, 35, 29, 0.08);
   --shadow: rgba(20, 35, 29, 0.18);
   color-scheme: light;
 }
@@ -328,26 +410,28 @@
 html { -webkit-text-size-adjust: 100%; }
 
 /* ---- 書体（2026-10-16） ----
-   はじめ「見出しは明朝・本文はゴシック」にしたが、「なんかフォント和風にするとださいな。全体的に和モダンみたいな雰囲気にできる？」で明朝をやめた。
-   日本語は Zen 角ゴシック New、数字と英字は Jost（Futura に近い幾何学的な書体。等幅の数字がある）。欧文を先に並べると、数字と英字だけ Jost になる。
-   サイトに同梱して配る（外の会社へ閲覧者の情報を送らないため）。どれも SIL Open Font License 1.1（許諾の文は fonts/ にある）。
-   サイトで使う文字だけに絞ってある（tools/make-site-fonts.py）。入っていない文字や、読み込む前は端末の書体で出る（swap）。 */
-@font-face { font-family: "Jost"; src: url("fonts/jost.woff2") format("woff2"); font-weight: 100 900; font-display: swap; size-adjust: 106%; }
-@font-face { font-family: "Zen Kaku Gothic New"; src: url("fonts/zenkaku-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "Zen Kaku Gothic New"; src: url("fonts/zenkaku-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
-@font-face { font-family: "Zen Kaku Gothic New"; src: url("fonts/zenkaku-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+   「フォントiphoneみたいなのない？」: iPhone・Mac では端末の書体（英数字は SF Pro、日本語はヒラギノ）をそのまま使う（並びの先頭。読み込みも無い）。
+   SF Pro とヒラギノは Apple の決まりで同梱して配れないので、ほかの端末（Windows・Android）には、よく似た書体を同梱して使う:
+   英数字は Inter（SF Pro に近い。等幅の数字・大きな文字用の形がある可変の書体）、日本語は Noto Sans JP（ヒラギノに近い）。
+   どれも SIL Open Font License 1.1（許諾の文は fonts/ にある）。サイトで使う文字だけに絞ってある（tools/make-site-fonts.py）。
+   Inter は英数字の範囲だけに当てる（unicode-range）。日本語の文字のために読み込まないように。
+   経過: 見出しは明朝 →「和風にするとださい」で Zen 角ゴシックと Jost → iPhone 風（どれも 2026-10-16）。 */
+@font-face { font-family: "Inter"; src: url("fonts/inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2190-21FF, U+2212, U+2215; }
+@font-face { font-family: "Noto Sans JP"; src: url("fonts/notosansjp-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Noto Sans JP"; src: url("fonts/notosansjp-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 :root {
-  --font-gothic: "Jost", "Zen Kaku Gothic New", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Inter", "Noto Sans JP", "Segoe UI", "Yu Gothic UI", Meiryo, sans-serif;
 }
 
 body {
   margin: 0;
-  background: var(--bg);   /* 和モダンは平らな色面（前はぼかしの光を重ねていた） */
+  background: var(--bg);   /* 平らな色面（和モダンのときに、ぼかしの光をやめた） */
   color: var(--text);
-  font-family: var(--font-gothic);
+  font-family: var(--font-ui);
   font-size: 15px;
-  line-height: 1.7;
-  letter-spacing: 0.02em;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
 
@@ -355,7 +439,7 @@ a { color: var(--accent); }
 
 button, select, input { font: inherit; color: inherit; }
 
-/* ---- 上の帯 ---- */
+/* ---- 上の帯（iPhone のナビゲーションバーのように、すりガラスと細い線） ---- */
 .topbar {
   position: sticky;
   top: 0;
@@ -365,49 +449,60 @@ button, select, input { font: inherit; color: inherit; }
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 12px max(var(--gutter), env(safe-area-inset-left));
+  padding: 10px max(var(--gutter), env(safe-area-inset-left));
   background: var(--bar-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--on-bg-line);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid var(--on-bg-line);
   color: var(--on-bg);
 }
 
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.brand img { display: block; border-radius: 8px; }
-.brand .name { font-weight: 600; letter-spacing: 0.02em; }
+.brand img { display: block; border-radius: 7px; }
+.brand .name { font-weight: 700; }
 .brand .product { color: var(--on-bg-muted); font-weight: 600; }
 .updated { margin: 0; color: var(--on-bg-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 
-/* いま見ている帯と、いちばん上へ戻るボタン（2026-10-14「上の固定ヘッダーにTOPへ戻るボタン(アイコン)と選択しているランクを表示してほしい」） */
-.bar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; min-width: 0; }
-.bar-band {
-  padding: 2px 12px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--line-2);
-  background: var(--panel-2);
-  color: var(--text);   /* 札はパネルの色なので、上の帯の文字色（背景の上の色）ではなくパネルの文字色 */
+/* いま見ている帯と、いちばん上へ戻るボタン（2026-10-14「上の固定ヘッダーにTOPへ戻るボタン(アイコン)と選択しているランクを表示してほしい」）。
+   帯の札は押すと選び直せる選ぶ欄（2026-10-16「TOPのランク押すと変更できるようにして」）。iPhone の選ぶボタンのように、丸い札に上下の山形。 */
+.bar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; min-width: 0; }
+.bar-band, .band-pick {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
   font-weight: 600;
-  font-size: 14px;
+  color: var(--on-bg);
+  background-color: var(--on-bg-fill);
+  background-image: var(--pick-arrow);   /* 色を画像に書き込むので、配色ごとに作った上下の山形を使う（変数の色は画像の中に届かない） */
+  background-repeat: no-repeat;
+  border: 0;
+  cursor: pointer;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
-.bar-band:empty { display: none; }
+.bar-band {
+  height: 34px;
+  padding: 0 28px 0 14px;
+  border-radius: 999px;
+  background-position: right 11px center;
+  background-size: 8px auto;
+  font-size: 15px;
+}
+.bar-band option, .bar-band optgroup, .band-pick option, .band-pick optgroup { background: var(--panel); color: var(--text); font-size: 15px; }
 .to-top, .icon-btn {
   display: inline-grid;
   place-items: center;
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   padding: 0;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--line-2);
-  background: var(--panel-2);
-  color: var(--accent);
+  border-radius: 50%;
+  border: 0;
+  background: var(--on-bg-fill);
+  color: var(--on-bg);
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: opacity 0.15s;
 }
-.to-top:hover, .icon-btn:hover { border-color: var(--accent); }
+.to-top:hover, .icon-btn:hover, .bar-band:hover, .band-pick:hover { opacity: 0.8; }
 .to-top svg, .icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
 main {
@@ -418,39 +513,25 @@ main {
 
 .notice {
   margin: 0 0 14px;
-  padding: 10px 14px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--warn-line);
-  background: var(--warn-bg);
+  padding: 12px 16px;
+  border-radius: var(--r-md);
+  background: var(--panel);
   color: var(--warn);
   font-size: 14px;
 }
 
-/* ---- ランク帯を選ぶ欄（見出しの中）。前は15個の札を横に並べていた（2026-10-14「ランクの選択ももっとシンプルに」） ---- */
+/* ---- ランク帯を選ぶ欄（見出しの中）。前は15個の札を横に並べていた（2026-10-14「ランクの選択ももっとシンプルに」） ----
+   形は上の帯の札とそろえる（上の .bar-band, .band-pick）。 */
 .band-pick {
-  appearance: none;
-  -webkit-appearance: none;
-  font: inherit;
-  font-weight: 600;
-  color: var(--text);
-  background-color: var(--panel-2);
-  background-image: var(--pick-arrow);   /* 色を画像に書き込むので、配色ごとに作った「∨」を使う（変数の色は画像の中に届かない） */
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 0.5em auto;
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-sm);
-  padding: 0 calc(0.5em + 22px) 0 14px;
-  margin-right: 4px;
-  cursor: pointer;
-  font-variant-numeric: tabular-nums;
-  transition: border-color 0.15s;
+  padding: 2px calc(0.32em + 30px) 2px 16px;
+  margin-right: 6px;
+  border-radius: 14px;
+  background-position: right 14px center;
+  background-size: 0.3em auto;
 }
-.band-pick:hover { border-color: var(--accent); }
-.band-pick option, .band-pick optgroup { background: var(--panel); color: var(--text); font-size: 15px; }
 
-/* ---- 予想の大きな数字 ---- */
-.hero { margin-bottom: 18px; }
+/* ---- 予想の大きな数字（iPhone のウィジェットのように、枠なし・大きな角丸・色のついた題・太い数字） ---- */
+.hero { margin-bottom: 20px; }
 .hero-head {
   display: flex;
   align-items: flex-end;
@@ -459,8 +540,9 @@ main {
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
-.hero h1 { color: var(--on-bg); margin: 0; font-size: clamp(21px, 4.4vw, 28px); line-height: 1.3; }
-.sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+/* iPhone の大きな題（Large Title） */
+.hero h1 { color: var(--on-bg); margin: 0; font-size: clamp(26px, 6vw, 34px); font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; }
+.sub { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
 
 .cards {
   display: grid;
@@ -471,44 +553,34 @@ main {
 .card {
   position: relative;
   overflow: hidden;
-  padding: 18px 18px 16px;
+  padding: 16px 18px;
   border-radius: var(--radius);
-  border: 1px solid var(--line);
   background: var(--panel);
+  box-shadow: var(--elev);
   min-width: 0;
-}
-/* スコアの色は、左上の短い線だけ（前は上いっぱいの色帯）。 */
-.card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 18px;
-  width: 32px;
-  height: 3px;
-  background: var(--score-color, var(--accent));
 }
 .card.s2 { --score-color: var(--c2); }
 .card.s4 { --score-color: var(--c4); }
 .card.s6 { --score-color: var(--c6); }
 
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+/* スコアは題の色で示す（iPhone のウィジェットの題と同じ。和モダンのときは左上の短い線だった） */
 .pill {
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  font-size: 15px;
   color: var(--score-color);
 }
-.tag-forecast { font-size: 12px; color: var(--faint); }
+.tag-forecast { font-size: 13px; color: var(--muted); }
 
 .big {
-  margin: 10px 0 2px;
-  font-size: clamp(32px, 6.4vw, 46px);
-  font-weight: 500;
+  margin: 6px 0 0;
+  font-size: clamp(34px, 7vw, 46px);
+  font-weight: 700;
   line-height: 1.1;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
-.big small { font-size: 0.38em; font-weight: 500; color: var(--muted); margin-left: 5px; letter-spacing: 0.06em; }
+.big small { font-size: 0.4em; font-weight: 600; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
 
 .safe {
   display: flex;
@@ -517,67 +589,67 @@ main {
   gap: 8px;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px dashed var(--line-2);
+  border-top: 0.5px solid var(--line-2);
   font-size: 13px;
   color: var(--muted);
 }
 .safe b { color: var(--text); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-.meter { position: relative; height: 3px; margin-top: 12px; background: var(--line); }
-.meter span { position: absolute; inset: 0 auto 0 0; background: var(--score-color); }
+/* iPhone の進み具合の線（丸い端の 4px） */
+.meter { position: relative; height: 4px; margin-top: 12px; border-radius: 4px; background: var(--fill); }
+.meter span { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--score-color); }
 
 .caution {
   margin: 10px 0 0;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: var(--r-sm);
   background: var(--warn-bg);
   color: var(--warn);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .shared { margin-top: 12px; }
 .shared .stale {
   margin: 0 0 8px;
-  padding: 8px 12px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--warn-line);
+  padding: 10px 14px;
+  border-radius: var(--r-md);
   background: var(--warn-bg);
   color: var(--warn);
   font-size: 13px;
 }
 .shared .caution { display: inline-block; margin: 0 0 6px; }
 
-.empty { color: var(--muted); padding: 20px; border: 1px dashed var(--line-2); border-radius: var(--radius); }
+.empty { color: var(--muted); padding: 20px; border-radius: var(--r-md); background: var(--fill); }
 
-.hint { margin: 12px 2px 0; font-size: 12.5px; color: var(--faint); }
+.hint { margin: 12px 4px 0; font-size: 13px; color: var(--faint); }
 .hint strong { color: var(--muted); }
 /* 背景（名前の色）の上に直接書く文字は --on-bg 系（2026-10-16「背景色を指定のメイン色に」）。パネルの上の --muted・--faint では薄すぎた。
    予想の下の注意の箱は、背景の色が透けると読みにくいので、パネルの地を敷く。 */
 .hero .sub, .hero > .hint, .hero > .hint strong { color: var(--on-bg-muted); }
 .hero .shared .caution, .hero .shared .stale { background: var(--panel); }
 
-/* ---- 切り替えボタン ---- */
+/* ---- 切り替えボタン（iPhone のセグメント: 下地の上に、選んだものだけ浮いたつまみ） ---- */
 .seg {
   display: inline-flex;
-  padding: 3px;
-  gap: 2px;
+  padding: 2px;
+  gap: 0;
   border-radius: var(--r-sm);
-  background: var(--panel);
-  border: 1px solid var(--line);
+  background: var(--fill);
 }
 .seg button {
   border: 0;
   background: transparent;
-  color: var(--muted);
-  padding: 6px 14px;
-  border-radius: var(--r-sm);
-  font-weight: 700;
-  font-size: 13.5px;
+  color: var(--text);
+  padding: 5px 14px;
+  border-radius: 7px;
+  font-weight: 500;
+  font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s;
 }
-.seg button[aria-pressed="true"] { background: var(--line-2); color: var(--text); }
-.seg.small button { padding: 4px 10px; font-size: 12.5px; }
+.seg button[aria-pressed="true"] { background: var(--thumb); font-weight: 600; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04); }
+.seg.small button { padding: 4px 12px; font-size: 13px; }
 
 /* ---- 枠 ---- */
 /* 6つのパネルの入れ物（設定で並べ替え・表示を変える。2026-10-16）。ふつうは横いっぱい。「推移」と「全ランク帯」が隣り合うときだけ、
@@ -592,11 +664,12 @@ main {
 .panels > .panel.side-wide { grid-column: 1; }
 .panels > .panel.side-narrow { grid-column: 2; }
 
+/* パネルは iPhone の角丸のまとまりのように、枠なし・大きな角丸 */
 .panel {
   padding: 16px;
   border-radius: var(--radius);
-  border: 1px solid var(--line);
   background: var(--panel);
+  box-shadow: var(--elev);
   min-width: 0;
 }
 .panel-head {
@@ -605,90 +678,121 @@ main {
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
-.panel h2 { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: 0.1em; color: var(--text); }
-/* 見出しの左の短い縦線だけを差し色にする（文字は墨・生成りのまま。色を使う所を絞るのが和モダン） */
-.panel h2::before { content: ""; display: inline-block; width: 3px; height: 1em; margin-right: 10px; vertical-align: -0.14em; background: var(--head); }
-.panel h2 small { color: var(--faint); font-weight: 400; font-size: 12px; margin-left: 8px; letter-spacing: 0.04em; }
-.hero h1, .settings-head h2 { font-weight: 500; letter-spacing: 0.08em; }
-.settings-block h3 { font-weight: 500; letter-spacing: 0.1em; }
-.band-pick { letter-spacing: 0.02em; }
+/* 見出しは iPhone の見出し（17px の太字）。横の説明は、見出しの下の行に分けて出す
+   （2026-10-16「画面を小さくしたときにカードタイトルの横の説明が変に開業するのをやめてほしい」。横に並べると、説明が見出しの続きで折れ、
+   「日付を押すと、上 / に大きく出ます」のように途中で切れていた）。 */
+.panel h2 { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.35; color: var(--text); }
+.panel h2 small { display: block; margin-top: 2px; color: var(--muted); font-weight: 400; font-size: 13px; line-height: 1.45; }
+.settings-head h2 { font-weight: 700; }
 
 /* ---- パネルの開け閉め（2026-10-16）。閉じても見出しは残す ---- */
-/* 文字でなく矢印のアイコン（「閉じる。開くはダサいから、アイコンでわかりやすいのでして」）。上の帯の ↑ ボタンと同じ形で少し小さく。
+/* 文字でなく矢印のアイコン（「閉じる。開くはダサいから、アイコンでわかりやすいのでして」）。iPhone のように、薄い丸の上の山形。
    開いているときは ∧、閉じているときは回して ∨。 */
 .fold {
   display: inline-grid;
   place-items: center;
   flex: none;
   margin-left: auto;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   padding: 0;
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-sm);
-  background: var(--panel-2);
+  border: 0;
+  border-radius: 50%;
+  background: var(--fill);
   color: var(--muted);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: opacity 0.15s;
 }
-.fold:hover { border-color: var(--accent); color: var(--accent); }
-.fold svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+.fold:hover { opacity: 0.75; }
+.fold svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
 .fold[aria-expanded="false"] svg { transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce) { .fold svg { transition: none; } }
+.hero .fold { background: var(--on-bg-fill); color: var(--on-bg); }   /* 予想の開け閉めは地の上にある */
 /* パネルのボタンは右上に固定する（流れに入れると、スマホの幅で見出しの次の行に落ち、閉じても高さを取った）。 */
 .panel { position: relative; }
-.panel > .panel-head { padding-right: 44px; }
-.panel > .panel-head > .fold { position: absolute; top: 12px; right: 12px; }
+.panel > .panel-head { padding-right: 40px; }
+.panel > .panel-head > .fold { position: absolute; top: 14px; right: 14px; }
 
-/* ---- 設定（2026-10-16）。ヘッダの歯車から開く。選んだものはすぐ画面に当てる ---- */
+/* ---- 設定（2026-10-16）。ヘッダの歯車から開く。選んだものはすぐ画面に当てる ----
+   iPhone の設定画面のように: 角丸の一覧に細い区切り線、表示のオン・オフはスイッチ。スマホでは下から出るシート。 */
 .settings {
   width: min(520px, calc(100% - 2 * var(--gutter)));
   max-height: calc(100dvh - 48px);
-  padding: 18px;
-  border: 1px solid var(--line-2);
+  padding: 16px 18px 20px;
+  border: 0;
   border-radius: var(--radius);
   background: var(--panel);
   color: var(--text);
-  box-shadow: 0 12px 32px var(--shadow);
+  box-shadow: 0 20px 60px var(--shadow);
   overflow-y: auto;
 }
-.settings::backdrop { background: rgba(0, 0, 0, 0.5); }
-.settings-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
-.settings-head h2 { margin: 0; font-size: 18px; color: var(--text); }
-.settings-block { margin-top: 14px; }
-.settings-block h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+.settings::backdrop { background: rgba(0, 0, 0, 0.4); }
+.settings-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.settings-head h2 { margin: 0; font-size: 20px; color: var(--text); }
+.settings .icon-btn { width: 30px; height: 30px; background: var(--fill); color: var(--muted); }
+.settings .icon-btn svg { width: 14px; height: 14px; stroke-width: 2.6; }
+.settings-block { margin-top: 18px; }
+.settings-block h3 { margin: 0 0 8px 4px; font-size: 13px; font-weight: 400; color: var(--muted); }
 .theme-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .theme-opt {
   display: grid;
   gap: 6px;
   padding: 8px;
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-sm);
-  background: var(--panel-2);
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--fill);
   cursor: pointer;
   text-align: left;
 }
-.theme-opt[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.theme-opt .theme-name { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; }
+.theme-opt[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent) inset; }
+.theme-opt .theme-name { font-size: 13px; font-weight: 600; }
 .theme-opt .theme-name small { display: block; color: var(--muted); font-weight: 400; font-size: 11px; }
-/* 見本は、その配色の data-theme を付けて描く（地・差し色・+2/+4/+6 の色）。 */
-.swatch { display: flex; align-items: center; height: 34px; padding: 0 6px; border-radius: 2px; background: var(--bg); border-top: 3px solid var(--accent); }
-.swatch .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px 3px 6px; border-radius: 2px; background: var(--panel); border: 1px solid var(--line); }
-.swatch .chip b { font-size: 12px; font-weight: 500; line-height: 1; color: var(--head); margin-right: 2px; }
-.swatch i { width: 9px; height: 9px; }
+/* 見本は、その配色の data-theme を付けて描く（地・パネル・見出しの色・+2/+4/+6 の色）。 */
+.swatch { display: flex; align-items: center; height: 36px; padding: 0 6px; border-radius: 8px; background: var(--bg); }
+.swatch .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px 4px 7px; border-radius: 6px; background: var(--panel); }
+.swatch .chip b { font-size: 12px; font-weight: 700; line-height: 1; color: var(--head); margin-right: 2px; }
+.swatch i { width: 9px; height: 9px; border-radius: 50%; }
 .swatch .s2 { background: var(--c2); } .swatch .s4 { background: var(--c4); } .swatch .s6 { background: var(--c6); }
-.layout-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.layout-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); }
-.layout-list label { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; font-size: 14px; }
-.layout-list input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.layout-list { list-style: none; margin: 0; padding: 0; border-radius: var(--r-md); background: var(--fill); overflow: hidden; }
+.layout-list li { position: relative; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 10px 6px 14px; }
+.layout-list li + li::before { content: ""; position: absolute; top: 0; left: 14px; right: 0; height: 0.5px; background: var(--line-2); }   /* 区切り線は左を空けて（iPhone の一覧と同じ） */
+.layout-list label { flex: 1; display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; gap: 10px; min-width: 0; cursor: pointer; font-size: 15px; }
+/* 表示のオン・オフは iPhone のスイッチ。チェックの欄の見た目だけを変える（押して切り替わる動きは同じ） */
+.layout-list input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  margin: 0;
+  border-radius: 16px;
+  background: var(--fill-2);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.layout-list input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: var(--knob);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 3px 1px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s;
+}
+.layout-list input[type="checkbox"]:checked { background: var(--switch); }
+.layout-list input[type="checkbox"]:checked::after { transform: translateX(20px); }
 .layout-list li.off label span { color: var(--faint); }
-.layout-list .move { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--panel); color: var(--muted); cursor: pointer; }
-.layout-list .move:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.layout-list .move:disabled { opacity: 0.35; cursor: default; }
-.layout-list .move svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.settings-foot { margin: 16px 0 0; text-align: right; }
+.layout-list .move { display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: var(--fill); color: var(--accent); cursor: pointer; }
+.layout-list .move:hover:not(:disabled) { opacity: 0.75; }
+.layout-list .move:disabled { opacity: 0.3; cursor: default; }
+.layout-list .move svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.settings-foot { margin: 18px 0 0; text-align: center; }
 @media (max-width: 420px) { .theme-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .panel.folded > :not(.panel-head), .hero.folded > :not(.hero-head) { display: none; }
 .panel.folded .panel-head > :not(h2):not(.fold) { display: none; }
@@ -713,9 +817,9 @@ main {
   position: absolute;
   top: 6px;
   min-width: 150px;
-  padding: 8px 10px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--line-2);
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  border: 0;
   background: var(--tip-bg);
   font-size: 12.5px;
   line-height: 1.5;
@@ -734,7 +838,7 @@ main {
   height: 3px;
   margin-right: 6px;
   vertical-align: middle;
-  border-radius: 2px;
+  border-radius: 4px;
   background: currentColor;
 }
 .k2 { color: var(--c2); }
@@ -750,18 +854,18 @@ main {
 /* ---- 1週間のボーダー予想（2026-10-14「ボーダー予想は本日から一週間分みれるようにして」） ---- */
 table.week th[scope="row"] { font-weight: 700; color: var(--text); }
 table.week .wd { font-variant-numeric: tabular-nums; }
-table.week .rel { margin-left: 6px; font-size: 11.5px; font-weight: 700; color: var(--accent); }
+table.week .rel { margin-left: 6px; font-size: 12px; font-weight: 600; color: var(--accent); }
 table.week .kind { margin-left: 6px; font-size: 11.5px; color: var(--warn); }
-table.week td .wf { display: block; font-size: 15px; font-weight: 700; }
+table.week td .wf { display: block; font-size: 16px; font-weight: 600; }
 table.week td .ws { display: block; font-size: 11.5px; color: var(--faint); }
 table.week tbody tr { cursor: pointer; }
-table.week tbody tr.on { background: var(--panel-2); box-shadow: inset 3px 0 0 var(--accent); }
+table.week tbody tr.on { background: var(--tint); }
 table.week tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 /* 前の同じ曜日の実際との比べ（案 D、2026-10-14） */
 
 /* これまでの答え合わせ（2026-10-15）。見た目は1週間の予想の表にそろえる（行は押せないので、押せる見た目にはしない）。 */
 table.answers th[scope="row"] { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-table.answers td .wa { display: block; font-size: 15px; font-weight: 700; }
+table.answers td .wa { display: block; font-size: 16px; font-weight: 600; }
 table.answers td .wp { display: block; font-size: 11.5px; color: var(--faint); }
 table.answers td .pending { display: block; font-size: 12.5px; color: var(--muted); }
 
@@ -772,21 +876,21 @@ table.answers td .pending { display: block; font-size: 12.5px; color: var(--mute
 table.heat { table-layout: fixed; border-collapse: separate; border-spacing: 3px; min-width: 290px; }
 table.heat th, table.heat td { padding: 4px 1px; text-align: center; white-space: nowrap; }
 table.heat thead th { position: static; background: none; border: 0; }
-table.heat .hw { display: block; font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: 0.08em; }
+table.heat .hw { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
 table.heat th.sat .hw { color: var(--sat); }   /* 土曜は青（+2 の色は配色ごとに青とは限らない） */
 table.heat th.sun .hw { color: var(--sun); }
 table.heat .ha { display: block; font-size: 11px; font-weight: 600; color: var(--faint); }
 table.heat tbody tr { border: 0; }
 table.heat tbody tr:hover { background: none; }
-table.heat td { height: 46px; border-radius: 2px; background: var(--cell); }
+table.heat td { height: 46px; border-radius: 7px; background: var(--cell); }
 table.heat td .hd { display: block; font-size: 10.5px; line-height: 1.3; color: var(--muted); }
-table.heat td .hv { display: block; font-size: 13px; line-height: 1.3; font-weight: 500; }
+table.heat td .hv { display: block; font-size: 13px; line-height: 1.3; font-weight: 600; }
 table.heat td.dark .hd, table.heat td.dark .hv { color: var(--on-strong); }
 table.heat td.blank .hv { color: var(--faint); font-weight: 400; }
 table.heat td.later { background: none; }
 table.heat td.later .hd { color: var(--faint); }
-table.heat td.fc { outline: 1px dashed var(--muted); outline-offset: -3px; cursor: pointer; }
-table.heat td.today { box-shadow: inset 0 0 0 1.5px var(--accent); }
+table.heat td.fc { outline: 1.5px dashed var(--muted); outline-offset: -3px; cursor: pointer; }
+table.heat td.today { box-shadow: inset 0 0 0 2px var(--accent); }
 table.heat td.on { outline: 2px solid var(--accent); outline-offset: -3px; }
 table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 
@@ -806,8 +910,8 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
   text-align: left;
   cursor: pointer;
 }
-.overview button:hover { background: var(--panel-2); }
-.overview button[aria-current="true"] { background: var(--panel-2); border-color: var(--line-2); }
+.overview button:hover { background: var(--fill); }
+.overview button[aria-current="true"] { background: var(--tint); }
 .overview .band { font-weight: 600; font-variant-numeric: tabular-nums; }
 .overview .nums { display: flex; gap: 10px; font-size: 13px; font-variant-numeric: tabular-nums; overflow: hidden; }
 .overview .nums span { white-space: nowrap; }
@@ -823,37 +927,44 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 .tilde { color: var(--faint); }
 .filters input[type="date"] {
   min-width: 0;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: var(--r-sm);
-  border: 1px solid var(--line-2);
-  background: var(--panel-2);
+  border: 0;
+  background: var(--fill);
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 .filters input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
 .filters + .filters { margin-top: -2px; }
-.filters label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.filters label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .filters select {
-  padding: 6px 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 6px 30px 6px 12px;
   border-radius: var(--r-sm);
-  border: 1px solid var(--line-2);
-  background: var(--panel-2);
-}
-button.ghost {
-  padding: 6px 12px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--line-2);
-  background: transparent;
-  color: var(--muted);
+  border: 0;
+  background: var(--fill) var(--pick-arrow-panel) no-repeat right 11px center / 7px auto;
+  color: var(--text);
   cursor: pointer;
 }
-button.ghost:hover { color: var(--text); }
+.filters select option { background: var(--panel); color: var(--text); }
+/* 文字だけのボタン（iPhone のボタンのように、差し色の文字） */
+button.ghost {
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+button.ghost:hover { background: var(--fill); }
 
-.tablewrap { overflow-x: auto; border-radius: var(--r-sm); border: 1px solid var(--line); }
+.tablewrap { overflow-x: auto; border-radius: var(--r-md); }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 th, td { padding: 8px 12px; text-align: left; white-space: nowrap; }
-thead th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-size: 12.5px; font-weight: 700; border-bottom: 1px solid var(--line); }
-tbody tr { border-bottom: 1px solid var(--line); }
+thead th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-size: 13px; font-weight: 600; border-bottom: 0.5px solid var(--line-2); }
+tbody tr { border-bottom: 0.5px solid var(--line); }
 tbody tr:last-child { border-bottom: 0; }
 tbody tr:hover { background: var(--hover); }
 .n { text-align: right; }
@@ -897,11 +1008,21 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   /* スマホの幅では更新日時を出さない（利用者の指示「スマホぐらい小さくしているときは更新日時はけしていい」）。帯の札と↑ボタンを1行に収めるため。 */
   .updated { display: none; }
   .topbar { flex-wrap: nowrap; padding-top: 8px; padding-bottom: 8px; }
-  table.week th, table.week td { padding: 8px 8px; }
+  /* 表は横にはみ出さないように余白を詰める（iPhone 風の書体は少し幅広で、1週間の表が 390px の幅で 14px はみ出し、+6 の列が切れた） */
+  .panel { padding: 14px; }
+  table.week th, table.week td { padding: 8px 5px; }
+  table.week th:first-child, table.week td:first-child { padding-left: 8px; }
   table.week .rel, table.week .kind { display: block; margin-left: 0; }
-  table.week td .wf { font-size: 14px; }
-  table.answers th, table.answers td { padding: 8px 8px; }
+  table.week td .wf { font-size: 15px; }
+  table.answers th, table.answers td { padding: 8px 5px; }
+  table.answers th:first-child, table.answers td:first-child { padding-left: 8px; }
+  table.answers td .wd { display: block; }   /* 予想との差は次の行に（1行だと表が右へはみ出した） */
   table.answers td .wa { font-size: 14px; }
+  table.answers td .wp { font-size: 11px; }
+  table.answers th[scope="row"] { font-size: 14px; white-space: normal; }   /* 曜日は次の行に回してよい（6桁の帯で表がはみ出した） */
+  /* 設定は、iPhone のシートのように下から出す（下の角は画面の端に付ける） */
+  .settings { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: var(--radius) var(--radius) 0 0; max-height: 88dvh;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

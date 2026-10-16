@@ -160,19 +160,21 @@ const forecastDays = () => state.forecasts.days.filter((d) => d.date >= jstToday
 
 // ランク帯は、見出しの中の選ぶ欄1つで選ぶ（利用者の指示「ランクの選択ももっとシンプルに」、2026-10-14。前は15個の札が横に並んでいた）。
 // S・A・B・C・D のまとまりごとに区切って並べる。
+// 上の帯の札も同じ選ぶ欄にする（2026-10-16「TOPのランク押すと変更できるようにして」）。
 function renderBands() {
-  const select = $('band');
   const groups = new Map();
   for (const c of state.forecasts.classes) {
     const g = c.rankClass.charAt(0);
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g).push(c.rankClass);
   }
-  select.replaceChildren(...[...groups].map(([g, names]) => {
-    const og = el('optgroup', { label: g });
-    og.append(...names.map((n) => el('option', { value: n }, n)));
-    return og;
-  }));
+  for (const select of [$('band'), $('bar-band')]) {
+    select.replaceChildren(...[...groups].map(([g, names]) => {
+      const og = el('optgroup', { label: g });
+      og.append(...names.map((n) => el('option', { value: n }, n)));
+      return og;
+    }));
+  }
 }
 
 // ---- アクセス解析（GoatCounter。利用者の決定、2026-10-15「goatcounterにしよう」）----
@@ -202,7 +204,7 @@ function selectBand(name) {
   store.set('band', name);
   if (decodeURIComponent(location.hash.slice(1)) !== name) history.replaceState(null, '', '#' + encodeURIComponent(name));
   $('band').value = name;
-  $('bar-band').textContent = name;   // 上の帯（下まで読んでも、どの帯を見ているか分かるように）
+  $('bar-band').value = name;   // 上の帯（下まで読んでも、どの帯を見ているか分かり、押せば選び直せる）
   // 実績（actuals.json）は最初に全部の帯をまとめて読んでいる（前は帯を開くたびに読んでいた）。
   const rows = state.history.get(name) || [];
   state.shown = PAGE;
@@ -596,9 +598,10 @@ function renderAnswers() {
         td.append(el('span', { class: 'pending' }, '結果待ち'), el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`));
       } else {
         // 実際が「95%の確率で取れるライン」を越えた日の ▲ と色分けは付けない（利用者の指示、2026-10-16「▲ は実際が…を越えた日です。の説明もいらないし、機能もいらない」）。
-        td.append(
-          el('span', { class: 'wa', title: '実際のボーダー' }, fmt(r[4])),
-          el('span', { class: 'wp' }, `予想 ${fmt(r[2])}（${r[5] > 0 ? '+' : ''}${pct1(r[5])}）`));
+        // 差は別の部品にして、スマホの幅では次の行に分ける（1行だと 390px の幅で表が右へはみ出した。2026-10-16）
+        const wp = el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`);
+        wp.append(el('span', { class: 'wd' }, `（${r[5] > 0 ? '+' : ''}${pct1(r[5])}）`));
+        td.append(el('span', { class: 'wa', title: '実際のボーダー' }, fmt(r[4])), wp);
       }
       tr.append(td);
     }
@@ -887,6 +890,7 @@ $('reset-settings').addEventListener('click', () => {
 
 // ---- 操作 ----
 $('band').addEventListener('change', (e) => selectBand(e.target.value));
+$('bar-band').addEventListener('change', (e) => selectBand(e.target.value));
 // いちばん上へ戻る（動きを減らす設定の人には、すっと動かさずにすぐ戻す）。
 $('to-top').addEventListener('click', () => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
