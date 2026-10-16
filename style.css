@@ -12,18 +12,19 @@
    地・パネル・枠・文字まで、その配色の色の系統に染める（利用者の指示、2026-10-16「背景色とか全部合わせて変わるようにしてほしいな」。
    前は暗い配色がどれもほぼ黒で、差し色くらいしか違わなかった）。並びは暗い地 6 つ → 明るい地 3 つ。
    下の定義は tools/make-site-themes.py が作る。値を変えるときは、ここを手で直さず、その道具の THEMES を直して流す。 */
-/* 藍（あい）: 藍色の地。最初の設定。（地は藍色 #165e83。+2/+4/+6 は『配色総鑑』No.347 の #00b49b・#b984af・#a6a159 を読める明るさにそろえた）。 */
+/* 藍（あい）: 藍色の地。最初の設定。（地は藍色 #165e83。+2/+4/+6 は 『配色総鑑』No.347 の #00b49b・#b984af・#a6a159 を読める明るさにそろえた）。 */
 :root, [data-theme="ai"] {
   --bg: #165e83;
   --bg-glow: #2f7299;
   --bg-glow-2: #025377;
   --panel: #092a3b;
   --panel-2: #143446;
-  --line: #27465a;
-  --line-2: #3a5a6e;
-  --text: #f0f8fe;
-  --muted: #b6cfdf;
-  --faint: #88a3b5;
+  --line: #2a4657;
+  --line-2: #3d5a6b;
+  --text: #ecf5fb;
+  --head: #a0d9fe;
+  --muted: #b0c1cb;
+  --faint: #85959f;
   --accent: #91d4fe;
   --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%2391d4fe' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #fecf7f;
@@ -36,17 +37,17 @@
   --sun: #ffa098;
   --bar-bg: rgba(22, 94, 131, 0.88);
   --tip-bg: rgba(9, 42, 59, 0.97);
-  --cell: rgba(240, 248, 254, 0.06);
-  --hover: rgba(240, 248, 254, 0.04);
-  --on-strong: #0c1d27;
-  --on-bg: #f5fbff;
-  --on-bg-muted: #d3e8f6;
+  --cell: rgba(236, 245, 251, 0.06);
+  --hover: rgba(236, 245, 251, 0.04);
+  --on-strong: #151c1f;
+  --on-bg: #fcfaf4;
+  --on-bg-muted: #eae8df;
   --on-bg-line: #5486a5;
   --shadow: rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
 
-/* 墨と朱（すみとしゅ）: 墨の地に、朱の差し色。（地は墨 #595857。+2/+4/+6 は『配色総鑑』No.274 の #5a82b3・#9a72aa・#8b835b を読める明るさにそろえた）。 */
+/* 墨と朱（すみとしゅ）: 墨の地に、朱の差し色。（地は墨 #595857。+2/+4/+6 は 『配色総鑑』No.274 の #5a82b3・#9a72aa・#8b835b を読める明るさにそろえた）。 */
 [data-theme="sumi"] {
   --bg: #595857;
   --bg-glow: #6d6c6b;
@@ -54,10 +55,11 @@
   --panel: #272626;
   --panel-2: #313030;
   --line: #434242;
-  --line-2: #565554;
-  --text: #fcf5ee;
-  --muted: #dac7b3;
-  --faint: #b09a84;
+  --line-2: #565555;
+  --text: #f4f3f3;
+  --head: #fec0af;
+  --muted: #bfbdbd;
+  --faint: #949191;
   --accent: #ffb6a2;
   --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ffb6a2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #fecf7f;
@@ -70,62 +72,64 @@
   --sun: #ffa098;
   --bar-bg: rgba(89, 88, 87, 0.88);
   --tip-bg: rgba(39, 38, 38, 0.97);
-  --cell: rgba(252, 245, 238, 0.06);
-  --hover: rgba(252, 245, 238, 0.04);
-  --on-strong: #24180b;
-  --on-bg: #fff9f3;
-  --on-bg-muted: #f3e1d0;
+  --cell: rgba(244, 243, 243, 0.06);
+  --hover: rgba(244, 243, 243, 0.04);
+  --on-strong: #1b1a1a;
+  --on-bg: #fcfaf4;
+  --on-bg-muted: #eae8df;
   --on-bg-line: #81807f;
   --shadow: rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
 
-/* 茜（あかね）: 茜色の地。（地は茜色 #b7282e。+2/+4/+6 は『配色総鑑』No.282 の #b984af・#96d1aa・#c59f6b を読める明るさにそろえた）。 */
+/* 茜（あかね）: 茜色の地に生成り、茜の見出し（紅白の取り合わせ）。（地は茜色 #b7282e、パネルは生成り #fbfaf5。+2/+4/+6 は 『配色総鑑』No.338 の橙黄・深緑と藍色 の #165e83・#fcb315・#004f46 を読める明るさにそろえた）。 */
 [data-theme="akane"] {
   --bg: #b7282e;
   --bg-glow: #d04242;
   --bg-glow-2: #a91622;
-  --panel: #3f1917;
-  --panel-2: #4a2321;
-  --line: #5e3532;
-  --line-2: #734845;
-  --text: #fff4f3;
-  --muted: #e1c2bf;
-  --faint: #b69592;
-  --accent: #feb5af;
-  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23feb5af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --warn: #fecf7f;
-  --warn-bg: rgba(254, 207, 127, 0.12);
-  --warn-line: rgba(254, 207, 127, 0.45);
-  --c2: #e2a8d6; --c2-rgb: 226, 168, 214;
-  --c4: #a7eabe; --c4-rgb: 167, 234, 190;
-  --c6: #c69c63; --c6-rgb: 198, 156, 99;
-  --sat: #89c3fe;
-  --sun: #ffa098;
+  --panel: #fbfaf5;
+  --panel-2: #f1f0e9;
+  --line: #e0ded6;
+  --line-2: #cccbc1;
+  --text: #211f18;
+  --head: #ac3032;
+  --muted: #4f4d43;
+  --faint: #716f64;
+  --accent: #9b1e24;
+  --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%239b1e24' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --warn: #825b00;
+  --warn-bg: rgba(130, 91, 0, 0.12);
+  --warn-line: rgba(130, 91, 0, 0.45);
+  --c2: #024e70; --c2-rgb: 2, 78, 112;
+  --c4: #2c8c7e; --c4-rgb: 44, 140, 126;
+  --c6: #7f5800; --c6-rgb: 127, 88, 0;
+  --sat: #2266a4;
+  --sun: #a03f3c;
   --bar-bg: rgba(183, 40, 46, 0.88);
-  --tip-bg: rgba(63, 25, 23, 0.97);
-  --cell: rgba(255, 244, 243, 0.06);
-  --hover: rgba(255, 244, 243, 0.04);
-  --on-strong: #271514;
-  --on-bg: #fef9f8;
-  --on-bg-muted: #f8dddb;
+  --tip-bg: rgba(251, 250, 245, 0.97);
+  --cell: rgba(33, 31, 24, 0.05);
+  --hover: rgba(33, 31, 24, 0.04);
+  --on-strong: #ffffff;
+  --on-bg: #fcfaf4;
+  --on-bg-muted: #eae8df;
   --on-bg-line: #d96863;
-  --shadow: rgba(0, 0, 0, 0.35);
-  color-scheme: dark;
+  --shadow: rgba(33, 31, 24, 0.18);
+  color-scheme: light;
 }
 
-/* 夜桜（よざくら）: 夜の桑の実色の地に、桜色の差し色。（地は桑の実色 #55295b。+2/+4/+6 は『配色総鑑』No.248 の #b5b1d8・#704357・#bc892b を読める明るさにそろえた）。 */
+/* 夜桜（よざくら）: 夜の桑の実色の地に、桜色の差し色。（地は桑の実色 #55295b。+2/+4/+6 は 『配色総鑑』No.248 の #b5b1d8・#704357・#bc892b を読める明るさにそろえた）。 */
 [data-theme="sakura"] {
   --bg: #55295b;
   --bg-glow: #693c6f;
   --bg-glow-2: #4a1e50;
   --panel: #331d36;
-  --panel-2: #3d2740;
-  --line: #503953;
-  --line-2: #644b67;
-  --text: #fbf4fc;
-  --muted: #d6c3d8;
-  --faint: #ab97ad;
+  --panel-2: #3d2741;
+  --line: #4f3a52;
+  --line-2: #634d66;
+  --text: #f7f1f8;
+  --head: #ffbdc6;
+  --muted: #c5b9c7;
+  --faint: #9a8e9b;
   --accent: #feb3bd;
   --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23feb3bd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #fecf7f;
@@ -138,28 +142,29 @@
   --sun: #ffa098;
   --bar-bg: rgba(85, 41, 91, 0.88);
   --tip-bg: rgba(51, 29, 54, 0.97);
-  --cell: rgba(251, 244, 252, 0.06);
-  --hover: rgba(251, 244, 252, 0.04);
-  --on-strong: #211623;
-  --on-bg: #fef8fe;
-  --on-bg-muted: #efdef1;
+  --cell: rgba(247, 241, 248, 0.06);
+  --hover: rgba(247, 241, 248, 0.04);
+  --on-strong: #1d191e;
+  --on-bg: #fcfaf4;
+  --on-bg-muted: #eae8df;
   --on-bg-line: #79547e;
   --shadow: rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
 
-/* 藤（ふじ）: 藤紫の地。（地は藤紫 #a59aca。+2/+4/+6 は『配色総鑑』No.338 の #004f46・#a62c37・#fcb315 を読める明るさにそろえた）。 */
+/* 藤（ふじ）: 藤紫の地。（地は藤紫 #a59aca。+2/+4/+6 は 『配色総鑑』No.338 の #004f46・#a62c37・#fcb315 を読める明るさにそろえた）。 */
 [data-theme="fuji"] {
   --bg: #a59aca;
   --bg-glow: #b4acce;
   --bg-glow-2: #968bba;
   --panel: #faf9ff;
-  --panel-2: #f1edfe;
-  --line: #dfdbef;
-  --line-2: #ccc6e0;
-  --text: #231f2f;
-  --muted: #544e67;
-  --faint: #76708a;
+  --panel-2: #f0eff7;
+  --line: #dedce6;
+  --line-2: #cbc9d4;
+  --text: #1f1e26;
+  --head: #675a8c;
+  --muted: #4d4b57;
+  --faint: #6f6d79;
   --accent: #5a4886;
   --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235a4886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
@@ -172,28 +177,29 @@
   --sun: #a03f3c;
   --bar-bg: rgba(165, 154, 202, 0.88);
   --tip-bg: rgba(250, 249, 255, 0.97);
-  --cell: rgba(35, 31, 47, 0.05);
-  --hover: rgba(35, 31, 47, 0.04);
+  --cell: rgba(31, 30, 38, 0.05);
+  --hover: rgba(31, 30, 38, 0.04);
   --on-strong: #ffffff;
-  --on-bg: #1c1827;
-  --on-bg-muted: #342f45;
+  --on-bg: #191525;
+  --on-bg-muted: #322c43;
   --on-bg-line: #7b709d;
-  --shadow: rgba(35, 31, 47, 0.18);
+  --shadow: rgba(31, 30, 38, 0.18);
   color-scheme: light;
 }
 
-/* 抹茶（まっちゃ）: 抹茶色の地。（地は抹茶色 #c5c56a。+2/+4/+6 は『配色総鑑』No.265 の #1e0e3f・#d46d7a・#ffdd00 を読める明るさにそろえた）。 */
+/* 抹茶（まっちゃ）: 抹茶色の地。（地は抹茶色 #c5c56a。+2/+4/+6 は 『配色総鑑』No.265 の #1e0e3f・#d46d7a・#ffdd00 を読める明るさにそろえた）。 */
 [data-theme="matcha"] {
   --bg: #c5c56a;
   --bg-glow: #d3d497;
   --bg-glow-2: #b5b55a;
   --panel: #fbfcec;
-  --panel-2: #f1f2dd;
-  --line: #dfe0c8;
-  --line-2: #cccdaf;
-  --text: #232311;
-  --muted: #54553b;
-  --faint: #76775c;
+  --panel-2: #f1f3dc;
+  --line: #dfe1c8;
+  --line-2: #ccceaf;
+  --text: #202013;
+  --head: #316745;
+  --muted: #4e4f3c;
+  --faint: #6f705c;
   --accent: #5a5903;
   --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235a5903' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
@@ -206,28 +212,29 @@
   --sun: #a03f3c;
   --bar-bg: rgba(197, 197, 106, 0.88);
   --tip-bg: rgba(251, 252, 236, 0.97);
-  --cell: rgba(35, 35, 17, 0.05);
-  --hover: rgba(35, 35, 17, 0.04);
+  --cell: rgba(32, 32, 19, 0.05);
+  --hover: rgba(32, 32, 19, 0.04);
   --on-strong: #ffffff;
-  --on-bg: #1c1c0b;
-  --on-bg-muted: #34351c;
+  --on-bg: #191908;
+  --on-bg-muted: #323219;
   --on-bg-line: #99993d;
-  --shadow: rgba(35, 35, 17, 0.18);
+  --shadow: rgba(32, 32, 19, 0.18);
   color-scheme: light;
 }
 
-/* 和紙（わし）: 生成り色の明るい地に、藍の差し色。昼の屋外向け。（地は生成り色 #fbfaf5。+2/+4/+6 は『配色総鑑』No.299 の #819238・#c53c69・#eea78c を読める明るさにそろえた）。 */
+/* 和紙（わし）: 生成り色の明るい地に、藍の差し色。昼の屋外向け。（地は生成り色 #fbfaf5。+2/+4/+6 は 『配色総鑑』No.299 の #819238・#c53c69・#eea78c を読める明るさにそろえた）。 */
 [data-theme="washi"] {
   --bg: #fbfaf5;
   --bg-glow: #fcfcf8;
   --bg-glow-2: #eae9e4;
   --panel: #fafaf9;
-  --panel-2: #f0f0ee;
+  --panel-2: #f0f0ef;
   --line: #dededc;
-  --line-2: #cbcac8;
-  --text: #262210;
-  --muted: #585339;
-  --faint: #7b755a;
+  --line-2: #cacac9;
+  --text: #1f1f1e;
+  --head: #165e83;
+  --muted: #4d4d4b;
+  --faint: #6f6f6d;
   --accent: #005c84;
   --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23005c84' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
@@ -240,28 +247,29 @@
   --sun: #a03f3c;
   --bar-bg: rgba(251, 250, 245, 0.88);
   --tip-bg: rgba(250, 250, 249, 0.97);
-  --cell: rgba(38, 34, 16, 0.05);
-  --hover: rgba(38, 34, 16, 0.04);
+  --cell: rgba(31, 31, 30, 0.05);
+  --hover: rgba(31, 31, 30, 0.04);
   --on-strong: #ffffff;
-  --on-bg: #1e1b0a;
-  --on-bg-muted: #38331a;
+  --on-bg: #191815;
+  --on-bg-muted: #31302d;
   --on-bg-line: #cdccc7;
-  --shadow: rgba(38, 34, 16, 0.18);
+  --shadow: rgba(31, 31, 30, 0.18);
   color-scheme: light;
 }
 
-/* 桜（さくら）: 撫子色の地に、紅の差し色。（地は撫子色（濃いめの桜色） #eebbcb。+2/+4/+6 は『配色総鑑』No.257 の #006eb8・#a36aa5・#fcb315 を読める明るさにそろえた）。 */
+/* 桜（さくら）: 撫子色の地に、紅の差し色。（地は撫子色（濃いめの桜色） #eebbcb。+2/+4/+6 は 『配色総鑑』No.257 の #006eb8・#a36aa5・#fcb315 を読める明るさにそろえた）。 */
 [data-theme="sakurairo"] {
   --bg: #eebbcb;
   --bg-glow: #f5d0db;
   --bg-glow-2: #ddabbb;
   --panel: #fff8fa;
-  --panel-2: #fdeaf0;
-  --line: #edd8de;
-  --line-2: #ddc3ca;
-  --text: #2e1c22;
-  --muted: #654952;
-  --faint: #896b74;
+  --panel-2: #f7edf0;
+  --line: #e6dbde;
+  --line-2: #d4c6ca;
+  --text: #261c1f;
+  --head: #ab2f3d;
+  --muted: #57494d;
+  --faint: #796a6f;
   --accent: #9a1c2f;
   --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%239a1c2f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
@@ -274,28 +282,29 @@
   --sun: #a03f3c;
   --bar-bg: rgba(238, 187, 203, 0.88);
   --tip-bg: rgba(255, 248, 250, 0.97);
-  --cell: rgba(46, 28, 34, 0.05);
-  --hover: rgba(46, 28, 34, 0.04);
+  --cell: rgba(38, 28, 31, 0.05);
+  --hover: rgba(38, 28, 31, 0.04);
   --on-strong: #ffffff;
-  --on-bg: #26151b;
-  --on-bg-muted: #442a33;
+  --on-bg: #231218;
+  --on-bg-muted: #412830;
   --on-bg-line: #c08f9f;
-  --shadow: rgba(46, 28, 34, 0.18);
+  --shadow: rgba(38, 28, 31, 0.18);
   color-scheme: light;
 }
 
-/* 青磁（せいじ）: 青磁色の地。（地は青磁色 #7ebea5。+2/+4/+6 は『配色総鑑』No.333 の #006eb8・#f8ed43・#ae5224 を読める明るさにそろえた）。 */
+/* 青磁（せいじ）: 青磁色の地。（地は青磁色 #7ebea5。+2/+4/+6 は 『配色総鑑』No.333 の #006eb8・#f8ed43・#ae5224 を読める明るさにそろえた）。 */
 [data-theme="seiji"] {
   --bg: #7ebea5;
   --bg-glow: #9ec9b7;
   --bg-glow-2: #6fae96;
   --panel: #effff8;
-  --panel-2: #e0f6ed;
+  --panel-2: #e0f7ed;
   --line: #cce5da;
   --line-2: #b4d3c6;
-  --text: #12261f;
-  --muted: #3c5a4e;
-  --faint: #5e7c70;
+  --text: #14231d;
+  --head: #2c725a;
+  --muted: #3d534a;
+  --faint: #5e756b;
   --accent: #04654b;
   --pick-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%2304654b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --warn: #825b00;
@@ -308,13 +317,13 @@
   --sun: #a03f3c;
   --bar-bg: rgba(126, 190, 165, 0.88);
   --tip-bg: rgba(239, 255, 248, 0.97);
-  --cell: rgba(18, 38, 31, 0.05);
-  --hover: rgba(18, 38, 31, 0.04);
+  --cell: rgba(20, 35, 29, 0.05);
+  --hover: rgba(20, 35, 29, 0.04);
   --on-strong: #ffffff;
-  --on-bg: #0b1f18;
-  --on-bg-muted: #1d392f;
+  --on-bg: #091d16;
+  --on-bg-muted: #1a372c;
   --on-bg-line: #53927b;
-  --shadow: rgba(18, 38, 31, 0.18);
+  --shadow: rgba(20, 35, 29, 0.18);
   color-scheme: light;
 }
 
@@ -325,6 +334,18 @@
 
 html { -webkit-text-size-adjust: 100%; }
 
+/* ---- 書体（2026-10-16。利用者の言葉「フォントとか、文字の色も考えてね」に、選んだ形「見出しは明朝・本文はゴシック」） ----
+   本文と数字は Zen 角ゴシック New、見出しはしっぽり明朝。サイトに同梱して配る（外の会社へ閲覧者の情報を送らないため）。
+   どちらも SIL Open Font License 1.1（許諾の文は fonts/ にある）。サイトで使う文字だけに絞ってある（tools/make-site-fonts.py）。
+   入っていない文字や、読み込む前は端末の書体で出る（swap）。 */
+@font-face { font-family: "Zen Kaku Gothic New"; src: url("fonts/zenkaku-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Zen Kaku Gothic New"; src: url("fonts/zenkaku-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Shippori Mincho"; src: url("fonts/shippori-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+:root {
+  --font-gothic: "Zen Kaku Gothic New", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  --font-mincho: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif;
+}
+
 body {
   margin: 0;
   background:
@@ -333,7 +354,7 @@ body {
     var(--bg);
   background-attachment: fixed;
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  font-family: var(--font-gothic);
   font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
@@ -374,6 +395,7 @@ button, select, input { font: inherit; color: inherit; }
   border-radius: 999px;
   border: 1px solid var(--line-2);
   background: var(--panel-2);
+  color: var(--text);   /* 札はパネルの色なので、上の帯の文字色（背景の上の色）ではなくパネルの文字色 */
   font-weight: 800;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
@@ -593,8 +615,11 @@ main {
   flex-wrap: wrap;
   margin-bottom: 10px;
 }
-.panel h2 { margin: 0; font-size: 16px; }
+.panel h2 { margin: 0; font-size: 17px; color: var(--head); }
 .panel h2 small { color: var(--faint); font-weight: 600; font-size: 12px; margin-left: 6px; }
+/* 見出しは明朝。見出しの横の小さな説明・ランク帯を選ぶ欄は、読みやすいゴシックのまま。 */
+.hero h1, .panel h2, .settings-head h2, .settings-block h3 { font-family: var(--font-mincho); font-weight: 700; letter-spacing: 0.04em; }
+.panel h2 small, .band-pick { font-family: var(--font-gothic); letter-spacing: 0; }
 
 /* ---- パネルの開け閉め（2026-10-16）。閉じても見出しは残す ---- */
 /* 文字でなく矢印のアイコン（「閉じる。開くはダサいから、アイコンでわかりやすいのでして」）。上の帯の ↑ ボタンと同じ形で少し小さく。
@@ -637,7 +662,7 @@ main {
 }
 .settings::backdrop { background: rgba(0, 0, 0, 0.5); }
 .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
-.settings-head h2 { margin: 0; font-size: 18px; }
+.settings-head h2 { margin: 0; font-size: 19px; color: var(--head); }
 .settings-block { margin-top: 14px; }
 .settings-block h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
 .theme-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -655,8 +680,10 @@ main {
 .theme-opt .theme-name { font-size: 13px; font-weight: 700; }
 .theme-opt .theme-name small { display: block; color: var(--muted); font-weight: 600; font-size: 11px; }
 /* 見本は、その配色の data-theme を付けて描く（地・差し色・+2/+4/+6 の色）。 */
-.swatch { display: flex; align-items: center; gap: 5px; height: 34px; padding: 0 8px; border-radius: 7px; background: var(--bg); border-top: 3px solid var(--accent); }
-.swatch i { width: 12px; height: 12px; border-radius: 50%; }
+.swatch { display: flex; align-items: center; height: 34px; padding: 0 6px; border-radius: 7px; background: var(--bg); border-top: 3px solid var(--accent); }
+.swatch .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px 3px 6px; border-radius: 5px; background: var(--panel); border: 1px solid var(--line); }
+.swatch .chip b { font-family: var(--font-mincho); font-size: 12px; line-height: 1; color: var(--head); margin-right: 2px; }
+.swatch i { width: 10px; height: 10px; border-radius: 50%; }
 .swatch .s2 { background: var(--c2); } .swatch .s4 { background: var(--c4); } .swatch .s6 { background: var(--c6); }
 .layout-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .layout-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }

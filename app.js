@@ -801,9 +801,12 @@ function renderSettings(focus) {
   const theme = currentTheme();
   $('theme-list').replaceChildren(...THEMES.map((t) => {
     const b = el('button', { type: 'button', class: 'theme-opt', 'data-pick': t.id, 'aria-pressed': String(t.id === theme) });
-    // 見本はその配色の data-theme を付けて、地・差し色・+2/+4/+6 の色で描く。
+    // 見本はその配色の data-theme を付けて描く: 地の上にパネルの色の札を置き、見出しの色の明朝の「和」と +2/+4/+6 の点を並べる。
+    // 前は地の上にじかに点を並べていて、地とパネルの色が違う配色（茜は紅白）では、点が地に沈んで見えなかった。
     const sw = el('span', { class: 'swatch', 'data-theme': t.id, 'aria-hidden': 'true' });
-    sw.append(el('i', { class: 's2' }), el('i', { class: 's4' }), el('i', { class: 's6' }));
+    const chip = el('span', { class: 'chip' });
+    chip.append(el('b', {}, '和'), el('i', { class: 's2' }), el('i', { class: 's4' }), el('i', { class: 's6' }));
+    sw.append(chip);
     const name = el('span', { class: 'theme-name' }, t.name);
     name.append(el('small', {}, t.reading));
     b.append(sw, name);

@@ -7,7 +7,7 @@
   var themes = {
     ai: { bar: '#165e83', scheme: 'dark' },
     sumi: { bar: '#595857', scheme: 'dark' },
-    akane: { bar: '#b7282e', scheme: 'dark' },
+    akane: { bar: '#b7282e', scheme: 'light' },
     sakura: { bar: '#55295b', scheme: 'dark' },
     fuji: { bar: '#a59aca', scheme: 'light' },
     matcha: { bar: '#c5c56a', scheme: 'light' },
