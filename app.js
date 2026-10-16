@@ -9,7 +9,7 @@ const $ = (id) => document.getElementById(id);
 const SVG = 'http://www.w3.org/2000/svg';
 const DOW = ['日', '月', '火', '水', '木', '金', '土'];
 const SCORES = [2, 4, 6];
-const PAGE = 60;
+const PER_PAGES = [10, 50, 100];   // これまでの実際のボーダーの1ページの件数（最初は 10。2026-10-17）
 const FORMAT = 2;              // data の形の版（BorderSiteExport.FormatVersion と同じ）
 const STALE_HOURS = 36;        // これより古ければ「更新が止まっている」と出す
 const RELOAD_MINUTES = 10;     // 開き直したとき、これだけたっていれば読み直す
@@ -27,10 +27,12 @@ const state = {
   history: new Map(),          // 帯 → 新しい順の [日付, +2, +4, +6]（actuals.json）
   answers: new Map(),          // 帯 → 答え合わせの新しい順の [日付, スコア, その日最後の予想, 95%のライン, 実際, 差%]（results.json）
   sort: { key: 'date', asc: false },
-  shown: PAGE,
+  page: 0,                     // これまでの実際のボーダーの、いま見ているページ（0 から）
+  perPage: PER_PAGES[0],
   heatScore: 2,                // 曜日×週の色分け表で色にするスコア
+  heatWeeks: 12,               // 曜日×週の色分け表に並べる過去の週の数
 };
-const HEAT_WEEKS = 12;         // 曜日×週の色分け表に並べる過去の週の数（今週を含む）
+const HEAT_WEEK_CHOICES = [4, 8, 12];   // 曜日×週の色分け表に並べる過去の週の数（今週を含む）。選べる（2026-10-17）。最初は 12
 const MONDAY_FIRST = [1, 2, 3, 4, 5, 6, 0];
 
 const nf = new Intl.NumberFormat('ja-JP');
@@ -207,7 +209,7 @@ function selectBand(name) {
   $('bar-band').value = name;   // 上の帯（下まで読んでも、どの帯を見ているか分かり、押せば選び直せる）
   // 実績（actuals.json）は最初に全部の帯をまとめて読んでいる（前は帯を開くたびに読んでいた）。
   const rows = state.history.get(name) || [];
-  state.shown = PAGE;
+  state.page = 0;
   renderHero();
   renderWeek();
   renderOverview();
@@ -526,7 +528,11 @@ function renderTable() {
   const hide = (s) => score !== 0 && score !== s;
   document.querySelectorAll('#actual thead th.n').forEach((th, i) => { th.hidden = hide(SCORES[i]); });
 
-  $('rows').replaceChildren(...list.slice(0, state.shown).map((r) => {
+  // ページ送り（2026-10-17「これまでの実際のボーダーにページャーつけよう。デフォルト10件で50,100選択できるように」）
+  const pages = Math.max(1, Math.ceil(list.length / state.perPage));
+  state.page = Math.min(Math.max(state.page, 0), pages - 1);
+  const start = state.page * state.perPage;
+  $('rows').replaceChildren(...list.slice(start, start + state.perPage).map((r) => {
     const d = dowOf(r[0]);
     const tr = el('tr', { class: d === 0 ? 'sun' : d === 6 ? 'sat' : '' });
     tr.append(el('td', {}, r[0].replace(/-/g, '/')), el('td', {}, DOW[d]));
@@ -537,7 +543,10 @@ function renderTable() {
     });
     return tr;
   }));
-  $('more').hidden = list.length <= state.shown;
+  $('page-info').textContent = `${state.page + 1} / ${pages}`;
+  $('page-info').title = list.length ? `${fmt(start + 1)}〜${fmt(Math.min(start + state.perPage, list.length))} 件目 ／ ${fmt(list.length)} 件` : '';
+  $('page-first').disabled = $('page-prev').disabled = state.page === 0;
+  $('page-next').disabled = $('page-last').disabled = state.page >= pages - 1;
 }
 
 // ---- 1週間のボーダー予想（利用者の指示「ボーダー予想は本日から一週間分みれるようにして」、2026-10-14） ----
@@ -641,7 +650,7 @@ function renderHeat() {
   const lastWeek = mondayOf(Math.max(today, ...forecastNs));
 
   const weeks = [];
-  for (let w = mondayOf(today) - (HEAT_WEEKS - 1) * 7; w <= lastWeek; w += 7) {
+  for (let w = mondayOf(today) - (state.heatWeeks - 1) * 7; w <= lastWeek; w += 7) {
     weeks.push(MONDAY_FIRST.map((_, i) => {
       const n = w + i;
       const iso = isoOfDay(n);
@@ -660,7 +669,7 @@ function renderHeat() {
 
   $('heat-head').replaceChildren(...MONDAY_FIRST.map((d, i) => {
     const th = el('th', { scope: 'col', class: d === 0 ? 'sun' : d === 6 ? 'sat' : '' });
-    th.append(el('span', { class: 'hw' }, DOW[d]), el('span', { class: 'ha', title: `直近${HEAT_WEEKS}週の${DOW[d]}曜の平均` }, average[i] == null ? '—' : short(Math.round(average[i]))));
+    th.append(el('span', { class: 'hw' }, DOW[d]), el('span', { class: 'ha', title: `直近${state.heatWeeks}週の${DOW[d]}曜の平均` }, average[i] == null ? '—' : short(Math.round(average[i]))));
     return th;
   }));
 
@@ -929,6 +938,21 @@ $('week-rows').addEventListener('keydown', (e) => {
   e.preventDefault();
   selectDay(e.target.closest('tr[data-day]')?.dataset.day);
 });
+// 並べる週の数（2026-10-17「曜日毎のボーダーも4,8,12週を選択できるようにしよう」）。選んだものはこのブラウザに覚える。
+function setHeatWeeks(n) {
+  state.heatWeeks = HEAT_WEEK_CHOICES.includes(n) ? n : 12;
+  for (const x of document.querySelectorAll('#heat-weeks button')) x.setAttribute('aria-pressed', String(Number(x.dataset.weeks) === state.heatWeeks));
+  $('heat-sub').textContent = `直近${state.heatWeeks}週と、この先の予想`;
+  for (const x of document.querySelectorAll('.heat-n')) x.textContent = String(state.heatWeeks);
+}
+setHeatWeeks(Number(store.get('heatWeeks')) || 12);
+$('heat-weeks').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-weeks]');
+  if (!b) return;
+  setHeatWeeks(Number(b.dataset.weeks));
+  store.set('heatWeeks', String(state.heatWeeks));
+  if (state.forecasts) renderHeat();
+});
 $('heat-score').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-score]');
   if (!b) return;
@@ -950,7 +974,7 @@ $('range').addEventListener('click', (e) => {
   renderChart();
 });
 
-const refilter = () => { state.shown = PAGE; renderTable(); };
+const refilter = () => { state.page = 0; renderTable(); };
 ['from', 'to'].forEach((id) => $(id).addEventListener('change', () => { markPreset(); refilter(); }));
 $('presets').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-preset]');
@@ -965,13 +989,27 @@ $('clear').addEventListener('click', () => {
   markPreset();
   refilter();
 });
-$('more').addEventListener('click', () => { state.shown += PAGE; renderTable(); });
+// ページ送り。選んだ件数はこのブラウザに覚える（ランク帯・開け閉めと同じ）。
+{
+  const saved = Number(store.get('perPage'));
+  if (PER_PAGES.includes(saved)) state.perPage = saved;
+  $('per-page').value = String(state.perPage);
+}
+$('per-page').addEventListener('change', (e) => {
+  state.perPage = PER_PAGES.includes(Number(e.target.value)) ? Number(e.target.value) : PER_PAGES[0];
+  store.set('perPage', String(state.perPage));
+  state.page = 0;
+  renderTable();
+});
+for (const [id, to] of [['page-first', () => 0], ['page-prev', () => state.page - 1], ['page-next', () => state.page + 1], ['page-last', () => Infinity]]) {
+  $(id).addEventListener('click', () => { state.page = to(); renderTable(); });
+}
 document.querySelector('#actual thead').addEventListener('click', (e) => {
   const b = e.target.closest('.sort');
   if (!b) return;
   const key = b.dataset.sort === 'date' ? 'date' : Number(b.dataset.sort);
   state.sort = { key, asc: state.sort.key === key ? !state.sort.asc : false };
-  state.shown = PAGE;
+  state.page = 0;
   renderTable();
 });
 

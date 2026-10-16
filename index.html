@@ -81,11 +81,19 @@
        今週・来週の予想も点線の枠で並べ、過去の同じ曜日と見比べられるようにする。 -->
   <section class="panel heat-panel" aria-labelledby="heat-title">
     <div class="panel-head">
-      <h2 id="heat-title">曜日ごとのボーダー <small>直近12週と、この先の予想</small></h2>
-      <div id="heat-score" class="seg small" role="group" aria-label="色分けするスコア">
-        <button type="button" data-score="2" aria-pressed="true">+2</button>
-        <button type="button" data-score="4" aria-pressed="false">+4</button>
-        <button type="button" data-score="6" aria-pressed="false">+6</button>
+      <h2 id="heat-title">曜日ごとのボーダー <small id="heat-sub">直近12週と、この先の予想</small></h2>
+      <!-- 並べる週の数は 4・8・12 週から選ぶ（利用者の指示、2026-10-17「曜日毎のボーダーも4,8,12週を選択できるようにしよう」）。最初は 12 週。選んだものはこのブラウザに覚える。 -->
+      <div class="panel-tools">
+        <div id="heat-weeks" class="seg small" role="group" aria-label="並べる週の数">
+          <button type="button" data-weeks="4" aria-pressed="false">4週</button>
+          <button type="button" data-weeks="8" aria-pressed="false">8週</button>
+          <button type="button" data-weeks="12" aria-pressed="true">12週</button>
+        </div>
+        <div id="heat-score" class="seg small" role="group" aria-label="色分けするスコア">
+          <button type="button" data-score="2" aria-pressed="true">+2</button>
+          <button type="button" data-score="4" aria-pressed="false">+4</button>
+          <button type="button" data-score="6" aria-pressed="false">+6</button>
+        </div>
       </div>
     </div>
     <div class="heatwrap">
@@ -94,7 +102,7 @@
         <tbody id="heat-rows"></tbody>
       </table>
     </div>
-    <p class="hint">色が濃いほどボーダーが高い日です。点線の枠はボーダー予想で、押すと上に大きく出ます。曜日の下の数字は、直近12週の実際のボーダーの平均です。</p>
+    <p class="hint">色が濃いほどボーダーが高い日です。点線の枠はボーダー予想で、押すと上に大きく出ます。曜日の下の数字は、直近<span class="heat-n">12</span>週の実際のボーダーの平均です。</p>
   </section>
 
     <section class="panel chart-panel" aria-labelledby="chart-title">
@@ -163,7 +171,20 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <button id="more" type="button" class="ghost more" hidden>もっと見る</button>
+    <!-- ページ送り（利用者の指示、2026-10-17「これまでの実際のボーダーにページャーつけよう。デフォルト10件で50,100選択できるように」）。
+         前は 60 行ずつ「もっと見る」で増やしていた。選んだ件数はこのブラウザに覚える。 -->
+    <div id="pager" class="pager">
+      <label class="per">表示件数
+        <select id="per-page"><option value="10">10件</option><option value="50">50件</option><option value="100">100件</option></select>
+      </label>
+      <div class="pages">
+        <button id="page-first" type="button" class="page-btn" aria-label="最初のページ" title="最初のページ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 18l-6-6 6-6M8 6v12"/></svg></button>
+        <button id="page-prev" type="button" class="page-btn" aria-label="前のページ" title="前のページ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <span id="page-info" class="page-info" aria-live="polite"></span>
+        <button id="page-next" type="button" class="page-btn" aria-label="次のページ" title="次のページ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+        <button id="page-last" type="button" class="page-btn" aria-label="最後のページ" title="最後のページ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18l6-6-6-6M16 6v12"/></svg></button>
+      </div>
+    </div>
   </section>
 
   <!-- いちばん下に置き、最初は表示しない（設定でオンにすると出る。利用者の指示、2026-10-16「これまでの答え合わせは一番下でよくて、デフォルト非表示にして」）。

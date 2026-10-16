@@ -404,7 +404,7 @@
 
 * { box-sizing: border-box; }
 
-/* display を書いた部品（.seg・.more など）でも hidden で隠れるように。書かないと hidden が効かない。 */
+/* display を書いた部品（.seg など）でも hidden で隠れるように。書かないと hidden が効かない。 */
 [hidden] { display: none !important; }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -685,6 +685,8 @@ main {
    「日付を押すと、上 / に大きく出ます」のように途中で切れていた）。 */
 .panel h2 { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.35; color: var(--text); }
 .panel h2 small { display: block; margin-top: 2px; color: var(--muted); font-weight: 400; font-size: 13px; line-height: 1.45; }
+/* 見出しの右の切り替えが2つ以上あるとき（曜日ごとのボーダーの週数とスコア）。狭い幅では折り返す */
+.panel-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .settings-head h2 { font-weight: 700; }
 
 /* ---- パネルの開け閉め（2026-10-16）。閉じても見出しは残す ---- */
@@ -914,9 +916,14 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 .overview button:hover { background: var(--fill); }
 .overview button[aria-current="true"] { background: var(--tint); }
 .overview .band { font-weight: 600; font-variant-numeric: tabular-nums; }
-.overview .nums { display: flex; gap: 10px; font-size: 13px; font-variant-numeric: tabular-nums; overflow: hidden; }
-.overview .nums span { white-space: nowrap; }
-.overview .none { color: var(--faint); font-size: 12.5px; }
+/* +2・+4・+6 はそれぞれ決まった列に置き、右寄せでそろえる（2026-10-17「全ランク帯のボーダー予想の数値の縦列がそろっていないのが気持ち悪い」。
+   前は横に詰めて並べていて、「8,520」と「10.6万」のように桁の違う数字で列がずれた）。 */
+.overview .nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.overview .nums span { white-space: nowrap; text-align: right; }
+.overview .nums .c2 { grid-column: 1; }
+.overview .nums .c4 { grid-column: 2; }
+.overview .nums .c6 { grid-column: 3; }
+.overview .none { grid-column: 1 / -1; text-align: left; color: var(--faint); font-size: 12.5px; }
 .overview svg { display: block; width: 76px; height: 26px; }
 .overview svg polyline { fill: none; stroke: var(--c2); stroke-width: 1.6; stroke-linejoin: round; }
 
@@ -938,7 +945,7 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 .filters input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
 .filters + .filters { margin-top: -2px; }
 .filters label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-.filters select {
+.filters select, .pager select {
   appearance: none;
   -webkit-appearance: none;
   padding: 6px 30px 6px 12px;
@@ -948,7 +955,7 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
   color: var(--text);
   cursor: pointer;
 }
-.filters select option { background: var(--panel); color: var(--text); }
+.filters select option, .pager select option { background: var(--panel); color: var(--text); }
 /* 文字だけのボタン（iPhone のボタンのように、差し色の文字） */
 button.ghost {
   padding: 6px 10px;
@@ -974,7 +981,15 @@ tr.sun td:nth-child(2) { color: var(--sun); }
 th .sort { border: 0; background: none; padding: 0; color: inherit; font-weight: inherit; cursor: pointer; }
 th .sort[aria-sort="ascending"]::after { content: " ▲"; font-size: 0.8em; }
 th .sort[aria-sort="descending"]::after { content: " ▼"; font-size: 0.8em; }
-.more { display: block; margin: 12px auto 0; }
+/* ページ送り（2026-10-17）。左に件数、右に最初・前・ページ・次・最後 */
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.pager .per { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.pages { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.page-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--fill); color: var(--accent); cursor: pointer; }
+.page-btn:hover:not(:disabled) { opacity: 0.75; }
+.page-btn:disabled { opacity: 0.3; cursor: default; }
+.page-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.page-info { min-width: 4.5em; text-align: center; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* ---- 下の注意書き ---- */
 .foot {
