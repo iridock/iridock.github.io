@@ -171,11 +171,11 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <!-- ページ送り（利用者の指示、2026-10-17「これまでの実際のボーダーにページャーつけよう。デフォルト10件で50,100選択できるように」）。
+    <!-- ページ送り（利用者の指示、2026-10-17「これまでの実際のボーダーにページャーつけよう。デフォルト10件で50,100選択できるように」。そのあと「10,30,50,100にしよう」で 30 を足した）。
          前は 60 行ずつ「もっと見る」で増やしていた。選んだ件数はこのブラウザに覚える。 -->
     <div id="pager" class="pager">
       <label class="per">表示件数
-        <select id="per-page"><option value="10">10件</option><option value="50">50件</option><option value="100">100件</option></select>
+        <select id="per-page"><option value="10">10件</option><option value="30">30件</option><option value="50">50件</option><option value="100">100件</option></select>
       </label>
       <div class="pages">
         <button id="page-first" type="button" class="page-btn" aria-label="最初のページ" title="最初のページ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 18l-6-6 6-6M8 6v12"/></svg></button>

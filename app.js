@@ -9,7 +9,7 @@ const $ = (id) => document.getElementById(id);
 const SVG = 'http://www.w3.org/2000/svg';
 const DOW = ['日', '月', '火', '水', '木', '金', '土'];
 const SCORES = [2, 4, 6];
-const PER_PAGES = [10, 50, 100];   // これまでの実際のボーダーの1ページの件数（最初は 10。2026-10-17）
+const PER_PAGES = [10, 30, 50, 100];   // これまでの実際のボーダーの1ページの件数（最初は 10。2026-10-17「10,30,50,100にしよう」）
 const FORMAT = 2;              // data の形の版（BorderSiteExport.FormatVersion と同じ）
 const STALE_HOURS = 36;        // これより古ければ「更新が止まっている」と出す
 const RELOAD_MINUTES = 10;     // 開き直したとき、これだけたっていれば読み直す
