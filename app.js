@@ -736,9 +736,10 @@ setupFolds();
 // ---- 設定（利用者の指示、2026-10-16「上のヘッダのところに設定アイコンおいて。色の設定。各カードの表示非表示。順番の入れ替えを設定できるようにしよう。
 // もちろん設定したらブラウザに保存するようにしてね。色は和のイメージの色でお願い」） ----
 // 利用者が選んだ形: 表示・並べ替えの対象はパネル6つ（上のボーダー予想は常に先頭）、並べ替えは ↑↓ ボタン、
-// 配色は画面全体を和の色の組み合わせで（明るい地も1つ）。選んだものはすぐ画面に当て、このブラウザに覚える。
+// 配色は画面全体を和の色の組み合わせで。選んだものはすぐ画面に当て、このブラウザに覚える。
 // 配色の色の値は style.css の [data-theme]、最初に当てるのは theme.js（本文を描く前に当て、いつもの配色が一瞬見えないように）。
-// 暗い地 6 つ → 明るい地 3 つ（利用者の指示、2026-10-16「もう３種類色が欲しい」で 茜・桜・青磁 を足した）。
+// 「もう３種類色が欲しい」（2026-10-16）で 茜・桜・青磁 を足した。地はどれも名前の色そのもの（「背景色を指定のメイン色にしてほしいんだ」）なので、
+// 「明るい地」の書き添えはやめた（見本の色で分かる。藤・抹茶もパネルは白に近く、3つにだけ付けると食い違う）。
 // id は保存されているので変えない（夜桜は sakura、明るい桜は sakurairo）。色の値は tools/make-site-themes.py。
 const THEMES = [
   { id: 'ai', name: '藍', reading: 'あい' },
@@ -747,9 +748,9 @@ const THEMES = [
   { id: 'sakura', name: '夜桜', reading: 'よざくら' },
   { id: 'fuji', name: '藤', reading: 'ふじ' },
   { id: 'matcha', name: '抹茶', reading: 'まっちゃ' },
-  { id: 'washi', name: '和紙', reading: 'わし・明るい地' },
-  { id: 'sakurairo', name: '桜', reading: 'さくら・明るい地' },
-  { id: 'seiji', name: '青磁', reading: 'せいじ・明るい地' },
+  { id: 'washi', name: '和紙', reading: 'わし' },
+  { id: 'sakurairo', name: '桜', reading: 'さくら' },
+  { id: 'seiji', name: '青磁', reading: 'せいじ' },
 ];
 const LAYOUT_KEY = 'layout';
 const panelOf = (id) => document.querySelector(`#panels > section[aria-labelledby="${id}"]`);
