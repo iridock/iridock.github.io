@@ -1,22 +1,22 @@
-/* IriDock ボーダー予想（公開サイト）。暗めのダッシュボード（利用者の選択「a. ダッシュボード風」、2026-10-14）。
-   スコアの色は、色覚の違いがあっても見分けやすい組み合わせ（Okabe-Ito の空色・青緑・橙を暗い背景向けに明るくしたもの）。 */
+/* IriDock ボーダー予想（公開サイト）。ダッシュボード風（利用者の選択「a. ダッシュボード風」、2026-10-14）を、
+   和モダンの作りにした（2026-10-16「全体的に和モダンみたいな雰囲気にできる？また配色も含めてさ」）:
+   名前の色の平らな地・角を立てたパネル・細い線・色を使う所を絞る（見出しの縦線・スコアの短い線）・数字は Jost。 */
 :root {
-  --radius: 14px;
+  --radius: 6px;     /* 和モダンは角を立てる（前は 14px で、アプリのような丸い札に見えた） */
+  --r-sm: 3px;       /* ボタン・札・マス */
   --gutter: 16px;
 }
 
 /* ---- 配色（利用者の指示、2026-10-16「色の設定…色は和のイメージの色でお願い」）----
    設定で選ぶと、theme.js / app.js が <html data-theme="…"> を付け替える。設定の画面の見本にも同じ data-theme を付けて、その配色で描く。
-   色は変数だけで使う（直接書くと配色を変えても残る）。+2・+4・+6 の色は、どの配色でも 青・緑・橙 の順にして見分けやすくし、
-   色分け表は JavaScript で薄めて塗るので、同じ色を「赤, 緑, 青」の数（--c2-rgb など）でも持つ。
-   地・パネル・枠・文字まで、その配色の色の系統に染める（利用者の指示、2026-10-16「背景色とか全部合わせて変わるようにしてほしいな」。
-   前は暗い配色がどれもほぼ黒で、差し色くらいしか違わなかった）。並びは暗い地 6 つ → 明るい地 3 つ。
-   下の定義は tools/make-site-themes.py が作る。値を変えるときは、ここを手で直さず、その道具の THEMES を直して流す。 */
-/* 藍（あい）: 藍色の地。最初の設定。（地は藍色 #165e83。+2/+4/+6 は 『配色総鑑』No.347 の #00b49b・#b984af・#a6a159 を読める明るさにそろえた）。 */
+   色は変数だけで使う（直接書くと配色を変えても残る）。+2・+4・+6 の色は配色ごとに、色覚の違いがあっても見分けられる3色を選んである。
+   曜日ごとのボーダーは JavaScript で、配色ごとの濃淡の色（--heat-rgb。「赤, 緑, 青」の数）を薄めて塗る。
+   地・パネル・枠・文字まで、その配色の色の系統に染める（利用者の指示、2026-10-16「背景色とか全部合わせて変わるようにしてほしいな」）。
+   地は名前の色そのもの、パネルはその上で数字が読める深い色か白に近い色（茜は紅白の生成り）。
+   下の定義は tools/make-site-themes.py が作る。値を変えるときは、ここを手で直さず、その道具の PICKS を直して流す。 */
+/* 藍（あい）: 藍色の地。最初の設定。（地は藍色 #165e83。+2/+4/+6 は 伝統色の白群・芥子色・鴇色 の #83ccd2・#d0af4c・#f4b3c2 を読める明るさにそろえた）。 */
 :root, [data-theme="ai"] {
   --bg: #165e83;
-  --bg-glow: #2f7299;
-  --bg-glow-2: #025377;
   --panel: #092a3b;
   --panel-2: #143446;
   --line: #2a4657;
@@ -30,9 +30,10 @@
   --warn: #fecf7f;
   --warn-bg: rgba(254, 207, 127, 0.12);
   --warn-line: rgba(254, 207, 127, 0.45);
-  --c2: #69f3d7; --c2-rgb: 105, 243, 215;
-  --c4: #c790bd; --c4-rgb: 199, 144, 189;
-  --c6: #c6c279; --c6-rgb: 198, 194, 121;
+  --c2: #9de6ec;
+  --c4: #cf909f;
+  --c6: #d8bb66;
+  --heat-rgb: 145, 212, 254; --heat-flip: 0.5;
   --sat: #89c3fe;
   --sun: #ffa098;
   --bar-bg: rgba(22, 94, 131, 0.88);
@@ -50,8 +51,6 @@
 /* 墨と朱（すみとしゅ）: 墨の地に、朱の差し色。（地は墨 #595857。+2/+4/+6 は 『配色総鑑』No.274 の #5a82b3・#9a72aa・#8b835b を読める明るさにそろえた）。 */
 [data-theme="sumi"] {
   --bg: #595857;
-  --bg-glow: #6d6c6b;
-  --bg-glow-2: #4e4d4c;
   --panel: #272626;
   --panel-2: #313030;
   --line: #434242;
@@ -65,9 +64,10 @@
   --warn: #fecf7f;
   --warn-bg: rgba(254, 207, 127, 0.12);
   --warn-line: rgba(254, 207, 127, 0.45);
-  --c2: #bedafe; --c2-rgb: 190, 218, 254;
-  --c4: #bc92cd; --c4-rgb: 188, 146, 205;
-  --c6: #cdbf7a; --c6-rgb: 205, 191, 122;
+  --c2: #bddaff;
+  --c4: #bc92cd;
+  --c6: #c9bf8b;
+  --heat-rgb: 202, 202, 203; --heat-flip: 0.51;
   --sat: #89c3fe;
   --sun: #ffa098;
   --bar-bg: rgba(89, 88, 87, 0.88);
@@ -85,8 +85,6 @@
 /* 茜（あかね）: 茜色の地に生成り、茜の見出し（紅白の取り合わせ）。（地は茜色 #b7282e、パネルは生成り #fbfaf5。+2/+4/+6 は 『配色総鑑』No.338 の橙黄・深緑と藍色 の #165e83・#fcb315・#004f46 を読める明るさにそろえた）。 */
 [data-theme="akane"] {
   --bg: #b7282e;
-  --bg-glow: #d04242;
-  --bg-glow-2: #a91622;
   --panel: #fbfaf5;
   --panel-2: #f1f0e9;
   --line: #e0ded6;
@@ -100,9 +98,10 @@
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
-  --c2: #024e70; --c2-rgb: 2, 78, 112;
-  --c4: #2c8c7e; --c4-rgb: 44, 140, 126;
-  --c6: #7f5800; --c6-rgb: 127, 88, 0;
+  --c2: #024e70;
+  --c4: #46887d;
+  --c6: #7f5800;
+  --heat-rgb: 3, 83, 120; --heat-flip: 0.7;
   --sat: #2266a4;
   --sun: #a03f3c;
   --bar-bg: rgba(183, 40, 46, 0.88);
@@ -120,8 +119,6 @@
 /* 夜桜（よざくら）: 夜の桑の実色の地に、桜色の差し色。（地は桑の実色 #55295b。+2/+4/+6 は 『配色総鑑』No.248 の #b5b1d8・#704357・#bc892b を読める明るさにそろえた）。 */
 [data-theme="sakura"] {
   --bg: #55295b;
-  --bg-glow: #693c6f;
-  --bg-glow-2: #4a1e50;
   --panel: #331d36;
   --panel-2: #3d2741;
   --line: #4f3a52;
@@ -135,9 +132,10 @@
   --warn: #fecf7f;
   --warn-bg: rgba(254, 207, 127, 0.12);
   --warn-line: rgba(254, 207, 127, 0.45);
-  --c2: #d6d1ff; --c2-rgb: 214, 209, 255;
-  --c4: #d18daa; --c4-rgb: 209, 141, 170;
-  --c6: #e9b45b; --c6-rgb: 233, 180, 91;
+  --c2: #d6d1ff;
+  --c4: #c893a9;
+  --c6: #e4b568;
+  --heat-rgb: 255, 178, 189; --heat-flip: 0.52;
   --sat: #89c3fe;
   --sun: #ffa098;
   --bar-bg: rgba(85, 41, 91, 0.88);
@@ -155,8 +153,6 @@
 /* 藤（ふじ）: 藤紫の地。（地は藤紫 #a59aca。+2/+4/+6 は 『配色総鑑』No.338 の #004f46・#a62c37・#fcb315 を読める明るさにそろえた）。 */
 [data-theme="fuji"] {
   --bg: #a59aca;
-  --bg-glow: #b4acce;
-  --bg-glow-2: #968bba;
   --panel: #faf9ff;
   --panel-2: #f0eff7;
   --line: #dedce6;
@@ -170,9 +166,10 @@
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
-  --c2: #007064; --c2-rgb: 0, 112, 100;
-  --c4: #831825; --c4-rgb: 131, 24, 37;
-  --c6: #a07003; --c6-rgb: 160, 112, 3;
+  --c2: #46887d;
+  --c4: #78292d;
+  --c6: #7f5800;
+  --heat-rgb: 80, 67, 116; --heat-flip: 0.71;
   --sat: #2266a4;
   --sun: #a03f3c;
   --bar-bg: rgba(165, 154, 202, 0.88);
@@ -190,8 +187,6 @@
 /* 抹茶（まっちゃ）: 抹茶色の地。（地は抹茶色 #c5c56a。+2/+4/+6 は 『配色総鑑』No.265 の #1e0e3f・#d46d7a・#ffdd00 を読める明るさにそろえた）。 */
 [data-theme="matcha"] {
   --bg: #c5c56a;
-  --bg-glow: #d3d497;
-  --bg-glow-2: #b5b55a;
   --panel: #fbfcec;
   --panel-2: #f1f3dc;
   --line: #dfe1c8;
@@ -205,9 +200,10 @@
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
-  --c2: #62568f; --c2-rgb: 98, 86, 143;
-  --c4: #8e7a00; --c4-rgb: 142, 122, 0;
-  --c6: #7e1f33; --c6-rgb: 126, 31, 51;
+  --c2: #62568e;
+  --c4: #8c7a1c;
+  --c6: #772936;
+  --heat-rgb: 35, 90, 57; --heat-flip: 0.72;
   --sat: #2266a4;
   --sun: #a03f3c;
   --bar-bg: rgba(197, 197, 106, 0.88);
@@ -225,8 +221,6 @@
 /* 和紙（わし）: 生成り色の明るい地に、藍の差し色。昼の屋外向け。（地は生成り色 #fbfaf5。+2/+4/+6 は 『配色総鑑』No.299 の #819238・#c53c69・#eea78c を読める明るさにそろえた）。 */
 [data-theme="washi"] {
   --bg: #fbfaf5;
-  --bg-glow: #fcfcf8;
-  --bg-glow-2: #eae9e4;
   --panel: #fafaf9;
   --panel-2: #f0f0ef;
   --line: #dededc;
@@ -240,9 +234,10 @@
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
-  --c2: #9e3656; --c2-rgb: 158, 54, 86;
-  --c4: #434e00; --c4-rgb: 67, 78, 0;
-  --c6: #a8674e; --c6-rgb: 168, 103, 78;
+  --c2: #924258;
+  --c4: #434e00;
+  --c6: #a8674e;
+  --heat-rgb: 3, 83, 120; --heat-flip: 0.71;
   --sat: #2266a4;
   --sun: #a03f3c;
   --bar-bg: rgba(251, 250, 245, 0.88);
@@ -260,8 +255,6 @@
 /* 桜（さくら）: 撫子色の地に、紅の差し色。（地は撫子色（濃いめの桜色） #eebbcb。+2/+4/+6 は 『配色総鑑』No.257 の #006eb8・#a36aa5・#fcb315 を読める明るさにそろえた）。 */
 [data-theme="sakurairo"] {
   --bg: #eebbcb;
-  --bg-glow: #f5d0db;
-  --bg-glow-2: #ddabbb;
   --panel: #fff8fa;
   --panel-2: #f7edf0;
   --line: #e6dbde;
@@ -275,9 +268,10 @@
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
-  --c2: #247fc8; --c2-rgb: 36, 127, 200;
-  --c4: #642f67; --c4-rgb: 100, 47, 103;
-  --c6: #7f5800; --c6-rgb: 127, 88, 0;
+  --c2: #407fb8;
+  --c4: #642f67;
+  --c6: #7f5800;
+  --heat-rgb: 137, 32, 45; --heat-flip: 0.66;
   --sat: #2266a4;
   --sun: #a03f3c;
   --bar-bg: rgba(238, 187, 203, 0.88);
@@ -295,8 +289,6 @@
 /* 青磁（せいじ）: 青磁色の地。（地は青磁色 #7ebea5。+2/+4/+6 は 『配色総鑑』No.333 の #006eb8・#f8ed43・#ae5224 を読める明るさにそろえた）。 */
 [data-theme="seiji"] {
   --bg: #7ebea5;
-  --bg-glow: #9ec9b7;
-  --bg-glow-2: #6fae96;
   --panel: #effff8;
   --panel-2: #e0f7ed;
   --line: #cce5da;
@@ -310,9 +302,10 @@
   --warn: #825b00;
   --warn-bg: rgba(130, 91, 0, 0.12);
   --warn-line: rgba(130, 91, 0, 0.45);
-  --c2: #0263a7; --c2-rgb: 2, 99, 167;
-  --c4: #857e05; --c4-rgb: 133, 126, 5;
-  --c6: #782d00; --c6-rgb: 120, 45, 0;
+  --c2: #23649b;
+  --c4: #847e22;
+  --c6: #762f07;
+  --heat-rgb: 14, 91, 68; --heat-flip: 0.72;
   --sat: #2266a4;
   --sun: #a03f3c;
   --bar-bg: rgba(126, 190, 165, 0.88);
@@ -334,29 +327,27 @@
 
 html { -webkit-text-size-adjust: 100%; }
 
-/* ---- 書体（2026-10-16。利用者の言葉「フォントとか、文字の色も考えてね」に、選んだ形「見出しは明朝・本文はゴシック」） ----
-   本文と数字は Zen 角ゴシック New、見出しはしっぽり明朝。サイトに同梱して配る（外の会社へ閲覧者の情報を送らないため）。
-   どちらも SIL Open Font License 1.1（許諾の文は fonts/ にある）。サイトで使う文字だけに絞ってある（tools/make-site-fonts.py）。
-   入っていない文字や、読み込む前は端末の書体で出る（swap）。 */
+/* ---- 書体（2026-10-16） ----
+   はじめ「見出しは明朝・本文はゴシック」にしたが、「なんかフォント和風にするとださいな。全体的に和モダンみたいな雰囲気にできる？」で明朝をやめた。
+   日本語は Zen 角ゴシック New、数字と英字は Jost（Futura に近い幾何学的な書体。等幅の数字がある）。欧文を先に並べると、数字と英字だけ Jost になる。
+   サイトに同梱して配る（外の会社へ閲覧者の情報を送らないため）。どれも SIL Open Font License 1.1（許諾の文は fonts/ にある）。
+   サイトで使う文字だけに絞ってある（tools/make-site-fonts.py）。入っていない文字や、読み込む前は端末の書体で出る（swap）。 */
+@font-face { font-family: "Jost"; src: url("fonts/jost.woff2") format("woff2"); font-weight: 100 900; font-display: swap; size-adjust: 106%; }
 @font-face { font-family: "Zen Kaku Gothic New"; src: url("fonts/zenkaku-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Zen Kaku Gothic New"; src: url("fonts/zenkaku-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
 @font-face { font-family: "Zen Kaku Gothic New"; src: url("fonts/zenkaku-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
-@font-face { font-family: "Shippori Mincho"; src: url("fonts/shippori-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 :root {
-  --font-gothic: "Zen Kaku Gothic New", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
-  --font-mincho: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif;
+  --font-gothic: "Jost", "Zen Kaku Gothic New", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
 }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 500px at 15% -10%, var(--bg-glow), transparent 60%),
-    radial-gradient(900px 400px at 100% 0%, var(--bg-glow-2), transparent 55%),
-    var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);   /* 和モダンは平らな色面（前はぼかしの光を重ねていた） */
   color: var(--text);
   font-family: var(--font-gothic);
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
   min-height: 100vh;
 }
 
@@ -384,7 +375,7 @@ button, select, input { font: inherit; color: inherit; }
 
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .brand img { display: block; border-radius: 8px; }
-.brand .name { font-weight: 800; letter-spacing: 0.02em; }
+.brand .name { font-weight: 600; letter-spacing: 0.02em; }
 .brand .product { color: var(--on-bg-muted); font-weight: 600; }
 .updated { margin: 0; color: var(--on-bg-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 
@@ -392,11 +383,11 @@ button, select, input { font: inherit; color: inherit; }
 .bar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; min-width: 0; }
 .bar-band {
   padding: 2px 12px;
-  border-radius: 999px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line-2);
   background: var(--panel-2);
   color: var(--text);   /* 札はパネルの色なので、上の帯の文字色（背景の上の色）ではなくパネルの文字色 */
-  font-weight: 800;
+  font-weight: 600;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -409,7 +400,7 @@ button, select, input { font: inherit; color: inherit; }
   width: 40px;
   height: 40px;
   padding: 0;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line-2);
   background: var(--panel-2);
   color: var(--accent);
@@ -428,7 +419,7 @@ main {
 .notice {
   margin: 0 0 14px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--warn-line);
   background: var(--warn-bg);
   color: var(--warn);
@@ -440,7 +431,7 @@ main {
   appearance: none;
   -webkit-appearance: none;
   font: inherit;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text);
   background-color: var(--panel-2);
   background-image: var(--pick-arrow);   /* 色を画像に書き込むので、配色ごとに作った「∨」を使う（変数の色は画像の中に届かない） */
@@ -448,7 +439,7 @@ main {
   background-position: right 12px center;
   background-size: 0.5em auto;
   border: 1px solid var(--line-2);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   padding: 0 calc(0.5em + 22px) 0 14px;
   margin-right: 4px;
   cursor: pointer;
@@ -468,7 +459,7 @@ main {
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
-.hero h1 { color: var(--on-bg); margin: 0; font-size: clamp(22px, 4.6vw, 30px); line-height: 1.25; letter-spacing: 0.01em; }
+.hero h1 { color: var(--on-bg); margin: 0; font-size: clamp(21px, 4.4vw, 28px); line-height: 1.3; }
 .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
 
 .cards {
@@ -483,13 +474,16 @@ main {
   padding: 18px 18px 16px;
   border-radius: var(--radius);
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  background: var(--panel);
   min-width: 0;
 }
+/* スコアの色は、左上の短い線だけ（前は上いっぱいの色帯）。 */
 .card::before {
   content: "";
   position: absolute;
-  inset: 0 0 auto 0;
+  top: 0;
+  left: 18px;
+  width: 32px;
   height: 3px;
   background: var(--score-color, var(--accent));
 }
@@ -499,24 +493,22 @@ main {
 
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pill {
-  font-weight: 800;
-  font-size: 13px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.06em;
   color: var(--score-color);
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  padding: 0 10px;
 }
 .tag-forecast { font-size: 12px; color: var(--faint); }
 
 .big {
   margin: 10px 0 2px;
-  font-size: clamp(30px, 6.2vw, 44px);
-  font-weight: 800;
+  font-size: clamp(32px, 6.4vw, 46px);
+  font-weight: 500;
   line-height: 1.1;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
   font-variant-numeric: tabular-nums;
 }
-.big small { font-size: 0.4em; font-weight: 700; color: var(--muted); margin-left: 4px; }
+.big small { font-size: 0.38em; font-weight: 500; color: var(--muted); margin-left: 5px; letter-spacing: 0.06em; }
 
 .safe {
   display: flex;
@@ -529,15 +521,15 @@ main {
   font-size: 13px;
   color: var(--muted);
 }
-.safe b { color: var(--text); font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.safe b { color: var(--text); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-.meter { position: relative; height: 6px; margin-top: 10px; border-radius: 999px; background: var(--line); }
-.meter span { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--score-color); opacity: 0.85; }
+.meter { position: relative; height: 3px; margin-top: 12px; background: var(--line); }
+.meter span { position: absolute; inset: 0 auto 0 0; background: var(--score-color); }
 
 .caution {
   margin: 10px 0 0;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: var(--warn-bg);
   color: var(--warn);
   font-size: 12.5px;
@@ -547,7 +539,7 @@ main {
 .shared .stale {
   margin: 0 0 8px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--warn-line);
   background: var(--warn-bg);
   color: var(--warn);
@@ -569,7 +561,7 @@ main {
   display: inline-flex;
   padding: 3px;
   gap: 2px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--panel);
   border: 1px solid var(--line);
 }
@@ -578,7 +570,7 @@ main {
   background: transparent;
   color: var(--muted);
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   font-weight: 700;
   font-size: 13.5px;
   cursor: pointer;
@@ -615,11 +607,13 @@ main {
   flex-wrap: wrap;
   margin-bottom: 10px;
 }
-.panel h2 { margin: 0; font-size: 17px; color: var(--head); }
-.panel h2 small { color: var(--faint); font-weight: 600; font-size: 12px; margin-left: 6px; }
-/* 見出しは明朝。見出しの横の小さな説明・ランク帯を選ぶ欄は、読みやすいゴシックのまま。 */
-.hero h1, .panel h2, .settings-head h2, .settings-block h3 { font-family: var(--font-mincho); font-weight: 700; letter-spacing: 0.04em; }
-.panel h2 small, .band-pick { font-family: var(--font-gothic); letter-spacing: 0; }
+.panel h2 { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: 0.1em; color: var(--text); }
+/* 見出しの左の短い縦線だけを差し色にする（文字は墨・生成りのまま。色を使う所を絞るのが和モダン） */
+.panel h2::before { content: ""; display: inline-block; width: 3px; height: 1em; margin-right: 10px; vertical-align: -0.14em; background: var(--head); }
+.panel h2 small { color: var(--faint); font-weight: 400; font-size: 12px; margin-left: 8px; letter-spacing: 0.04em; }
+.hero h1, .settings-head h2 { font-weight: 500; letter-spacing: 0.08em; }
+.settings-block h3 { font-weight: 500; letter-spacing: 0.1em; }
+.band-pick { letter-spacing: 0.02em; }
 
 /* ---- パネルの開け閉め（2026-10-16）。閉じても見出しは残す ---- */
 /* 文字でなく矢印のアイコン（「閉じる。開くはダサいから、アイコンでわかりやすいのでして」）。上の帯の ↑ ボタンと同じ形で少し小さく。
@@ -633,7 +627,7 @@ main {
   height: 32px;
   padding: 0;
   border: 1px solid var(--line-2);
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   background: var(--panel-2);
   color: var(--muted);
   cursor: pointer;
@@ -657,12 +651,12 @@ main {
   border-radius: var(--radius);
   background: var(--panel);
   color: var(--text);
-  box-shadow: 0 16px 48px var(--shadow);
+  box-shadow: 0 12px 32px var(--shadow);
   overflow-y: auto;
 }
 .settings::backdrop { background: rgba(0, 0, 0, 0.5); }
 .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
-.settings-head h2 { margin: 0; font-size: 19px; color: var(--head); }
+.settings-head h2 { margin: 0; font-size: 18px; color: var(--text); }
 .settings-block { margin-top: 14px; }
 .settings-block h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
 .theme-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -671,26 +665,26 @@ main {
   gap: 6px;
   padding: 8px;
   border: 1px solid var(--line-2);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--panel-2);
   cursor: pointer;
   text-align: left;
 }
 .theme-opt[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.theme-opt .theme-name { font-size: 13px; font-weight: 700; }
-.theme-opt .theme-name small { display: block; color: var(--muted); font-weight: 600; font-size: 11px; }
+.theme-opt .theme-name { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; }
+.theme-opt .theme-name small { display: block; color: var(--muted); font-weight: 400; font-size: 11px; }
 /* 見本は、その配色の data-theme を付けて描く（地・差し色・+2/+4/+6 の色）。 */
-.swatch { display: flex; align-items: center; height: 34px; padding: 0 6px; border-radius: 7px; background: var(--bg); border-top: 3px solid var(--accent); }
-.swatch .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px 3px 6px; border-radius: 5px; background: var(--panel); border: 1px solid var(--line); }
-.swatch .chip b { font-family: var(--font-mincho); font-size: 12px; line-height: 1; color: var(--head); margin-right: 2px; }
-.swatch i { width: 10px; height: 10px; border-radius: 50%; }
+.swatch { display: flex; align-items: center; height: 34px; padding: 0 6px; border-radius: 2px; background: var(--bg); border-top: 3px solid var(--accent); }
+.swatch .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px 3px 6px; border-radius: 2px; background: var(--panel); border: 1px solid var(--line); }
+.swatch .chip b { font-size: 12px; font-weight: 500; line-height: 1; color: var(--head); margin-right: 2px; }
+.swatch i { width: 9px; height: 9px; }
 .swatch .s2 { background: var(--c2); } .swatch .s4 { background: var(--c4); } .swatch .s6 { background: var(--c6); }
 .layout-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.layout-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.layout-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); }
 .layout-list label { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; font-size: 14px; }
 .layout-list input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
 .layout-list li.off label span { color: var(--faint); }
-.layout-list .move { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); color: var(--muted); cursor: pointer; }
+.layout-list .move { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--panel); color: var(--muted); cursor: pointer; }
 .layout-list .move:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .layout-list .move:disabled { opacity: 0.35; cursor: default; }
 .layout-list .move svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -720,7 +714,7 @@ main {
   top: 6px;
   min-width: 150px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line-2);
   background: var(--tip-bg);
   font-size: 12.5px;
@@ -771,26 +765,28 @@ table.answers td .wa { display: block; font-size: 15px; font-weight: 700; }
 table.answers td .wp { display: block; font-size: 11.5px; color: var(--faint); }
 table.answers td .pending { display: block; font-size: 12.5px; color: var(--muted); }
 
-/* ---- 曜日×週の色分け表（案 C、2026-10-14）。色はスコアの色の濃さ。点線の枠は予想 ---- */
+/* ---- 曜日×週の色分け表（案 C、2026-10-14）。点線の枠は予想 ----
+   色は、配色ごとの1つの色（--heat-rgb。藍なら藍）の濃淡（2026-10-16）。前は +2/+4/+6 の色を 85% まで濃く塗っていて、
+   鮮やかな色の塊になり「曜日毎のカードの色の濃さのところだけ見た目浮いちゃっている」と言われた。 */
 .heatwrap { overflow-x: auto; }
-table.heat { table-layout: fixed; border-collapse: separate; border-spacing: 4px; min-width: 290px; }
+table.heat { table-layout: fixed; border-collapse: separate; border-spacing: 3px; min-width: 290px; }
 table.heat th, table.heat td { padding: 4px 1px; text-align: center; white-space: nowrap; }
 table.heat thead th { position: static; background: none; border: 0; }
-table.heat .hw { display: block; font-size: 13px; font-weight: 800; color: var(--text); }
+table.heat .hw { display: block; font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: 0.08em; }
 table.heat th.sat .hw { color: var(--sat); }   /* 土曜は青（+2 の色は配色ごとに青とは限らない） */
 table.heat th.sun .hw { color: var(--sun); }
 table.heat .ha { display: block; font-size: 11px; font-weight: 600; color: var(--faint); }
 table.heat tbody tr { border: 0; }
 table.heat tbody tr:hover { background: none; }
-table.heat td { height: 46px; border-radius: 8px; background: var(--cell); }
+table.heat td { height: 46px; border-radius: 2px; background: var(--cell); }
 table.heat td .hd { display: block; font-size: 10.5px; line-height: 1.3; color: var(--muted); }
-table.heat td .hv { display: block; font-size: 12.5px; line-height: 1.3; font-weight: 700; }
+table.heat td .hv { display: block; font-size: 13px; line-height: 1.3; font-weight: 500; }
 table.heat td.dark .hd, table.heat td.dark .hv { color: var(--on-strong); }
 table.heat td.blank .hv { color: var(--faint); font-weight: 400; }
 table.heat td.later { background: none; }
 table.heat td.later .hd { color: var(--faint); }
-table.heat td.fc { outline: 1.5px dashed var(--text); outline-offset: -3px; cursor: pointer; }
-table.heat td.today { box-shadow: inset 0 0 0 2px var(--accent); }
+table.heat td.fc { outline: 1px dashed var(--muted); outline-offset: -3px; cursor: pointer; }
+table.heat td.today { box-shadow: inset 0 0 0 1.5px var(--accent); }
 table.heat td.on { outline: 2px solid var(--accent); outline-offset: -3px; }
 table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 
@@ -805,14 +801,14 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
   gap: 10px;
   padding: 8px 10px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
 .overview button:hover { background: var(--panel-2); }
 .overview button[aria-current="true"] { background: var(--panel-2); border-color: var(--line-2); }
-.overview .band { font-weight: 800; font-variant-numeric: tabular-nums; }
+.overview .band { font-weight: 600; font-variant-numeric: tabular-nums; }
 .overview .nums { display: flex; gap: 10px; font-size: 13px; font-variant-numeric: tabular-nums; overflow: hidden; }
 .overview .nums span { white-space: nowrap; }
 .overview .none { color: var(--faint); font-size: 12.5px; }
@@ -828,7 +824,7 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 .filters input[type="date"] {
   min-width: 0;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line-2);
   background: var(--panel-2);
   color: var(--text);
@@ -839,13 +835,13 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 .filters label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .filters select {
   padding: 6px 8px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line-2);
   background: var(--panel-2);
 }
 button.ghost {
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line-2);
   background: transparent;
   color: var(--muted);
@@ -853,7 +849,7 @@ button.ghost {
 }
 button.ghost:hover { color: var(--text); }
 
-.tablewrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--line); }
+.tablewrap { overflow-x: auto; border-radius: var(--r-sm); border: 1px solid var(--line); }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 th, td { padding: 8px 12px; text-align: left; white-space: nowrap; }
 thead th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-size: 12.5px; font-weight: 700; border-bottom: 1px solid var(--line); }

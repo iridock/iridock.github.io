@@ -32,8 +32,6 @@ const state = {
 };
 const HEAT_WEEKS = 12;         // 曜日×週の色分け表に並べる過去の週の数（今週を含む）
 const MONDAY_FIRST = [1, 2, 3, 4, 5, 6, 0];
-// 色分け表の +2・+4・+6 の色。配色ごとに変わるので、style.css の --c2-rgb などから読む（前は藍の色の数をここに書いていた）。
-const rgbOf = (score) => getComputedStyle(document.documentElement).getPropertyValue(`--c${score}-rgb`).trim() || '86, 180, 233';
 
 const nf = new Intl.NumberFormat('ja-JP');
 const compact = new Intl.NumberFormat('ja-JP', { notation: 'compact', maximumFractionDigits: 1 });
@@ -614,10 +612,15 @@ function renderAnswers() {
 // ---- 曜日×週の色分け表（利用者が選んだ案 C、2026-10-14） ----
 // 横は月〜日、縦は直近12週と、予想のある来週まで。色が濃いほどボーダーが高い（表の中の最小〜最大で濃さを決める）。
 // 今日から先は予想を点線の枠で入れ、過去の同じ曜日と並べて見比べられるようにする。月曜・月初が高いといった癖も見える。
+const HEAT_MIN = 0.05, HEAT_MAX = 0.75;   // 濃淡の幅（いちばん低い日はほぼ地のまま）
 function renderHeat() {
   const cls = current();
   const score = state.heatScore;
-  const rgb = rgbOf(score);
+  // 色は配色ごとの1つの色の濃淡（2026-10-16）。前は +2/+4/+6 の色を 85% まで濃く塗り、「見た目浮いちゃっている」と言われた。
+  // 文字を --on-strong に切り替える濃さは、配色ごとに tools/make-site-themes.py が測って --heat-flip に書く。
+  const css = getComputedStyle(document.documentElement);
+  const rgb = css.getPropertyValue('--heat-rgb').trim() || '86, 180, 233';
+  const flip = Number(css.getPropertyValue('--heat-flip')) || 0.55;
   const idx = SCORES.indexOf(score) + 1;
   const today = dayNumber(jstToday());
   const mondayOf = (n) => n - ((new Date(n * 86400000).getUTCDay() + 6) % 7);
@@ -659,9 +662,9 @@ function renderHeat() {
       const td = el('td', { class: names.join(' ') });
       if (c.value != null) {
         const t = hi > lo ? (c.value - lo) / (hi - lo) : 0.5;
-        const alpha = 0.08 + 0.77 * t;
+        const alpha = HEAT_MIN + (HEAT_MAX - HEAT_MIN) * t;
         td.style.backgroundColor = `rgba(${rgb},${alpha.toFixed(2)})`;
-        if (alpha >= 0.55) td.classList.add('dark');
+        if (alpha >= flip) td.classList.add('dark');
         td.title = `${mdw(c.iso)} ${c.forecast ? 'のボーダー予想' : 'の実際のボーダー'} +${score}: ${fmt(c.value)} pt`;
       }
       if (c.forecast) { td.dataset.day = c.iso; td.tabIndex = 0; }
