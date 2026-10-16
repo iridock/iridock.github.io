@@ -577,6 +577,14 @@ const ANSWER_ROWS = 30;        // 帯の表に出す日数
 const pct1 = (v) => `${v.toFixed(1)}%`;
 // 表の上のまとめの文（全ランク帯の外れの真ん中など）・日ごとの外れの真ん中の札・「まだ答え合わせできた日がありません…」は出さない
 // （利用者の指示、2026-10-16「…の説明もいらない」「日ごとの外れの真ん中の札…いらない」「まだ答え合わせできた日がありません…の文…いらない」）。
+// その日最後の「95%の確率で取れるライン」（利用者の指示、2026-10-16「これまでの答え合わせに95%ラインもいれてくれない？」）。
+// 越えた日の ▲ や色分けは付けない（2026-10-16「▲ は実際が…を越えた日です。の説明もいらないし、機能もいらない」）。
+// スマホの幅では「ライン」を省いて「95% 134,276」にする（入り切らず、表が右へはみ出すため）。
+function lineOf(points) {
+  const s = el('span', { class: 'wl', title: 'その日最後の「95%の確率で取れるライン」' }, '95%');
+  s.append(el('span', { class: 'long' }, 'ライン'), ` ${fmt(points)}`);
+  return s;
+}
 function renderAnswers() {
   const rows = state.answers.get(state.band);
   const byDate = new Map();
@@ -596,12 +604,14 @@ function renderAnswers() {
         td.append(el('span', { class: 'none' }, '—'));
       } else if (r[4] == null) {
         td.append(el('span', { class: 'pending' }, '結果待ち'), el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`));
+        if (r[3] != null) td.append(lineOf(r[3]));
       } else {
         // 実際が「95%の確率で取れるライン」を越えた日の ▲ と色分けは付けない（利用者の指示、2026-10-16「▲ は実際が…を越えた日です。の説明もいらないし、機能もいらない」）。
         // 差は別の部品にして、スマホの幅では次の行に分ける（1行だと 390px の幅で表が右へはみ出した。2026-10-16）
         const wp = el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`);
         wp.append(el('span', { class: 'wd' }, `（${r[5] > 0 ? '+' : ''}${pct1(r[5])}）`));
         td.append(el('span', { class: 'wa', title: '実際のボーダー' }, fmt(r[4])), wp);
+        if (r[3] != null) td.append(lineOf(r[3]));
       }
       tr.append(td);
     }

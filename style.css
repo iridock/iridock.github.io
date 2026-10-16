@@ -868,6 +868,7 @@ table.answers th[scope="row"] { font-weight: 700; color: var(--text); font-varia
 table.answers td .wa { display: block; font-size: 16px; font-weight: 600; }
 table.answers td .wp { display: block; font-size: 11.5px; color: var(--faint); }
 table.answers td .pending { display: block; font-size: 12.5px; color: var(--muted); }
+table.answers td .wl { display: block; font-size: 11.5px; color: var(--muted); }   /* その日最後の 95% のライン */
 
 /* ---- 曜日×週の色分け表（案 C、2026-10-14）。点線の枠は予想 ----
    色は、配色ごとの1つの色（--heat-rgb。藍なら藍）の濃淡（2026-10-16）。前は +2/+4/+6 の色を 85% まで濃く塗っていて、
@@ -1017,6 +1018,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   table.answers th, table.answers td { padding: 8px 5px; }
   table.answers th:first-child, table.answers td:first-child { padding-left: 8px; }
   table.answers td .wd { display: block; }   /* 予想との差は次の行に（1行だと表が右へはみ出した） */
+  table.answers td .wl { font-size: 11px; }
+  table.answers td .wl .long { display: none; }   /* 「95%ライン」→「95%」（入り切らないため） */
   table.answers td .wa { font-size: 14px; }
   table.answers td .wp { font-size: 11px; }
   table.answers th[scope="row"] { font-size: 14px; white-space: normal; }   /* 曜日は次の行に回してよい（6桁の帯で表がはみ出した） */
