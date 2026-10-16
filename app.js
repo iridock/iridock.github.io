@@ -763,18 +763,29 @@ const panelOf = (id) => document.querySelector(`#panels > section[aria-labelledb
 const DEFAULT_ORDER = [...document.querySelectorAll('#panels > section[aria-labelledby]')].map((s) => s.getAttribute('aria-labelledby'));
 const panelName = (id) => headingText($(id)) || id;
 
+// 最初は表示しないパネル（設定でオンにすると出る）。並びは index.html の順で、答え合わせはいちばん下
+// （2026-10-16「これまでの答え合わせは一番下でよくて、デフォルト非表示にして」）。
+const DEFAULT_HIDDEN = ['answer-title'];
+// 覚えた並びの形の版。版 1（印なし）は、答え合わせが2番目で表示するのが既定だったころのもの。
+const LAYOUT_VERSION = 2;
 function loadLayout() {
   let saved = {};
   try { saved = JSON.parse(store.get(LAYOUT_KEY) || '{}') || {}; } catch { saved = {}; }
   const known = new Set(DEFAULT_ORDER);
   // 覚えた並びに無いパネル（あとでサイトに足したもの）は、後ろに足す。もう無いパネルは捨てる。
-  const order = (Array.isArray(saved.order) ? saved.order : []).filter((id, i, all) => known.has(id) && all.indexOf(id) === i);
+  let order = (Array.isArray(saved.order) ? saved.order : []).filter((id, i, all) => known.has(id) && all.indexOf(id) === i);
+  const hidden = Array.isArray(saved.hidden) ? saved.hidden.filter((id) => known.has(id)) : [...DEFAULT_HIDDEN];
+  // 版 1 で覚えた並びは、答え合わせだけ新しい既定（いちばん下・表示しない）に合わせる。ほかのパネルの選択はそのまま。
+  // 版 1 では「答え合わせが見えている」のが既定で、選んで見えるようにしたのかが分からないため。次に設定を変えると版 2 で覚える。
+  if (Array.isArray(saved.order) && saved.v !== LAYOUT_VERSION) {
+    order = order.filter((id) => id !== 'answer-title');
+    if (!hidden.includes('answer-title')) hidden.push('answer-title');
+  }
   for (const id of DEFAULT_ORDER) if (!order.includes(id)) order.push(id);
-  const hidden = new Set((Array.isArray(saved.hidden) ? saved.hidden : []).filter((id) => known.has(id)));
-  return { order, hidden };
+  return { order, hidden: new Set(hidden) };
 }
 function saveLayout(layout) {
-  store.set(LAYOUT_KEY, JSON.stringify({ order: layout.order, hidden: [...layout.hidden] }));
+  store.set(LAYOUT_KEY, JSON.stringify({ v: LAYOUT_VERSION, order: layout.order, hidden: [...layout.hidden] }));
 }
 function applyLayout(layout = loadLayout()) {
   const box = $('panels');
