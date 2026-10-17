@@ -1035,6 +1035,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   table.answers th:first-child, table.answers td:first-child { padding-left: 8px; }
   table.answers td .wd { display: block; }   /* 予想との差は次の行に（1行だと表が右へはみ出した） */
   table.answers td .wl, table.answers td .wn { font-size: 11px; }
+  table.answers td .wn .long { display: none; }   /* 「今の計算」→「今」（入り切らないため） */
   table.answers td .wa { font-size: 14px; }
   table.answers td .wp { font-size: 11px; }
   table.answers th[scope="row"] { font-size: 14px; white-space: normal; }   /* 曜日は次の行に回してよい（6桁の帯で表がはみ出した） */
