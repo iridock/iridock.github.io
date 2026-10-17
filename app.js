@@ -25,7 +25,7 @@ const state = {
   day: null,
   range: 30,
   history: new Map(),          // 帯 → 新しい順の [日付, +2, +4, +6]（actuals.json）
-  answers: new Map(),          // 帯 → 答え合わせの新しい順の [日付, スコア, その日最後の予想, 95%のライン, 実際, 差%]（results.json）
+  answers: new Map(),          // 帯 → 答え合わせの新しい順の [日付, スコア, その日最後の予想, 安全圏（90% の線。10/18 より前は null）, 実際, 差%]（results.json）
   sort: { key: 'date', asc: false },
   page: 0,                     // これまでの実際のボーダーの、いま見ているページ（0 から）
   perPage: PER_PAGES[0],
@@ -277,21 +277,23 @@ function renderHero() {
     big.append(el('small', {}, 'pt'));
     card.append(big);
 
-    // 「95%の確率で取れるライン」= ここまで届いていれば、過去の記録で 95% の日にそのスコアが取れていたポイント
-    // （利用者の指示、2026-10-14。前は「ここまで上げれば取れる（95%）」で、伝わりにくかった）。
-    if (c.safe95 != null) {
+    // 「安全圏」= ここまで上げておけば、過去の記録で 10 日に 9 日はそのスコアが取れていたポイント（90% の線）。
+    // 利用者の決定、2026-10-18「今95％ラインを表示しているのを90％ラインに変更しよう」
+    // 「ライバーが確認してだいたいここまであげておけばとれるよなっていうのを示したいんだよね。あきらかな外れ値の場合は注意書きでわかるし」。
+    // 前は「95%の確率で取れるライン」（2026-10-14〜）、その前は「ここまで上げれば取れる（95%）」。
+    if (c.safe90 != null) {
       const safe = el('div', { class: 'safe' });
-      safe.append(el('span', {}, '95%の確率で取れるライン'), el('b', {}, `${fmt(c.safe95)} pt`));
+      safe.append(el('span', {}, '安全圏'), el('b', {}, `${fmt(c.safe90)} pt`));
       card.append(safe);
-      const ratio = Math.max(0, Math.min(1, c.points / c.safe95));
-      const meter = el('div', { class: 'meter', role: 'img', 'aria-label': `ボーダー予想は「95%の確率で取れるライン」の ${Math.round(ratio * 100)}% の高さ` });
+      const ratio = Math.max(0, Math.min(1, c.points / c.safe90));
+      const meter = el('div', { class: 'meter', role: 'img', 'aria-label': `ボーダー予想は安全圏の ${Math.round(ratio * 100)}% の高さ` });
       const fill = el('span');
       fill.style.width = `${(ratio * 100).toFixed(1)}%`;
       meter.append(fill);
       card.append(meter);
     } else {
       const safe = el('div', { class: 'safe' });
-      safe.append(el('span', {}, '95%の確率で取れるラインは、まだ出せません（記録が足りないため）'));
+      safe.append(el('span', {}, '安全圏は、まだ出せません（記録が足りないため）'));
       card.append(safe);
     }
 
@@ -358,7 +360,7 @@ function renderChart() {
 
   const values = [];
   for (const r of list) for (let i = 1; i <= 3; i++) if (r[i] != null) values.push(r[i]);
-  for (const f of forecasts) for (const c of f.cards) { values.push(c.points); if (c.safe95 != null) values.push(c.safe95); }
+  for (const f of forecasts) for (const c of f.cards) { values.push(c.points); if (c.safe90 != null) values.push(c.safe90); }
   if (values.length === 0) {
     const t = svgEl('text', { class: 'tick', x: W / 2, y: H / 2, 'text-anchor': 'middle' });
     t.textContent = 'この期間の記録がありません';
@@ -387,15 +389,15 @@ function renderChart() {
     svg.append(t);
   }
 
-  // 予想の幅（予想〜95%の確率で取れるライン）を帯で塗る。先の日ほど太くなるので、どこまで上げれば安全かと、
+  // 予想の幅（予想〜安全圏）を帯で塗る。先の日ほど太くなるので、どこまで上げれば安全かと、
   // 先の日ほど当てにならないことが目で分かる（利用者が選んだ案 B、2026-10-14）。線より先に描いて、下に敷く。
   for (const s of SCORES) {
     const pts = forecasts
       .map((f) => ({ n: dayNumber(f.date), card: f.cards.find((c) => c.score === s) }))
-      .filter((f) => f.card && f.card.safe95 != null);
+      .filter((f) => f.card && f.card.safe90 != null);
     if (pts.length < 2) continue;
     const at = (f, v) => `${x(f.n).toFixed(1)},${y(v).toFixed(1)}`;
-    const upper = pts.map((f) => at(f, f.card.safe95));
+    const upper = pts.map((f) => at(f, f.card.safe90));
     const lower = pts.map((f) => at(f, f.card.points)).reverse();
     svg.append(svgEl('polygon', { class: 'band', fill: `var(--c${s})`, points: [...upper, ...lower].join(' ') }));
     svg.append(svgEl('polyline', { class: 'fsl', stroke: `var(--c${s})`, points: upper.join(' ') }));
@@ -433,7 +435,7 @@ function renderChart() {
     ...forecasts.map((f) => ({
       date: f.date,
       values: Object.fromEntries(f.cards.map((c) => [c.score, c.points])),
-      safe: Object.fromEntries(f.cards.map((c) => [c.score, c.safe95])),
+      safe: Object.fromEntries(f.cards.map((c) => [c.score, c.safe90])),
       forecast: true,
     })),
   ];
@@ -449,7 +451,7 @@ function renderChart() {
     tip.replaceChildren(el('b', {}, `${mdw(best.date)} ${best.forecast ? 'のボーダー予想' : 'の実際のボーダー'}`),
       ...SCORES.map((s) => {
         const row = el('span', { class: `row c${s}` });
-        const safe = best.forecast && best.safe?.[s] != null ? `（95% ${fmt(best.safe[s])}）` : '';
+        const safe = best.forecast && best.safe?.[s] != null ? `（安全圏 ${fmt(best.safe[s])}）` : '';
         row.append(el('span', {}, `+${s}`), el('span', {}, fmt(best.values[s]) + safe));
         return row;
       }));
@@ -550,7 +552,7 @@ function renderTable() {
 }
 
 // ---- 1週間のボーダー予想（利用者の指示「ボーダー予想は本日から一週間分みれるようにして」、2026-10-14） ----
-// 大きい数字がボーダー予想、小さい数字が「95%の確率で取れるライン」。行を押すと、その日が上のカードに大きく出る。
+// 大きい数字がボーダー予想、小さい数字が安全圏（90% の線）。行を押すと、その日が上のカードに大きく出る。
 function renderWeek() {
   const cls = current();
   $('week-rows').replaceChildren(...forecastDays().map((d) => {
@@ -569,7 +571,7 @@ function renderWeek() {
       const td = el('td', { class: `n c${s}` });
       if (c) {
         td.append(el('span', { class: 'wf' }, fmt(c.points)));
-        if (c.safe95 != null) td.append(el('span', { class: 'ws', title: '95%の確率で取れるライン' }, fmt(c.safe95)));
+        if (c.safe90 != null) td.append(el('span', { class: 'ws', title: '安全圏（ここまで上げておけば、10日に9日は取れるライン）' }, fmt(c.safe90)));
         // 前の同じ曜日の実際と比べた ▲▼ は出さない（2026-10-14 に案 D として入れたが、利用者の指示 2026-10-16「1週間のボーダー予想の▲▼の機能もいらない」で外した）。
       } else {
         td.append(el('span', { class: 'none' }, '—'));
@@ -586,13 +588,11 @@ const ANSWER_ROWS = 30;        // 帯の表に出す日数
 const pct1 = (v) => `${v.toFixed(1)}%`;
 // 表の上のまとめの文（全ランク帯の外れの真ん中など）・日ごとの外れの真ん中の札・「まだ答え合わせできた日がありません…」は出さない
 // （利用者の指示、2026-10-16「…の説明もいらない」「日ごとの外れの真ん中の札…いらない」「まだ答え合わせできた日がありません…の文…いらない」）。
-// その日最後の「95%の確率で取れるライン」（利用者の指示、2026-10-16「これまでの答え合わせに95%ラインもいれてくれない？」）。
+// その日最後の安全圏（90% の線。利用者の指示、2026-10-16「これまでの答え合わせに95%ラインもいれてくれない？」、
+// 2026-10-18 に 95% から 90% の「安全圏」に替えた）。10/18 より前の日は 95% の線しか覚えていないので出さない（過去の予想は書き換えない）。
 // 越えた日の ▲ や色分けは付けない（2026-10-16「▲ は実際が…を越えた日です。の説明もいらないし、機能もいらない」）。
-// スマホの幅では「ライン」を省いて「95% 134,276」にする（入り切らず、表が右へはみ出すため）。
 function lineOf(points) {
-  const s = el('span', { class: 'wl', title: 'その日最後の「95%の確率で取れるライン」' }, '95%');
-  s.append(el('span', { class: 'long' }, 'ライン'), ` ${fmt(points)}`);
-  return s;
+  return el('span', { class: 'wl', title: 'その日最後の安全圏' }, `安全圏 ${fmt(points)}`);
 }
 function renderAnswers() {
   const rows = state.answers.get(state.band);
@@ -615,7 +615,7 @@ function renderAnswers() {
         td.append(el('span', { class: 'pending' }, '結果待ち'), el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`));
         if (r[3] != null) td.append(lineOf(r[3]));
       } else {
-        // 実際が「95%の確率で取れるライン」を越えた日の ▲ と色分けは付けない（利用者の指示、2026-10-16「▲ は実際が…を越えた日です。の説明もいらないし、機能もいらない」）。
+        // 実際が安全圏を越えた日の ▲ と色分けは付けない（利用者の指示、2026-10-16「▲ は実際が…を越えた日です。の説明もいらないし、機能もいらない」）。
         // 差は別の部品にして、スマホの幅では次の行に分ける（1行だと 390px の幅で表が右へはみ出した。2026-10-16）
         const wp = el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`);
         wp.append(el('span', { class: 'wd' }, `（${r[5] > 0 ? '+' : ''}${pct1(r[5])}）`));
