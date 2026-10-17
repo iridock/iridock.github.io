@@ -594,6 +594,13 @@ const pct1 = (v) => `${v.toFixed(1)}%`;
 function lineOf(points) {
   return el('span', { class: 'wl', title: 'その日最後の安全圏' }, `安全圏 ${fmt(points)}`);
 }
+// 今の計算での予想（利用者の指示、2026-10-18「webのこれまでの答え合わせに今の計算での予想もだしてほしい」）。
+// バッチが、その日に予想した時刻までに届いていた記録だけで、今のやり方で計算し直したもの（r[6]）と、実際との差（r[7]）。ここでは計算しない。
+function nowOf(r) {
+  const s = el('span', { class: 'wn', title: 'その日と同じ材料で、今のやり方で計算し直した予想' }, `今の計算 ${fmt(r[6])}`);
+  if (r[7] != null) s.append(el('span', { class: 'wd' }, `（${r[7] > 0 ? '+' : ''}${pct1(r[7])}）`));
+  return s;
+}
 function renderAnswers() {
   const rows = state.answers.get(state.band);
   const byDate = new Map();
@@ -613,6 +620,7 @@ function renderAnswers() {
         td.append(el('span', { class: 'none' }, '—'));
       } else if (r[4] == null) {
         td.append(el('span', { class: 'pending' }, '結果待ち'), el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`));
+        if (r[6] != null) td.append(nowOf(r));
         if (r[3] != null) td.append(lineOf(r[3]));
       } else {
         // 実際が安全圏を越えた日の ▲ と色分けは付けない（利用者の指示、2026-10-16「▲ は実際が…を越えた日です。の説明もいらないし、機能もいらない」）。
@@ -620,6 +628,7 @@ function renderAnswers() {
         const wp = el('span', { class: 'wp' }, `予想 ${fmt(r[2])}`);
         wp.append(el('span', { class: 'wd' }, `（${r[5] > 0 ? '+' : ''}${pct1(r[5])}）`));
         td.append(el('span', { class: 'wa', title: '実際のボーダー' }, fmt(r[4])), wp);
+        if (r[6] != null) td.append(nowOf(r));
         if (r[3] != null) td.append(lineOf(r[3]));
       }
       tr.append(td);

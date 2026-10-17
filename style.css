@@ -871,6 +871,7 @@ table.answers td .wa { display: block; font-size: 16px; font-weight: 600; }
 table.answers td .wp { display: block; font-size: 11.5px; color: var(--faint); }
 table.answers td .pending { display: block; font-size: 12.5px; color: var(--muted); }
 table.answers td .wl { display: block; font-size: 11.5px; color: var(--muted); }   /* その日最後の安全圏（90% の線） */
+table.answers td .wn { display: block; font-size: 11.5px; color: var(--accent); }   /* 今の計算での予想（2026-10-18）。その日の予想と見比べやすいよう差し色 */
 
 /* ---- 曜日×週の色分け表（案 C、2026-10-14）。点線の枠は予想 ----
    色は、配色ごとの1つの色（--heat-rgb。藍なら藍）の濃淡（2026-10-16）。前は +2/+4/+6 の色を 85% まで濃く塗っていて、
@@ -1033,7 +1034,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   table.answers th, table.answers td { padding: 8px 5px; }
   table.answers th:first-child, table.answers td:first-child { padding-left: 8px; }
   table.answers td .wd { display: block; }   /* 予想との差は次の行に（1行だと表が右へはみ出した） */
-  table.answers td .wl { font-size: 11px; }
+  table.answers td .wl, table.answers td .wn { font-size: 11px; }
   table.answers td .wa { font-size: 14px; }
   table.answers td .wp { font-size: 11px; }
   table.answers th[scope="row"] { font-size: 14px; white-space: normal; }   /* 曜日は次の行に回してよい（6桁の帯で表がはみ出した） */
