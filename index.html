@@ -194,6 +194,8 @@
     <div class="panel-head">
       <h2 id="answer-title">これまでの答え合わせ <small>その日最後のボーダー予想と、実際のボーダー</small></h2>
     </div>
+    <!-- 統計（利用者の指示、2026-10-26）。選んでいる帯の、表に出す日の全部で数える。ページをめくっても変わらない。 -->
+    <div id="answer-stats" class="stats" hidden></div>
     <div class="tablewrap">
       <table id="answers" class="answers">
         <thead><tr>
@@ -205,8 +207,17 @@
         <tbody id="answer-rows"></tbody>
       </table>
     </div>
+    <!-- 1 ページ = 7 日（利用者の指示、2026-10-26「直近1週間だけ出してページングにしよう」）。‹ が新しい 7 日、› が古い 7 日 -->
+    <div id="answer-pager" class="pager" hidden>
+      <span id="answer-range" class="per"></span>
+      <div class="pages">
+        <button id="answer-page-prev" type="button" class="page-btn" aria-label="新しい7日へ" title="新しい7日へ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <span id="answer-page-info" class="page-info" aria-live="polite"></span>
+        <button id="answer-page-next" type="button" class="page-btn" aria-label="古い7日へ" title="古い7日へ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+    </div>
     <p id="answer-empty" class="sub" hidden></p>
-    <p class="hint">大きい数字が実際のボーダー、小さい数字がその日最後のボーダー予想と実際との差（＋は予想が高すぎ、−は低すぎ）、「今の計算」（スマホでは「今」）はその日と同じ材料（その日に予想した時点で届いていた記録）で今のやり方で計算し直した予想と実際との差、「安全圏」の数字はその日最後の安全圏（ここまで上げておけば、ふつうの日なら 5 回に 4 回は取れるライン。10/20 までは 10 日に 9 日の線）です。日付の下の「外れやすい日」の札（スマホの幅では「注意」）は、その日の予想のカードに外れやすい日の一言を出していた日です（10/25 より前の日は、今のルールで数え直しています）。</p>
+    <p class="hint">大きい数字が実際のボーダー、小さい数字がその日最後のボーダー予想と実際との差（＋は予想が高すぎ、−は低すぎ）、「今の計算」（スマホでは「今」）はその日と同じ材料（その日に予想した時点で届いていた記録）で今のやり方で計算し直した予想と実際との差、「安全圏」の数字はその日最後の安全圏（ここまで上げておけば、ふつうの日なら 5 回に 4 回は取れるライン。10/20 までは 10 日に 9 日の線）です。日付の下の「外れやすい日」の札（スマホの幅では「注意」）は、その日の予想のカードに外れやすい日の一言を出していた日です（10/25 より前の日は、今のルールで数え直しています）。いちばん上の数字は、選んでいるランク帯の、表に出す日の全部を数えたものです（「本」は +2・+4・+6 を 1 本ずつ数えたもの。マイナスは予想が低すぎ、プラスは予想が高すぎ）。表は新しい 7 日から、矢印で古い 7 日へめくれます。</p>
   </section>
   </div>
 </main>

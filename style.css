@@ -887,6 +887,15 @@ table.answers .risky, table.week .risky {
 }
 table.answers .risky .short, table.week .risky .short { display: none; }
 
+/* 答え合わせの統計（2026-10-26）。数字のタイル。デスクトップは4列、スマホは2列。 */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 14px; }
+.stats[hidden] { display: none; }
+.stat { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: var(--r-md); background: var(--fill); min-width: 0; }
+.stat .sl { font-size: 12px; color: var(--muted); }
+.stat .sv { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
+.stat .ss { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+@media (max-width: 860px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 /* ---- 曜日×週の色分け表（案 C、2026-10-14）。点線の枠は予想 ----
    色は、配色ごとの1つの色（--heat-rgb。藍なら藍）の濃淡（2026-10-16）。前は +2/+4/+6 の色を 85% まで濃く塗っていて、
    鮮やかな色の塊になり「曜日毎のカードの色の濃さのところだけ見た目浮いちゃっている」と言われた。 */

@@ -616,6 +616,47 @@ function nowOf(r) {
   if (r[7] != null) s.append(el('span', { class: 'wd' }, `（${r[7] > 0 ? '+' : ''}${pct1(r[7])}）`));
   return s;
 }
+// ---- 答え合わせの統計と、1週間（7日）ごとのページ送り（利用者の指示、2026-10-26） ----
+// 利用者の言葉「これまでの答え合わせの1番上に統計を出そう。統計日数、予想のプラスマイナス5パーセントで収まった回数、安全圏で収まった日、マイナスだった日、プラスだった日。
+// あと直近1週間だけ出してページングにしよう」「統計は他出した方がいいのあればだして」。
+// 利用者が選んだ形: 統計は選んでいる帯の、表に出す日（ANSWER_ROWS）の全部で数える（ページをめくっても数字は変わらない）／
+// +2・+4・+6 を 1 本ずつ数える（「日×スコア」が 1 本）／1 ページ = 7 日で、新しい 7 日から古いほうへ。
+// 追加で出したのは、±10% の本数と、安全圏の内を「ふつうの日」と「外れやすい日」に分けたもの（外れやすい日の一言が効いているかが分かる）。
+// 数えるのは実際が届いた本だけ。差は（予想 − 実際）÷ 実際 で、＋は予想が高すぎ、−は低すぎ（バッチが決めた r[5]。ここでは計算しない）。
+// 前に外した「外れの真ん中」の言葉と、安全圏を越えた日の ▲ は、今回も出さない。
+const ANSWER_PAGE_DAYS = 7;
+const pctOf = (a, b) => (b > 0 ? `${Math.round((a * 100) / b)}%` : '—');
+function answerStats(rows, dates) {
+  const inRange = new Set(dates);
+  const done = rows.filter((r) => inRange.has(r[0]) && r[4] != null && r[5] != null);
+  const safe = done.filter((r) => r[3] != null);
+  const inSafe = (list) => list.filter((r) => r[4] <= r[3]).length;
+  const normal = safe.filter((r) => r[8] === false);
+  const risky = safe.filter((r) => r[8] === true);
+  const tiles = [];
+  const add = (label, value, sub, title) => tiles.push({ label, value, sub, title });
+  // 数える相手が 1 本も無いときは「0 / 0 本」でなく「—」にする（安全圏を覚える前の日しか答えが届いていない帯など）
+  const frac = (label, a, b, title) => add(label, b > 0 ? `${a} / ${b} 本` : '—', b > 0 ? pctOf(a, b) : 'まだありません', title);
+  add('統計日数', `${new Set(done.map((r) => r[0])).size} 日`, `${done.length} 本`, '「本」は +2・+4・+6 を 1 本ずつ数えたものです');
+  frac('予想の ±5% に収まった', done.filter((r) => Math.abs(r[5]) <= 5).length, done.length);
+  frac('予想の ±10% に収まった', done.filter((r) => Math.abs(r[5]) <= 10).length, done.length);
+  frac('安全圏の内に収まった', inSafe(safe), safe.length, '実際のボーダーが、その日最後の安全圏以下だった本数（安全圏を覚えている日だけ）');
+  frac('ふつうの日の安全圏の内', inSafe(normal), normal.length, '「外れやすい日」の札が付いていない日');
+  frac('外れやすい日の安全圏の内', inSafe(risky), risky.length, '「外れやすい日」の札が付いた日');
+  add('マイナス（予想が低すぎ）', `${done.filter((r) => r[5] < 0).length} 本`, pctOf(done.filter((r) => r[5] < 0).length, done.length), '予想より実際が高かった本数');
+  add('プラス（予想が高すぎ）', `${done.filter((r) => r[5] > 0).length} 本`, pctOf(done.filter((r) => r[5] > 0).length, done.length), '予想より実際が低かった本数');
+  return done.length === 0 ? [] : tiles;
+}
+function renderAnswerStats(rows, dates) {
+  const box = $('answer-stats');
+  box.replaceChildren(...answerStats(rows, dates).map((t) => {
+    const tile = el('div', { class: 'stat' });
+    if (t.title) tile.title = t.title;
+    tile.append(el('span', { class: 'sl' }, t.label), el('b', { class: 'sv' }, t.value), el('span', { class: 'ss' }, t.sub));
+    return tile;
+  }));
+  box.hidden = !box.hasChildNodes();
+}
 function renderAnswers() {
   const rows = state.answers.get(state.band);
   const byDate = new Map();
@@ -623,7 +664,21 @@ function renderAnswers() {
     if (!byDate.has(r[0])) byDate.set(r[0], new Map());
     byDate.get(r[0]).set(r[1], r);
   }
-  const dates = [...byDate.keys()].sort().reverse().slice(0, ANSWER_ROWS);
+  const allDates = [...byDate.keys()].sort().reverse().slice(0, ANSWER_ROWS);
+  renderAnswerStats(rows || [], allDates);
+  // 帯を変えたら、いちばん新しい 7 日に戻す
+  if (state.answerBand !== state.band) {
+    state.answerBand = state.band;
+    state.answerPage = 0;
+  }
+  const pages = Math.max(1, Math.ceil(allDates.length / ANSWER_PAGE_DAYS));
+  state.answerPage = Math.min(Math.max(state.answerPage ?? 0, 0), pages - 1);
+  const dates = allDates.slice(state.answerPage * ANSWER_PAGE_DAYS, (state.answerPage + 1) * ANSWER_PAGE_DAYS);
+  $('answer-pager').hidden = allDates.length === 0;
+  $('answer-range').textContent = dates.length ? `${mdw(dates[dates.length - 1])} 〜 ${mdw(dates[0])}` : '';
+  $('answer-page-info').textContent = `${state.answerPage + 1} / ${pages}`;
+  $('answer-page-prev').disabled = state.answerPage === 0;
+  $('answer-page-next').disabled = state.answerPage >= pages - 1;
   $('answer-rows').replaceChildren(...dates.map((date) => {
     const d = dowOf(date);
     const tr = el('tr', { class: d === 0 ? 'sun' : d === 6 ? 'sat' : '' });
@@ -659,8 +714,11 @@ function renderAnswers() {
   }));
   const empty = $('answer-empty');
   empty.textContent = state.results ? `${state.band} の答え合わせは、まだありません。` : '答え合わせを読み込めませんでした。時間をおいて開き直してください。';
-  empty.hidden = dates.length > 0;
+  empty.hidden = allDates.length > 0;
 }
+// ページ送り（‹ = 新しい 7 日へ、› = 古い 7 日へ。「これまでの実際のボーダー」のページ送りと同じ向き）
+$('answer-page-prev').addEventListener('click', () => { state.answerPage -= 1; renderAnswers(); });
+$('answer-page-next').addEventListener('click', () => { state.answerPage += 1; renderAnswers(); });
 
 // ---- 曜日×週の色分け表（利用者が選んだ案 C、2026-10-14） ----
 // 横は月〜日、縦は直近12週と、予想のある来週まで。色が濃いほどボーダーが高い（表の中の最小〜最大で濃さを決める）。
