@@ -25,7 +25,7 @@ const state = {
   day: null,
   range: 30,
   history: new Map(),          // 帯 → 新しい順の [日付, +2, +4, +6]（actuals.json）
-  answers: new Map(),          // 帯 → 答え合わせの新しい順の [日付, スコア, その日最後の予想, 安全圏（10/18〜20 は 90% の線、10/21 からはふつうの日に 5 回に 4 回の線。10/18 より前は null）, 実際, 差%]（results.json）
+  answers: new Map(),          // 帯 → 答え合わせの新しい順の [日付, スコア, その日最後の予想, 安全圏（10/18〜20 は 90% の線、10/21 からはふつうの日に 5 回に 4 回の線。10/18 より前は null）, 実際, 差%, 今の計算, その差%, 外れやすい日だったか]（results.json）
   sort: { key: 'date', asc: false },
   page: 0,                     // これまでの実際のボーダーの、いま見ているページ（0 から）
   perPage: PER_PAGES[0],
@@ -615,7 +615,14 @@ function renderAnswers() {
   $('answer-rows').replaceChildren(...dates.map((date) => {
     const d = dowOf(date);
     const tr = el('tr', { class: d === 0 ? 'sun' : d === 6 ? 'sat' : '' });
-    tr.append(el('th', { scope: 'row' }, mdw(date)));
+    const th = el('th', { scope: 'row' }, mdw(date));
+    // 外れやすい日だった日には札を付ける（利用者の指示、2026-10-25「これまでの答え合わせのところで外れやすい日だったかどうかがわかるようにして」）。
+    // r[8] は、その日のカードに出した一言があったか（10/25 からは当日に出した一言、それより前は今のルールで数え直したもの。バッチが決める。ここでは決めない）。
+    // 札だけで理由は出さない（利用者の決定）。スマホの幅で表が伸びないよう、日付の下に置く。
+    if ([...byDate.get(date).values()].some((r) => r[8] === true)) {
+      th.append(el('span', { class: 'risky', title: 'この日は、予想のカードに「外れやすい日」の一言を出していた日です' }, '外れやすい日'));
+    }
+    tr.append(th);
     for (const s of SCORES) {
       const r = byDate.get(date).get(s);
       const td = el('td', { class: `n c${s}` });
