@@ -885,6 +885,7 @@ table.answers .risky {
   font-weight: 600;
   white-space: nowrap;
 }
+table.answers .risky .short { display: none; }
 
 /* ---- 曜日×週の色分け表（案 C、2026-10-14）。点線の枠は予想 ----
    色は、配色ごとの1つの色（--heat-rgb。藍なら藍）の濃淡（2026-10-16）。前は +2/+4/+6 の色を 85% まで濃く塗っていて、
@@ -1049,6 +1050,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   table.answers td .wd { display: block; }   /* 予想との差は次の行に（1行だと表が右へはみ出した） */
   table.answers td .wl, table.answers td .wn { font-size: 11px; }
   table.answers td .wn .long { display: none; }   /* 「今の計算」→「今」（入り切らないため） */
+  table.answers .risky { padding: 1px 5px; font-size: 10.5px; }
+  table.answers .risky .long { display: none; }    /* 「外れやすい日」→「注意」（日付の列に入り切らないため） */
+  table.answers .risky .short { display: inline; }
   table.answers td .wa { font-size: 14px; }
   table.answers td .wp { font-size: 11px; }
   table.answers th[scope="row"] { font-size: 14px; white-space: normal; }   /* 曜日は次の行に回してよい（6桁の帯で表がはみ出した） */
