@@ -873,7 +873,7 @@ table.answers td .pending { display: block; font-size: 12.5px; color: var(--mute
 table.answers td .wl { display: block; font-size: 11.5px; color: var(--muted); }   /* その日最後の安全圏（90% の線） */
 table.answers td .wn { display: block; font-size: 11.5px; color: var(--accent); }   /* 今の計算での予想（2026-10-18）。その日の予想と見比べやすいよう差し色 */
 /* 外れやすい日だった日の札（2026-10-25）。日付の下に置いて、スマホの幅でも表を伸ばさない。色は予想のカードの注意書きと同じ注意の色 */
-table.answers .risky {
+table.answers .risky, table.week .risky {
   display: block;
   width: fit-content;
   margin-top: 4px;
@@ -885,7 +885,7 @@ table.answers .risky {
   font-weight: 600;
   white-space: nowrap;
 }
-table.answers .risky .short { display: none; }
+table.answers .risky .short, table.week .risky .short { display: none; }
 
 /* ---- 曜日×週の色分け表（案 C、2026-10-14）。点線の枠は予想 ----
    色は、配色ごとの1つの色（--heat-rgb。藍なら藍）の濃淡（2026-10-16）。前は +2/+4/+6 の色を 85% まで濃く塗っていて、
@@ -1050,9 +1050,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   table.answers td .wd { display: block; }   /* 予想との差は次の行に（1行だと表が右へはみ出した） */
   table.answers td .wl, table.answers td .wn { font-size: 11px; }
   table.answers td .wn .long { display: none; }   /* 「今の計算」→「今」（入り切らないため） */
-  table.answers .risky { padding: 1px 5px; font-size: 10.5px; }
-  table.answers .risky .long { display: none; }    /* 「外れやすい日」→「注意」（日付の列に入り切らないため） */
-  table.answers .risky .short { display: inline; }
+  table.answers .risky, table.week .risky { padding: 1px 5px; font-size: 10.5px; }
+  table.answers .risky .long, table.week .risky .long { display: none; }    /* 「外れやすい日」→「注意」（日付の列に入り切らないため） */
+  table.answers .risky .short, table.week .risky .short { display: inline; }
   table.answers td .wa { font-size: 14px; }
   table.answers td .wp { font-size: 11px; }
   table.answers th[scope="row"] { font-size: 14px; white-space: normal; }   /* 曜日は次の行に回してよい（6桁の帯で表がはみ出した） */

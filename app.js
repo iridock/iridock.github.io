@@ -552,6 +552,14 @@ function renderTable() {
   $('page-next').disabled = $('page-last').disabled = state.page >= pages - 1;
 }
 
+// 外れやすい日の札（1週間の予想と答え合わせの表で同じもの）。スマホの幅では日付の列が 45px ほどしかなく「外れやすい日」が入らないので、「注意」に縮める
+// （答え合わせの表が 354/330 でスマホの幅からはみ出した。2026-10-25）。title は、押さなくても理由が見られるよう渡された文をそのまま使う。
+function riskyTag(title) {
+  const tag = el('span', { class: 'risky', title });
+  tag.append(el('span', { class: 'long' }, '外れやすい日'), el('span', { class: 'short' }, '注意'));
+  return tag;
+}
+
 // ---- 1週間のボーダー予想（利用者の指示「ボーダー予想は本日から一週間分みれるようにして」、2026-10-14） ----
 // 大きい数字がボーダー予想、小さい数字が安全圏（ふつうの日に 5 回に 4 回取れる線。設計書15）。行を押すと、その日が上のカードに大きく出る。
 function renderWeek() {
@@ -566,6 +574,10 @@ function renderWeek() {
     if (word) th.append(el('span', { class: 'rel' }, word));
     const kind = dayKind(d);
     if (kind && kind !== 'ふつうの日') th.append(el('span', { class: 'kind' }, kind));
+    // 外れやすい日の札（利用者の指示、2026-10-25「一週間の予想にも外れやすい日いれてほしいな」）。答え合わせの表と同じ形・同じ決まり:
+    // カードに一言（caution）が出る日に付ける。押すと上のカードに一言が出るので、ここでは札だけ。スマホの幅では「注意」に縮める。
+    const cautionText = cards.map((x) => x.caution).find((t) => t);
+    if (cautionText) th.append(riskyTag(cautionText));
     tr.append(th);
     for (const s of SCORES) {
       const c = cards.find((x) => x.score === s);
@@ -618,12 +630,9 @@ function renderAnswers() {
     const th = el('th', { scope: 'row' }, mdw(date));
     // 外れやすい日だった日には札を付ける（利用者の指示、2026-10-25「これまでの答え合わせのところで外れやすい日だったかどうかがわかるようにして」）。
     // r[8] は、その日のカードに出した一言があったか（10/25 からは当日に出した一言、それより前は今のルールで数え直したもの。バッチが決める。ここでは決めない）。
-    // 札だけで理由は出さない（利用者の決定）。スマホの幅では日付の列が 45px ほどしかなく「外れやすい日」が入らないので、「注意」に縮める
-    // （表が 354/330 でスマホの幅からはみ出した。2026-10-25）。
+    // 札だけで理由は出さない（利用者の決定）。
     if ([...byDate.get(date).values()].some((r) => r[8] === true)) {
-      const tag = el('span', { class: 'risky', title: 'この日は、予想のカードに「外れやすい日」の一言を出していた日です' });
-      tag.append(el('span', { class: 'long' }, '外れやすい日'), el('span', { class: 'short' }, '注意'));
-      th.append(tag);
+      th.append(riskyTag('この日は、予想のカードに「外れやすい日」の一言を出していた日です'));
     }
     tr.append(th);
     for (const s of SCORES) {
