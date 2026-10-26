@@ -559,6 +559,14 @@ function riskyTag(title) {
   tag.append(el('span', { class: 'long' }, '外れやすい日'), el('span', { class: 'short' }, '注意'));
   return tag;
 }
+// 「直近の傾向」の札（2つ目の札。利用者の指示、2026-10-26「直近だけ傾向が見られるやつを別の札作ろうか」「3ヶ月とか1年とか続いてれば入れてほしい」→「すすめて」）。
+// 外れやすい日の札（前もって分かる日）とは別物で、「ここ数か月続いている片寄り」を知らせる説明の札。予想や安全圏は動かさない。
+// 出す条件と文言は安全圏のループ（work-aa）が決め、予想のカードの trend に入る（空なら出さない。設計書15）。スマホの幅では「傾向」に縮める。
+function trendTag(title) {
+  const tag = el('span', { class: 'trendtag', title });
+  tag.append(el('span', { class: 'long' }, '直近の傾向'), el('span', { class: 'short' }, '傾向'));
+  return tag;
+}
 
 // ---- 1週間のボーダー予想（利用者の指示「ボーダー予想は本日から一週間分みれるようにして」、2026-10-14） ----
 // 大きい数字がボーダー予想、小さい数字が安全圏（ふつうの日に 5 回に 4 回取れる線。設計書15）。行を押すと、その日が上のカードに大きく出る。
@@ -578,6 +586,8 @@ function renderWeek() {
     // カードに一言（caution）が出る日に付ける。押すと上のカードに一言が出るので、ここでは札だけ。スマホの幅では「注意」に縮める。
     const cautionText = cards.map((x) => x.caution).find((t) => t);
     if (cautionText) th.append(riskyTag(cautionText));
+    const trendText = cards.map((x) => x.trend).find((t) => t);
+    if (trendText) th.append(trendTag(trendText));
     tr.append(th);
     for (const s of SCORES) {
       const c = cards.find((x) => x.score === s);
@@ -693,6 +703,10 @@ function renderAnswers() {
     // 札だけで理由は出さない（利用者の決定）。
     if ([...byDate.get(date).values()].some((r) => r[8] === true)) {
       th.append(riskyTag('この日は、予想のカードに「外れやすい日」の一言を出していた日です'));
+    }
+    // r[9] は、その日のカードに「直近の傾向」の一言を出していたか（バッチが決める。まだ覚えていない日・古い版の results.json は無い）
+    if ([...byDate.get(date).values()].some((r) => r[9] === true)) {
+      th.append(trendTag('この日は、予想のカードに「直近の傾向」の一言を出していた日です'));
     }
     tr.append(th);
     for (const s of SCORES) {
