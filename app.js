@@ -254,6 +254,14 @@ function renderHero() {
   // 「予想の元」（どのやり方で計算したか）の文は出さない（利用者の指示「…の文言はいらない」、2026-10-14）。
   const same = (key) => cards[0][key] && cards.every((c) => c[key] === cards[0][key]);
   const sharedCaution = same('caution');
+  // 「直近の傾向」の一言（利用者の指示、2026-10-26「新しい札の傾向の説明がほしいのと、全部の予想に反映させて」。前は札に触れたときの説明にしか出ていなかった）。
+  // 外れやすい日の一言（注意の色）とは別物なので、差し色の別の箱にして、見出し「直近の傾向」を付ける。予想や安全圏の数字は動かさない。
+  const sharedTrend = same('trend');
+  const trendNote = (text) => {
+    const p = el('p', { class: 'caution trend' });
+    p.append(el('b', {}, '直近の傾向　'), text);
+    return p;
+  };
   // 報告が少ない帯（S2 など）は、最新の記録が何日も前になる。取れていないのではなく、元の集計に数字が無い（2026-10-14 に確かめた）。
   // 見た人が「壊れている」と思わないよう、古いことをはっきり書く。
   const staleDays = cls.latestDate ? dayNumber(state.day) - dayNumber(cls.latestDate) : Infinity;
@@ -265,7 +273,8 @@ function renderHero() {
         : 'この帯は最近の実際のボーダーの記録がありません。')]
       : []),
     ...(ahead >= 2 ? [el('p', { class: 'caution' }, `${ahead} 日先の予想です。先の日ほど外れやすくなります。`)] : []),
-    ...(sharedCaution ? [el('p', { class: 'caution' }, cards[0].caution)] : []));
+    ...(sharedCaution ? [el('p', { class: 'caution' }, cards[0].caution)] : []),
+    ...(sharedTrend ? [trendNote(cards[0].trend)] : []));
 
   box.replaceChildren(...cards.map((c) => {
     const card = el('article', { class: `card s${c.score}`, 'aria-label': `+${c.score} のボーダー予想` });
@@ -300,6 +309,7 @@ function renderHero() {
 
     // カードに「〇/〇 の実際のボーダーは 〇 pt」は出さない（利用者の指示、2026-10-16。上の見出しの横の文言と一緒に外した）。
     if (c.caution && !sharedCaution) card.append(el('p', { class: 'caution' }, c.caution));
+    if (c.trend && !sharedTrend) card.append(trendNote(c.trend));
     return card;
   }));
 }

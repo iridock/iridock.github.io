@@ -608,6 +608,10 @@ main {
   font-size: 13px;
 }
 
+/* 「直近の傾向」の一言（2026-10-26）。外れやすい日の一言（注意の色）と見分けるため差し色。表の札（.trendtag）と同じ色 */
+.caution.trend { background: var(--tint); color: var(--accent); }
+.caution.trend b { font-weight: 700; }
+
 .shared { margin-top: 12px; }
 .shared .stale {
   margin: 0 0 8px;
