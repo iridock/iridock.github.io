@@ -636,11 +636,15 @@ function answerStats(rows, dates) {
   const tiles = [];
   const add = (label, value, sub, title) => tiles.push({ label, value, sub, title });
   // 数える相手が 1 本も無いときは「0 / 0 本」でなく「—」にする（安全圏を覚える前の日しか答えが届いていない帯など）
-  const frac = (label, a, b, title) => add(label, b > 0 ? `${a} / ${b} 本` : '—', b > 0 ? pctOf(a, b) : 'まだありません', title);
+  const frac = (label, a, b, title, note = '') => add(label, b > 0 ? `${a} / ${b} 本` : '—', b > 0 ? `${pctOf(a, b)}${note}` : `まだありません${note}`, title);
+  // 安全圏は 10/18 から覚えている（それより前の日は null。過去の予想は書き換えない）ので、分母は「統計の本数」より少なくなる。
+  // 利用者の言葉（2026-10-26）「全部で30本なのに安全圏に収まったなど分母が21な理由がわからない」→ 外れた本数と、いつまでの日かを書く。
+  const noSafe = done.filter((r) => r[3] == null);
+  const noSafeNote = noSafe.length > 0 ? `（${noSafe.length} 本は ${md([...noSafe].sort((x, y) => (x[0] < y[0] ? 1 : -1))[0][0])} までで安全圏の記録なし）` : '';
   add('統計日数', `${new Set(done.map((r) => r[0])).size} 日`, `${done.length} 本`, '「本」は +2・+4・+6 を 1 本ずつ数えたものです');
   frac('予想の ±5% に収まった', done.filter((r) => Math.abs(r[5]) <= 5).length, done.length);
   frac('予想の ±10% に収まった', done.filter((r) => Math.abs(r[5]) <= 10).length, done.length);
-  frac('安全圏の内に収まった', inSafe(safe), safe.length, '実際のボーダーが、その日最後の安全圏以下だった本数（安全圏を覚えている日だけ）');
+  frac('安全圏の内に収まった', inSafe(safe), safe.length, '実際のボーダーが、その日最後の安全圏以下だった本数（安全圏を覚えている日だけ）', noSafeNote);
   // 目安の 80% は work-aa（安全圏のループ）の提案（2026-10-26）。日数が少ないうちは 80% から大きくぶれる（4 日の窓で 59〜95%、7 日の窓で 63〜91%）。
   frac('ふつうの日の安全圏の内', inSafe(normal), normal.length, '「外れやすい日」の札が付いていない日。安全圏は、ふつうの日なら 5 回に 4 回（80%）ほど収まる設計です');
   frac('外れやすい日の安全圏の内', inSafe(risky), risky.length, '「外れやすい日」の札が付いた日');
