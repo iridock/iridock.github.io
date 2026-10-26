@@ -641,7 +641,8 @@ function answerStats(rows, dates) {
   frac('予想の ±5% に収まった', done.filter((r) => Math.abs(r[5]) <= 5).length, done.length);
   frac('予想の ±10% に収まった', done.filter((r) => Math.abs(r[5]) <= 10).length, done.length);
   frac('安全圏の内に収まった', inSafe(safe), safe.length, '実際のボーダーが、その日最後の安全圏以下だった本数（安全圏を覚えている日だけ）');
-  frac('ふつうの日の安全圏の内', inSafe(normal), normal.length, '「外れやすい日」の札が付いていない日');
+  // 目安の 80% は work-aa（安全圏のループ）の提案（2026-10-26）。日数が少ないうちは 80% から大きくぶれる（4 日の窓で 59〜95%、7 日の窓で 63〜91%）。
+  frac('ふつうの日の安全圏の内', inSafe(normal), normal.length, '「外れやすい日」の札が付いていない日。安全圏は、ふつうの日なら 5 回に 4 回（80%）ほど収まる設計です');
   frac('外れやすい日の安全圏の内', inSafe(risky), risky.length, '「外れやすい日」の札が付いた日');
   add('マイナス（予想が低すぎ）', `${done.filter((r) => r[5] < 0).length} 本`, pctOf(done.filter((r) => r[5] < 0).length, done.length), '予想より実際が高かった本数');
   add('プラス（予想が高すぎ）', `${done.filter((r) => r[5] > 0).length} 本`, pctOf(done.filter((r) => r[5] > 0).length, done.length), '予想より実際が低かった本数');
