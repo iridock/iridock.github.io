@@ -1065,7 +1065,7 @@
       x.fillRect(40, 170, W - 80, 52);
       x.fillStyle = '#3a1a00';
       x.font = `800 28px ${ff}`;
-      x.fillText('回す人', 64, 207);
+      x.fillText('リスナー', 64, 207);
       x.fillText('当たったもの', 400, 207);
       let y = 226;
       pg.rows.forEach((r, i) => {
@@ -1219,7 +1219,7 @@
     // ブラウザ標準の候補（datalist）は配色に合わず端末ごとに見た目も操作も違ったので、ライブラリの Tom Select に替えた（利用者の指示「当てた人の名前のやつ、uiがダメだ。
     // なんかいいライブラリとかない？」「有名で安定しているライブラリがいい」）。欄を押すと設定で登録した人が出て、選ぶとすぐ入る。直接入れて確定してもよい（候補に無い名前もそのまま使える）。
     const whoSelect = h('select', 'rl-who-select');
-    whoSelect.setAttribute('aria-label', '回す人の名前（登録した人から選べます）');
+    whoSelect.setAttribute('aria-label', 'リスナーの名前（登録した人から選べます）');
     whoRow.append(whoSelect);
     const whoPicker = new window.TomSelect(whoSelect, {
       maxItems: 1,
@@ -1234,10 +1234,10 @@
       selectOnTab: true,
       maxOptions: MAX_PEOPLE,
       plugins: ['clear_button'],
-      placeholder: '回す人の名前（空でも回せます）',
+      placeholder: 'リスナーの名前（空でも回せます）',
       dropdownParent: 'body',    // カードの外にはみ出して出す（円盤の枠は overflow を隠すため）
       render: {
-        option_create: (data, escape) => `<div class="create">「${escape(data.input)}」を回す人にする</div>`,
+        option_create: (data, escape) => `<div class="create">「${escape(data.input)}」をリスナーにする</div>`,
         no_results: () => '<div class="no-results">登録した人はいません。名前を入れて確定すると使えます</div>',
       },
       onChange: (value) => { wheel.who = String(value || '').slice(0, MAX_WHO); save(); },
@@ -1312,14 +1312,14 @@
     const useWhoCheck = h('input');
     useWhoCheck.type = 'checkbox';
     useWhoCheck.checked = wheel.useWho;
-    useWhoLabel.append(useWhoCheck, document.createTextNode(' 回す人を記録する'));
+    useWhoLabel.append(useWhoCheck, document.createTextNode(' リスナーを記録する'));
     useWhoRow.append(useWhoLabel);
-    const useWhoNote = h('p', 'rl-note', 'なしにすると、名前の欄・履歴の「回す人」・まとめに出しません（罰ゲームなど）。');
+    const useWhoNote = h('p', 'rl-note', 'なしにすると、名前の欄・履歴の「リスナー」・まとめに出しません（罰ゲームなど）。');
     const saveTplRow = h('div', 'rl-row');
     const saveTplBtn = h('button', 'rl-btn', 'このルーレットをテンプレートに保存');
     saveTplBtn.type = 'button';
     saveTplRow.append(saveTplBtn);
-    const saveTplNote = h('p', 'rl-note', '保存すると、「＋ ルーレットを追加」で、このルーレットの項目・重み・回す人の設定から作れます。');
+    const saveTplNote = h('p', 'rl-note', '保存すると、「＋ ルーレットを追加」で、このルーレットの項目・重み・リスナーの設定から作れます。');
     // 「当たった項目を一覧から除く」も、ここに入れた（利用者の指示「当たった項目…は設定の中に入れちゃって」）
     lookBox.append(useWhoRow, useWhoNote, opts, saveTplRow, saveTplNote);
     // 履歴（全部表示）
@@ -1331,7 +1331,7 @@
     const histTable = h('table', 'rl-hist');
     const thead = h('thead');
     const hr = h('tr');
-    for (const t of ['日時', '回す人', '結果']) hr.append(h('th', t === '回す人' ? 'col-who' : null, t));
+    for (const t of ['日時', 'リスナー', '結果']) hr.append(h('th', t === 'リスナー' ? 'col-who' : null, t));
     thead.append(hr);
     const tbody = h('tbody');
     histTable.append(thead, tbody);
@@ -1690,7 +1690,7 @@
         input.maxLength = MAX_WHO;
         input.value = entry.who || '';
         input.placeholder = '名前なし';
-        input.setAttribute('aria-label', `履歴 ${i + 1} の回す人`);
+        input.setAttribute('aria-label', `履歴 ${i + 1} のリスナー`);
         input.addEventListener('input', () => { entry.who = input.value.slice(0, MAX_WHO); save(); renderSummary(); });
         who.append(input);
         const r = h('td', null, entry.result.trim() || NO_WHO);
@@ -1823,7 +1823,7 @@
     for (const t of data.templates) {
       const li = h('li', 'rl-tpl');
       li.append(h('span', 'rl-tpl-name', t.name));
-      li.append(h('span', 'rl-tpl-meta', `項目 ${t.items.length} 個・回す人${t.useWho ? 'あり' : 'なし'}`));
+      li.append(h('span', 'rl-tpl-meta', `項目 ${t.items.length} 個・リスナー${t.useWho ? 'あり' : 'なし'}`));
       const del = h('button', 'rl-btn rl-btn-small', '消す');
       del.type = 'button';
       del.setAttribute('aria-label', `テンプレート「${t.name}」を消す`);
