@@ -16,7 +16,7 @@
 <script src="../theme.js?v=2cd238f2"></script>
 <link rel="stylesheet" href="../style.css?v=262d1bb2">
 <link rel="stylesheet" href="vendor/tom-select/tom-select.css?v=9927adfd">
-<link rel="stylesheet" href="roulette.css?v=3a4351d5">
+<link rel="stylesheet" href="roulette.css?v=fec29c0b">
 <title>IriDock ルーレット</title>
 </head>
 <body>
@@ -82,7 +82,39 @@
   <section class="panel rl-wide" aria-labelledby="settings-title">
     <div class="panel-head"><h2 id="settings-title">設定</h2></div>
 
-    <!-- 当てた人の登録（ルーレットごとの「登録した人から選ぶ」に出る。選ぶとすぐ名前の欄に入る。名前の欄に直接入れてもよい） -->
+    <!-- ルーレットの絵柄（利用者の指示、2026-10-30。ルーレットごとではなく、ここで全部のルーレットにまとめて決める。色合い・演出はルーレットごとの「設定」） -->
+    <div class="rl-block">
+      <h3 class="rl-h3">ルーレットの絵柄</h3>
+      <p class="rl-note">全部のルーレットにまとめて反映されます（色合いと演出は、ルーレットごとの「設定」で選びます）。</p>
+      <div class="rl-row">
+        <label class="rl-field">切れ目の模様
+          <select id="look-pattern"></select>
+        </label>
+        <label class="rl-field">縁のデザイン
+          <select id="look-rim"></select>
+        </label>
+        <label class="rl-field">盤の形
+          <select id="look-shape"></select>
+        </label>
+        <label class="rl-field">中央の飾り
+          <select id="look-hub"></select>
+        </label>
+      </div>
+      <div id="look-hub-text-row" class="rl-row" hidden>
+        <label class="rl-field">中央に出す文字・絵文字（2 文字まで）
+          <input id="look-hub-text" type="text" maxlength="8" autocomplete="off" placeholder="例: ★">
+        </label>
+      </div>
+      <div id="look-hub-image-row" class="rl-row" hidden>
+        <button id="look-hub-image" type="button" class="rl-btn">画像を選ぶ</button>
+        <button id="look-hub-clear" type="button" class="rl-btn">画像を消す</button>
+        <input id="look-hub-file" type="file" accept="image/*" hidden>
+        <span id="look-hub-note" class="rl-count" role="status"></span>
+      </div>
+      <canvas id="look-preview" class="rl-look-preview" width="520" height="520" role="img" aria-label="絵柄の見本（円盤）"></canvas>
+    </div>
+
+    <!-- 当てた人の登録（ルーレットごとの「当てた人」の欄の候補に出る。選ぶとすぐ入る。名前を直接入れてもよい） -->
     <div class="rl-block">
       <h3 class="rl-h3">当てた人の登録</h3>
       <label class="rl-field">名前（複数は、改行か「、」で区切ります）
@@ -127,6 +159,6 @@
         crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
 <!-- 当てた人の欄の部品（Tom Select。Apache License 2.0。サイトに同梱している。vendor/tom-select/README.md） -->
 <script src="vendor/tom-select/tom-select.complete.min.js?v=8f9d7d34"></script>
-<script src="roulette.js?v=3b02dbb8"></script>
+<script src="roulette.js?v=4899d20e"></script>
 </body>
 </html>

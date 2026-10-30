@@ -214,6 +214,7 @@
 .rl-block { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
 .rl-block:first-of-type { margin-top: 8px; padding-top: 0; border-top: 0; }
 .rl-h3 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
+.rl-look-preview { display: block; width: min(100%, 260px); height: auto; aspect-ratio: 1; margin: 12px auto 0; }
 .rl-chips, .rl-tpls { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
 .rl-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--fill); font-size: 14px; }
 .rl-chip-x { width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; }

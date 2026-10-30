@@ -28,7 +28,8 @@
   // 公開のたびにスクリプトの名前に指紋（?v=）が付くので、ふだんはずれないが、念のための備え。
   const REQUIRED_IDS = ['notice', 'new-template', 'wheel-add', 'add-note', 'wheels', 'summary-scope', 'summary-body', 'summary-wrap', 'summary-empty', 'summary-count',
     'summary-copy', 'summary-x', 'summary-discord', 'summary-share', 'summary-pages', 'summary-status', 'template', 'discord-link', 'export', 'import', 'import-file', 'settings-status',
-    'people-input', 'people-add', 'people-list', 'people-note', 'templates-list', 'templates-note'];
+    'people-input', 'people-add', 'people-list', 'people-note', 'templates-list', 'templates-note',
+    'look-pattern', 'look-rim', 'look-shape', 'look-hub', 'look-hub-text', 'look-hub-text-row', 'look-hub-image-row', 'look-hub-image', 'look-hub-clear', 'look-hub-file', 'look-hub-note', 'look-preview'];
   if (REQUIRED_IDS.some((id) => !document.getElementById(id)) || typeof window.TomSelect !== 'function') {
     const box = document.createElement('p');
     box.setAttribute('role', 'alert');
@@ -103,6 +104,23 @@
   const DEFAULT_EFFECT = 'full';
   const themeOf = (name) => THEMES[name] || THEMES[DEFAULT_THEME];
   const effectOf = (name) => EFFECTS[name] || EFFECTS[DEFAULT_EFFECT];
+
+  // 絵柄（円盤の見た目の種類。利用者の指示、2026-10-30「ルーレット自体の絵柄？も選択できるようにしてほしいな」「ルーレットの絵柄はルーレット毎じゃなくて設定でまとめて変わるように」）。
+  // 色合い・演出はルーレットごとだが、絵柄は**設定で全部のルーレットにまとめて**決める（settings.look）。利用者が選んだ4つ: 切れ目の模様・縁のデザイン・盤の形・中央の飾り。
+  const PATTERNS = { plain: { name: '無地' }, stripe: { name: 'しま' }, dots: { name: '水玉' }, stars: { name: '星' }, checker: { name: '市松' } };
+  const RIMS = { lamp: { name: '金属とランプ' }, neon: { name: 'ネオン' }, pop: { name: 'ポップな丸' }, wafu: { name: '和風の鋲（びょう）' }, simple: { name: 'シンプルな線' } };
+  const SHAPES = { disc: { name: '円盤' }, flower: { name: '花（縁が波形）' }, gear: { name: '歯車（縁がぎざぎざ）' }, dart: { name: 'ダーツ盤（同心の輪と的）' } };
+  const HUBS = { star: { name: '星' }, heart: { name: 'ハート' }, crown: { name: '王冠' }, emoji: { name: '文字・絵文字' }, image: { name: '自分の画像' } };
+  const MAX_HUB_IMAGE = 100000;   // 中央に置く画像（データの文字数）。保存はブラウザの中だけなので、小さく縮めて入れる
+  const pickKey = (map, key, fallback) => (typeof key === 'string' && Object.prototype.hasOwnProperty.call(map, key) ? key : fallback);
+  const cleanHubText = (v) => Array.from(String(v == null ? '' : v)).slice(0, 2).join('');
+  const cleanHubImage = (v) => (typeof v === 'string' && v.length <= MAX_HUB_IMAGE && (v.startsWith('data:image/png;base64,') || v.startsWith('data:image/jpeg;base64,'))
+    && /^[A-Za-z0-9+/=]+$/.test(v.slice(v.indexOf(',') + 1)) ? v : '');
+  // 読み込んだ・壊れた保存でも、知らない値は既定に戻す
+  const lookFields = (src) => {
+    const o = src && typeof src === 'object' ? src : {};
+    return { pattern: pickKey(PATTERNS, o.pattern, 'plain'), rim: pickKey(RIMS, o.rim, 'lamp'), shape: pickKey(SHAPES, o.shape, 'disc'), hub: pickKey(HUBS, o.hub, 'star'), hubText: cleanHubText(o.hubText), hubImage: cleanHubImage(o.hubImage) };
+  };
 
   // ---- 抽選（画面に触らない部分。確かめの道具からも呼ぶ） ----
   // 53 ビットの乱数（0 以上 1 未満）。Math.random ではなく、ブラウザの安全な乱数を使う。
@@ -261,7 +279,7 @@
   });
   const defaultData = () => {
     const templates = defaultTemplates();
-    return { version: 1, wheels: templates.map((t) => newWheel(t.name, t)), templates, settings: { template: DEFAULT_TEMPLATE, discordLink: '', people: [] } };
+    return { version: 1, wheels: templates.map((t) => newWheel(t.name, t)), templates, settings: { template: DEFAULT_TEMPLATE, discordLink: '', people: [], look: lookFields({}) } };
   };
   // 登録した人: 前後の空白を除き、重複・空・長すぎるものを除く
   function sanitizePeople(list) {
@@ -323,6 +341,7 @@
         template: typeof s.template === 'string' && s.template.trim() ? s.template.slice(0, 200) : DEFAULT_TEMPLATE,
         discordLink: typeof s.discordLink === 'string' ? s.discordLink.slice(0, 300) : '',
         people: sanitizePeople(s.people),
+        look: lookFields(s.look),
       },
     };
   }
@@ -452,10 +471,289 @@
     }
     ctx.closePath();
   }
-  // 円盤: 金属の縁とランプ・立体的な切れ目・読みやすい文字・当たりの強調・針。fx = { bulb, winner, tilt, theme }（theme は色合い）
+  // 盤の形: 縁の外形。円盤のほか、花（波形）・歯車（ぎざぎざ）。円盤の面は、どの形でも円
+  const shapeDepth = (shape, rimW) => (shape === 'flower' ? rimW * 0.36 : shape === 'gear' ? rimW * 0.4 : 0);
+  function rimPath(ctx, cx, cy, outerR, rimW, shape) {
+    ctx.beginPath();
+    const depth = shapeDepth(shape, rimW);
+    if (!depth) {
+      ctx.arc(cx, cy, outerR, 0, TAU);
+      return;
+    }
+    const n = shape === 'flower' ? 14 : 20;
+    const steps = 480;
+    for (let i = 0; i <= steps; i++) {
+      const a = (i / steps) * TAU - Math.PI / 2;
+      const u = (a + Math.PI / 2) * n;
+      const t = shape === 'flower' ? Math.abs(Math.cos(u / 2)) : Math.max(0, Math.min(1, 0.5 + Math.cos(u) * 1.6));
+      const r = outerR - depth * (1 - t);
+      ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+    }
+    ctx.closePath();
+  }
+  // 縁の下地（影・縁の色・面との境目の暗い輪）。縁のデザインで色が変わる
+  function paintRimBase(ctx, S, cx, cy, outerR, rimW, R, T, L) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = S * 0.035;
+    ctx.shadowOffsetY = S * 0.012;
+    ctx.fillStyle = '#000';
+    rimPath(ctx, cx, cy, outerR, rimW, L.shape);
+    ctx.fill();
+    ctx.restore();
+    const g = ctx.createLinearGradient(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
+    let fill = g;
+    if (L.rim === 'neon') {
+      g.addColorStop(0, '#15183c');
+      g.addColorStop(1, '#07081c');
+    } else if (L.rim === 'wafu') {
+      g.addColorStop(0, '#dc4533');
+      g.addColorStop(1, '#8a170d');
+    } else if (L.rim === 'pop') {
+      fill = '#fff7ee';
+    } else if (L.rim === 'simple') {
+      fill = T.rim[1];
+    } else {
+      g.addColorStop(0, T.rim[0]);
+      g.addColorStop(0.3, T.rim[1]);
+      g.addColorStop(0.65, T.rim[2]);
+      g.addColorStop(1, T.rim[3]);
+    }
+    rimPath(ctx, cx, cy, outerR, rimW, L.shape);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + rimW * 0.14, 0, TAU);
+    ctx.fillStyle = L.rim === 'neon' ? 'rgba(0, 0, 0, 0.7)' : L.rim === 'pop' ? 'rgba(120, 60, 90, 0.35)' : 'rgba(70, 40, 0, 0.55)';
+    ctx.fill();
+  }
+  // 縁の飾り（ランプ・ネオン・丸・鋲）。fx.bulb で点滅・色替わり
+  function paintRimDeco(ctx, S, cx, cy, outerR, rimW, R, T, L, fx) {
+    const rd = (R + outerR - shapeDepth(L.shape, rimW)) / 2;
+    const blink = fx.bulb || 0;
+    if (L.rim === 'neon') {
+      ctx.save();
+      ctx.lineWidth = S * 0.009;
+      ctx.strokeStyle = T.bulb[1];
+      ctx.shadowColor = T.bulb[1];
+      ctx.shadowBlur = S * (blink % 2 ? 0.02 : 0.034);
+      rimPath(ctx, cx, cy, outerR - rimW * 0.22, rimW, L.shape);   // 盤の形（花・歯車）にそって光らせる
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = S * 0.0035;
+      ctx.strokeStyle = T.bulb[0];
+      ctx.stroke();
+      ctx.restore();
+    } else if (L.rim === 'pop') {
+      const n = 16;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * TAU - Math.PI / 2;
+        const x = cx + Math.cos(a) * rd;
+        const y = cy + Math.sin(a) * rd;
+        ctx.beginPath();
+        ctx.arc(x, y, S * 0.0125, 0, TAU);
+        ctx.fillStyle = T.palette[(i + blink) % T.palette.length][0];
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x - S * 0.003, y - S * 0.003, S * 0.004, 0, TAU);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fill();
+      }
+    } else if (L.rim === 'wafu') {
+      ctx.save();
+      ctx.lineWidth = S * 0.0035;
+      ctx.strokeStyle = '#f2c14e';
+      ctx.beginPath();
+      ctx.arc(cx, cy, R + rimW * 0.2, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+      const n = 24;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * TAU - Math.PI / 2;
+        const x = cx + Math.cos(a) * rd;
+        const y = cy + Math.sin(a) * rd;
+        const sg = ctx.createRadialGradient(x - S * 0.0025, y - S * 0.0025, S * 0.001, x, y, S * 0.0095);
+        sg.addColorStop(0, '#fff3b0');
+        sg.addColorStop(0.55, '#e8b53a');
+        sg.addColorStop(1, '#8d5f12');
+        ctx.beginPath();
+        ctx.arc(x, y, S * 0.0095, 0, TAU);
+        ctx.fillStyle = sg;
+        ctx.fill();
+      }
+    } else if (L.rim === 'simple') {
+      ctx.save();
+      ctx.lineWidth = S * 0.004;
+      ctx.strokeStyle = 'rgba(60, 40, 20, 0.55)';
+      rimPath(ctx, cx, cy, outerR, rimW, L.shape);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      const bulbs = 24;   // 金属の縁のランプ（交互に点滅。回している間と当たりの演出では速く）
+      for (let i = 0; i < bulbs; i++) {
+        const a = (i / bulbs) * TAU - Math.PI / 2;
+        const bx = cx + Math.cos(a) * rd;
+        const by = cy + Math.sin(a) * rd;
+        const on = (i + blink) % 2 === 0;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(bx, by, S * 0.0105, 0, TAU);
+        if (on) {
+          ctx.shadowColor = T.bulb[1];
+          ctx.shadowBlur = S * 0.025;
+          ctx.fillStyle = T.bulb[0];
+        } else {
+          ctx.fillStyle = T.bulb[2];
+        }
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  // 切れ目の模様: 円盤といっしょに回る（円の内側だけに、うすく重ねる）。1 回の描画で全部の切れ目にかける
+  function paintPattern(ctx, S, cx, cy, R, rot, pattern) {
+    if (pattern === 'plain') return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.clip();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+    const u = S * 0.045;
+    if (pattern === 'stripe') {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+      ctx.lineWidth = S * 0.016;
+      ctx.beginPath();
+      for (let k = -R * 2; k < R * 2; k += u) {
+        ctx.moveTo(k - R, -R);
+        ctx.lineTo(k + R, R);
+      }
+      ctx.stroke();
+    } else if (pattern === 'dots') {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.beginPath();
+      let row = 0;
+      for (let y = -R; y <= R; y += u, row++) {
+        for (let x = -R + (row % 2 ? u / 2 : 0); x <= R; x += u) {
+          ctx.moveTo(x + S * 0.009, y);
+          ctx.arc(x, y, S * 0.009, 0, TAU);
+        }
+      }
+      ctx.fill();
+    } else if (pattern === 'stars') {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.26)';
+      let row = 0;
+      for (let y = -R; y <= R; y += u * 1.5, row++) {
+        for (let x = -R + (row % 2 ? u * 0.75 : 0); x <= R; x += u * 1.5) {
+          starPath(ctx, x, y, S * 0.017);
+          ctx.fill();
+        }
+      }
+    } else if (pattern === 'checker') {
+      const c = S * 0.05;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.beginPath();
+      for (let iy = Math.floor(-R / c); iy * c < R; iy++) {
+        for (let ix = Math.floor(-R / c); ix * c < R; ix++) {
+          if ((ix + iy) % 2 === 0) ctx.rect(ix * c, iy * c, c, c);
+        }
+      }
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  // ダーツ盤: 同心の細い輪と、中心の的（緑と赤）
+  function paintDartFace(ctx, S, cx, cy, R) {
+    ctx.save();
+    ctx.lineWidth = S * 0.004;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    for (const f of [0.97, 0.9, 0.64, 0.57]) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * f, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = S * 0.006;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.27, 0, TAU);
+    ctx.fillStyle = 'rgba(20, 130, 70, 0.95)';
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.18, 0, TAU);
+    ctx.fillStyle = 'rgba(205, 25, 45, 0.97)';
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+  function heartPath(ctx, cx, cy, r) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + r * 0.9);
+    ctx.bezierCurveTo(cx - r * 1.5, cy + r * 0.1, cx - r * 0.9, cy - r * 1.1, cx, cy - r * 0.35);
+    ctx.bezierCurveTo(cx + r * 0.9, cy - r * 1.1, cx + r * 1.5, cy + r * 0.1, cx, cy + r * 0.9);
+    ctx.closePath();
+  }
+  function crownPath(ctx, cx, cy, r) {
+    ctx.beginPath();
+    [[-1, 0.7], [-1, -0.5], [-0.5, 0.05], [0, -0.8], [0.5, 0.05], [1, -0.5], [1, 0.7]].forEach(([x, y], i) => {
+      if (i) ctx.lineTo(cx + x * r, cy + y * r);
+      else ctx.moveTo(cx + x * r, cy + y * r);
+    });
+    ctx.closePath();
+  }
+  // 中央の飾り: 金の丸の上に、星・ハート・王冠・文字（絵文字）・自分の画像
+  function paintHub(ctx, S, cx, cy, L, ff) {
+    const hubR = S * 0.07;
+    const hub = ctx.createRadialGradient(cx - hubR * 0.3, cy - hubR * 0.35, hubR * 0.1, cx, cy, hubR);
+    hub.addColorStop(0, '#fff7c9');
+    hub.addColorStop(0.5, '#f1b72f');
+    hub.addColorStop(1, '#9a6200');
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = S * 0.015;
+    ctx.beginPath();
+    ctx.arc(cx, cy, hubR, 0, TAU);
+    ctx.fillStyle = hub;
+    ctx.fill();
+    ctx.restore();
+    ctx.lineWidth = S * 0.006;
+    ctx.strokeStyle = '#fff3b0';
+    ctx.stroke();
+    if (L.hub === 'image' && L.hubImg) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, hubR * 0.86, 0, TAU);
+      ctx.clip();
+      ctx.drawImage(L.hubImg, cx - hubR * 0.86, cy - hubR * 0.86, hubR * 1.72, hubR * 1.72);
+      ctx.restore();
+    } else if (L.hub === 'emoji' && L.hubText) {
+      const len = Array.from(L.hubText).length;
+      ctx.save();
+      ctx.font = `800 ${hubR * (len > 1 ? 0.95 : 1.25)}px ${ff}, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#c4143c';
+      ctx.fillText(L.hubText, cx, cy + hubR * 0.05);
+      ctx.restore();
+    } else if (L.hub === 'heart') {
+      heartPath(ctx, cx, cy + S * 0.002, hubR * 0.5);
+      ctx.fillStyle = '#c4143c';
+      ctx.fill();
+    } else if (L.hub === 'crown') {
+      crownPath(ctx, cx, cy, hubR * 0.58);
+      ctx.fillStyle = '#c4143c';
+      ctx.fill();
+    } else {
+      starPath(ctx, cx, cy + S * 0.002, hubR * 0.58);
+      ctx.fillStyle = '#c4143c';
+      ctx.fill();
+    }
+  }
+  // 円盤: 縁・立体的な切れ目・模様・読みやすい文字・当たりの強調・針。fx = { bulb, winner, tilt, theme, look }（theme は色合い、look は絵柄（設定でまとめて決める））
   function drawWheel(ctx, S, rot, items, ff, fx) {
     fx = fx || {};
     const T = fx.theme || themeOf(DEFAULT_THEME);
+    const L = Object.assign(lookFields({}), fx.look || {});
     const cx = S / 2;
     const cy = S * 0.52;                 // 針のぶんを上に空ける
     const outerR = S * 0.455;
@@ -463,31 +761,7 @@
     const R = outerR - rimW;
     ctx.clearRect(0, 0, S, S);
 
-    // 影
-    ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = S * 0.035;
-    ctx.shadowOffsetY = S * 0.012;
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR, 0, TAU);
-    ctx.fill();
-    ctx.restore();
-
-    // 金の縁
-    const rim = ctx.createLinearGradient(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
-    rim.addColorStop(0, T.rim[0]);
-    rim.addColorStop(0.3, T.rim[1]);
-    rim.addColorStop(0.65, T.rim[2]);
-    rim.addColorStop(1, T.rim[3]);
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR, 0, TAU);
-    ctx.fillStyle = rim;
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx, cy, R + rimW * 0.14, 0, TAU);
-    ctx.fillStyle = 'rgba(70, 40, 0, 0.55)';
-    ctx.fill();
+    paintRimBase(ctx, S, cx, cy, outerR, rimW, R, T, L);
 
     const list = layoutOf(items);
     if (list.length === 0) {
@@ -513,6 +787,8 @@
         ctx.fillStyle = g;
         ctx.fill();
       }
+      paintPattern(ctx, S, cx, cy, R, rot, L.pattern);
+      if (L.shape === 'dart') paintDartFace(ctx, S, cx, cy, R);
       // 区切りの白い線
       ctx.lineJoin = 'round';
       for (const e of list) {
@@ -536,7 +812,7 @@
         ctx.textAlign = leftward ? 'left' : 'right';
         ctx.textBaseline = 'middle';
         const label = items[e.index].label.trim();
-        const maxW = R * 0.68;
+        const maxW = R * (0.92 - (L.shape === 'dart' ? 0.3 : 0.24));   // ダーツ盤は、中心の的をよけて短く
         // 長い名前は、折り返して何行かに分け、収まる範囲でいちばん大きい文字にする（利用者の指示「ルーレットにもっと文字数表示できる方法ないかな？折り返すとかもう少し小さくするとか」）。
         // 切れ目の幅（中心に近いほど狭い）に行が収まる大きさまで小さくし、それでも入らない最小の大きさのときだけ、行数を絞って最後の行を「…」にする。
         const minSize = S * 0.024;
@@ -604,47 +880,8 @@
     ctx.strokeStyle = 'rgba(70, 40, 0, 0.7)';
     ctx.stroke();
 
-    // 縁のランプ（交互に点滅。回している間と当たりの演出では速く）
-    const bulbs = 24;
-    for (let i = 0; i < bulbs; i++) {
-      const a = (i / bulbs) * TAU - Math.PI / 2;
-      const bx = cx + Math.cos(a) * (outerR - rimW * 0.5);
-      const by = cy + Math.sin(a) * (outerR - rimW * 0.5);
-      const on = (i + (fx.bulb || 0)) % 2 === 0;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(bx, by, S * 0.0105, 0, TAU);
-      if (on) {
-        ctx.shadowColor = T.bulb[1];
-        ctx.shadowBlur = S * 0.025;
-        ctx.fillStyle = T.bulb[0];
-      } else {
-        ctx.fillStyle = T.bulb[2];
-      }
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // 中央（金の飾りと星）
-    const hubR = S * 0.07;
-    const hub = ctx.createRadialGradient(cx - hubR * 0.3, cy - hubR * 0.35, hubR * 0.1, cx, cy, hubR);
-    hub.addColorStop(0, '#fff7c9');
-    hub.addColorStop(0.5, '#f1b72f');
-    hub.addColorStop(1, '#9a6200');
-    ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = S * 0.015;
-    ctx.beginPath();
-    ctx.arc(cx, cy, hubR, 0, TAU);
-    ctx.fillStyle = hub;
-    ctx.fill();
-    ctx.restore();
-    ctx.lineWidth = S * 0.006;
-    ctx.strokeStyle = '#fff3b0';
-    ctx.stroke();
-    starPath(ctx, cx, cy + S * 0.002, hubR * 0.58);
-    ctx.fillStyle = '#c4143c';
-    ctx.fill();
+    paintRimDeco(ctx, S, cx, cy, outerR, rimW, R, T, L, fx);
+    paintHub(ctx, S, cx, cy, L, ff);
 
     // 針（赤い宝石のような形。切れ目が当たるたびにしなる）
     const px = cx;
@@ -731,7 +968,7 @@
     const wc = document.createElement('canvas');
     wc.width = 620;
     wc.height = 620;
-    drawWheel(wc.getContext('2d'), 620, last.rot, last.items, ff, { bulb: 0, winner: last.winner, tilt: 0, theme: themeOf(last.theme) });
+    drawWheel(wc.getContext('2d'), 620, last.rot, last.items, ff, { bulb: 0, winner: last.winner, tilt: 0, theme: themeOf(last.theme), look: last.look });
     x.drawImage(wc, 16, 28);
 
     const left = 660, maxW = 500;
@@ -1149,7 +1386,7 @@
         canvas.height = S;
       }
       canvas.setAttribute('aria-label', `ルーレットの円盤（${wheel.name}）。押すと回ります`);
-      drawWheel(canvas.getContext('2d'), S, v.rot, displayItems(), fontFamily(), { bulb: v.bulb, winner: v.winnerIdx, tilt: v.tilt, theme: themeOf(wheel.theme) });
+      drawWheel(canvas.getContext('2d'), S, v.rot, displayItems(), fontFamily(), { bulb: v.bulb, winner: v.winnerIdx, tilt: v.tilt, theme: themeOf(wheel.theme), look: currentLook() });
     }
     v.redraw = redraw;
 
@@ -1258,7 +1495,7 @@
     }
     function finish(a, now) {
       const text = a.label.trim();
-      v.last = { name: wheel.name, items: a.snapshot, rot: v.rot, text, winner: a.idx, who: a.who, theme: wheel.theme, at: Date.now() };
+      v.last = { name: wheel.name, items: a.snapshot, rot: v.rot, text, winner: a.idx, who: a.who, theme: wheel.theme, look: currentLook(), at: Date.now() };
       wheel.history.unshift({ at: v.last.at, result: a.label, who: a.who });
       wheel.history.length = Math.min(wheel.history.length, HISTORY_KEEP);
       v.winnerIdx = a.idx;
@@ -1787,6 +2024,123 @@
   if (canShareFiles()) $('summary-share').hidden = false;
   if (isPhone()) $('summary-x').hidden = $('summary-discord').hidden = true;
 
+  // ---- 絵柄（設定でまとめて決める。全部のルーレットに反映） ----
+  const hubImages = new Map();
+  // 中央の画像は、読み込めてから描く（読み込み中は星などの代わりに何も重ねず、読めたら全部のルーレットを描き直す）
+  function hubImageFor(url) {
+    if (!url) return null;
+    let e = hubImages.get(url);
+    if (!e) {
+      e = { img: new Image(), ok: false };
+      e.img.onload = () => { e.ok = true; redrawAll(); };
+      e.img.src = url;
+      hubImages.set(url, e);
+    }
+    return e.ok ? e.img : null;
+  }
+  function currentLook() {
+    const l = data.settings.look;
+    return Object.assign({}, l, { hubImg: l.hub === 'image' ? hubImageFor(l.hubImage) : null });
+  }
+  function redrawAll() {
+    for (const v of views) v.redraw();
+    renderLookPreview();
+  }
+  const previewItems = ['あたり', 'はずれ', 'ラッキー', 'おめでとう', 'もう一回', 'スペシャル'].map((label) => ({ label, weight: 1 }));
+  function renderLookPreview() {
+    const c = $('look-preview');
+    drawWheel(c.getContext('2d'), c.width, 0.35, previewItems, fontFamily(), { bulb: 0, winner: null, tilt: 0, theme: themeOf(DEFAULT_THEME), look: currentLook() });
+  }
+  function syncLookUi() {
+    const l = data.settings.look;
+    for (const [key, id] of [['pattern', 'look-pattern'], ['rim', 'look-rim'], ['shape', 'look-shape'], ['hub', 'look-hub']]) $(id).value = l[key];
+    $('look-hub-text').value = l.hubText;
+    $('look-hub-text-row').hidden = l.hub !== 'emoji';
+    $('look-hub-image-row').hidden = l.hub !== 'image';
+    $('look-hub-clear').disabled = !l.hubImage;
+    if (!$('look-hub-note').dataset.keep) $('look-hub-note').textContent = l.hubImage ? '画像を置いています。' : '画像はまだありません。';
+  }
+  // 画像を小さく（中央の丸に入れる大きさ）縮めて、文字（data URL）にする。ブラウザの外には出さない
+  function readHubImage(file) {
+    return new Promise((resolve) => {
+      if (!file || !String(file.type).startsWith('image/')) { resolve(''); return; }
+      const fr = new FileReader();
+      fr.onerror = () => resolve('');
+      fr.onload = () => {
+        const img = new Image();
+        img.onerror = () => resolve('');
+        img.onload = () => {
+          try {
+            const side = Math.min(img.naturalWidth, img.naturalHeight);
+            if (!side) { resolve(''); return; }
+            for (const size of [128, 96, 64]) {
+              const cv = document.createElement('canvas');
+              cv.width = size;
+              cv.height = size;
+              cv.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
+              const url = cv.toDataURL('image/png');
+              if (url.length <= MAX_HUB_IMAGE) { resolve(url); return; }
+            }
+          } catch (e) { /* 画像を読めない（画像として扱えない）ときは、空にする */ }
+          resolve('');
+        };
+        img.src = String(fr.result);
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+  async function setHubImage(file) {
+    const note = $('look-hub-note');
+    const url = await readHubImage(file);
+    note.dataset.keep = '1';
+    if (!url) {
+      note.textContent = '画像を読み込めませんでした（画像のファイルを選んでください）。';
+      return false;
+    }
+    data.settings.look.hubImage = url;
+    data.settings.look.hub = 'image';
+    save();
+    note.textContent = '画像を置きました。';
+    delete note.dataset.keep;
+    syncLookUi();
+    redrawAll();
+    return true;
+  }
+  function setupLook() {
+    const defs = [['pattern', 'look-pattern', PATTERNS, 'plain'], ['rim', 'look-rim', RIMS, 'lamp'], ['shape', 'look-shape', SHAPES, 'disc'], ['hub', 'look-hub', HUBS, 'star']];
+    for (const [key, id, map, fallback] of defs) {
+      const sel = $(id);
+      for (const [k, def] of Object.entries(map)) {
+        const o = h('option', null, def.name);
+        o.value = k;
+        sel.append(o);
+      }
+      sel.addEventListener('change', () => {
+        data.settings.look[key] = pickKey(map, sel.value, fallback);
+        save();
+        syncLookUi();
+        redrawAll();
+      });
+    }
+    $('look-hub-text').addEventListener('input', (e) => {
+      data.settings.look.hubText = cleanHubText(e.target.value);
+      save();
+      redrawAll();
+    });
+    $('look-hub-image').addEventListener('click', () => $('look-hub-file').click());
+    $('look-hub-file').addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (f) setHubImage(f);
+    });
+    $('look-hub-clear').addEventListener('click', () => {
+      data.settings.look.hubImage = '';
+      save();
+      syncLookUi();
+      redrawAll();
+    });
+  }
+
   // ---- 設定・書き出し・読み込み ----
   function exportData() {
     const d = new Date();
@@ -1822,9 +2176,11 @@
     $('discord-link').value = data.settings.discordLink;
     renderTemplates();
     renderPeople();
+    syncLookUi();
     for (const w of data.wheels) addWheel(w);
     renderScope();
     renderSummary();
+    renderLookPreview();
   }
   $('template').addEventListener('input', (e) => { data.settings.template = e.target.value.slice(0, 200) || DEFAULT_TEMPLATE; save(); });
   $('discord-link').addEventListener('input', (e) => { data.settings.discordLink = e.target.value.slice(0, 300); save(); });
@@ -1846,17 +2202,19 @@
       views: views.map((v) => ({ id: v.w.id, rot: v.rot, spinning: !!v.anim, last: v.last, winner: v.winnerIdx, confetti: v.confetti.length, tilt: v.tilt })),
     }),
     setWho: (i, name) => views[i].setWho(name),
+    setHubImage, lookFields, currentLook,
     makeCard: (i) => {
       const v = views[i || 0];
-      return makeCard(v.last || { name: v.w.name, items: v.w.items, rot: v.rot, text: '見本', winner: null, who: '', theme: v.w.theme, at: Date.now() });
+      return makeCard(v.last || { name: v.w.name, items: v.w.items, rot: v.rot, text: '見本', winner: null, who: '', theme: v.w.theme, look: currentLook(), at: Date.now() });
     },
     makeSummaryPages: () => makeSummaryPages(summarize(data.wheels, summaryScope()), summaryTitle(), showWheelNames()),
   };
 
+  setupLook();
   rebuild();
   requestAnimationFrame(frame);
   // 書体（Noto Sans JP・Inter）は、使うまで読み込まれない。読み込めたら円盤を描き直す。
   if (document.fonts && document.fonts.load) {
-    Promise.all(['800 20px "Noto Sans JP"', '700 20px "Noto Sans JP"', '700 20px Inter'].map((f) => document.fonts.load(f, 'あA'))).then(() => views.forEach((v) => v.redraw())).catch(() => {});
+    Promise.all(['800 20px "Noto Sans JP"', '700 20px "Noto Sans JP"', '700 20px Inter'].map((f) => document.fonts.load(f, 'あA'))).then(() => redrawAll()).catch(() => {});
   }
 })();
