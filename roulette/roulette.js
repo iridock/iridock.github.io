@@ -29,7 +29,7 @@
   const REQUIRED_IDS = ['notice', 'new-template', 'wheel-add', 'add-note', 'wheels', 'summary-scope', 'summary-body', 'summary-wrap', 'summary-empty', 'summary-count',
     'summary-copy', 'summary-x', 'summary-discord', 'summary-share', 'summary-pages', 'summary-status', 'template', 'discord-link', 'export', 'import', 'import-file', 'settings-status',
     'people-input', 'people-add', 'people-list', 'people-note', 'templates-list', 'templates-note',
-    'look-pattern', 'look-rim', 'look-shape', 'look-hub', 'look-hub-text', 'look-hub-text-row', 'look-hub-image-row', 'look-hub-image', 'look-hub-clear', 'look-hub-file', 'look-hub-note', 'look-preview'];
+    'look-theme', 'look-effect', 'look-effect-note', 'look-pattern', 'look-rim', 'look-shape', 'look-hub', 'look-hub-text', 'look-hub-text-row', 'look-hub-image-row', 'look-hub-image', 'look-hub-clear', 'look-hub-file', 'look-hub-note', 'look-preview'];
   if (REQUIRED_IDS.some((id) => !document.getElementById(id)) || typeof window.TomSelect !== 'function') {
     const box = document.createElement('p');
     box.setAttribute('role', 'alert');
@@ -44,22 +44,7 @@
     if (text != null) e.textContent = text;
     return e;
   }
-  // 「ラベル ＋ 選ぶ欄」（色合い・演出の選択。map は { キー: { name } }）
-  function selectField(text, map, value) {
-    const label = h('label', 'rl-field');
-    label.append(document.createTextNode(text));
-    const sel = h('select');
-    for (const [key, def] of Object.entries(map)) {
-      const o = h('option', null, def.name);
-      o.value = key;
-      sel.append(o);
-    }
-    sel.value = value;
-    label.append(sel);
-    return { label, sel };
-  }
-
-  // 色合い（ルーレットごとに選べる。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」。種類は色合いと演出で、見た目は円盤だけ）。
+  // 色合い（設定でまとめて選ぶ。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」「色合いとか演出も共通のところもっていって」。種類は色合いと演出で、見た目は円盤だけ）。
   // palette = 切れ目の色（明るい色・暗い色）。切れ目の中は、中心が暗く外側が明るいグラデーションにして立体感を出す。隣どうしが同じ色にならないよう順に使う。
   // rim = 縁の金属の色（4 色のグラデーション）、bulb = ランプ（点灯・光・消灯）、pointer = 針（明・中・暗）。文字は、どの色合いでも白の太字に濃いふちどり。
   const THEMES = {
@@ -94,7 +79,7 @@
     },
   };
   const DEFAULT_THEME = 'lively';
-  // 演出（ルーレットごとに選べる）。華やか = いまの動き。ふつう = 紙吹雪なし。控えめ = 点滅・紙吹雪・はずみなし（針のしなりと当たりの強調だけ）。
+  // 演出（設定でまとめて選ぶ）。華やか = いまの動き。ふつう = 紙吹雪なし。控えめ = 点滅・紙吹雪・はずみなし（針のしなりと当たりの強調だけ）。
   // OS の「動きを減らす」設定のときは、どれを選んでも 0.8 秒で、動きは出さない。
   const EFFECTS = {
     full: { name: '華やか', desc: '回すのは 6 秒。ランプの点滅・紙吹雪・結果がはずむ動きが出ます。', spinMs: 6000, turns: 7, confetti: true, pop: true, blink: true },
@@ -119,7 +104,7 @@
   // 読み込んだ・壊れた保存でも、知らない値は既定に戻す
   const lookFields = (src) => {
     const o = src && typeof src === 'object' ? src : {};
-    return { pattern: pickKey(PATTERNS, o.pattern, 'plain'), rim: pickKey(RIMS, o.rim, 'lamp'), shape: pickKey(SHAPES, o.shape, 'disc'), hub: pickKey(HUBS, o.hub, 'star'), hubText: cleanHubText(o.hubText), hubImage: cleanHubImage(o.hubImage) };
+    return { theme: pickKey(THEMES, o.theme, DEFAULT_THEME), effect: pickKey(EFFECTS, o.effect, DEFAULT_EFFECT), pattern: pickKey(PATTERNS, o.pattern, 'plain'), rim: pickKey(RIMS, o.rim, 'lamp'), shape: pickKey(SHAPES, o.shape, 'disc'), hub: pickKey(HUBS, o.hub, 'star'), hubText: cleanHubText(o.hubText), hubImage: cleanHubImage(o.hubImage) };
   };
 
   // ---- 抽選（画面に触らない部分。確かめの道具からも呼ぶ） ----
@@ -243,11 +228,11 @@
   // 中身は、利用者が実際に作った画面（2026-10-30「ルーレットのデフォルト値はこれにして」）をそのまま写した。
   const DEFAULT_TEMPLATES = [
     {
-      name: '罰ゲーム', theme: 'lively', effect: 'full', useWho: false, removePicked: false,
+      name: '罰ゲーム', useWho: false, removePicked: false,
       items: [['テキーラ２杯', 1], ['テキーラ１杯', 1], ['禁煙１時間', 1], ['禁煙２時間', 1], ['禁煙６時間', 1], ['救済：禁煙－１時間', 1]],
     },
     {
-      name: 'プレゼントルーレット', theme: 'luxe', effect: 'full', useWho: true, removePicked: false,
+      name: 'プレゼントルーレット', useWho: true, removePicked: false,
       items: [['ステッカー１', 3], ['ステッカー２', 3], ['ステッカー３', 3], ['アクリルスタンド１', 0.5], ['アクリルスタンド２', 0.5], ['キーホルダー１', 2], ['キーホルダー２', 2]],
     },
   ];
@@ -259,8 +244,6 @@
     id: newId(),
     name: String(src.name || 'ルーレット').slice(0, 30),
     items: Array.isArray(src.items) && src.items.length && Array.isArray(src.items[0]) ? src.items.map(([label, weight]) => ({ label, weight })) : cloneItems(src.items || []),
-    theme: THEMES[src.theme] ? src.theme : DEFAULT_THEME,
-    effect: EFFECTS[src.effect] ? src.effect : DEFAULT_EFFECT,
     useWho: src.useWho !== false,
     removePicked: src.removePicked === true,
   });
@@ -271,8 +254,6 @@
     name: String(name || (t && t.name) || 'ルーレット').slice(0, 30),
     items: t ? cloneItems(t.items) : [],
     removePicked: t ? t.removePicked === true : false,
-    theme: t ? t.theme : DEFAULT_THEME,
-    effect: t ? t.effect : DEFAULT_EFFECT,
     useWho: t ? t.useWho !== false : true,
     who: '',
     history: [],
@@ -301,8 +282,6 @@
       id: typeof t.id === 'string' && t.id ? t.id.slice(0, 40) : newId(),
       name: String(t.name || 'ルーレット').slice(0, 30),
       items: sanitizeItems(t.items),
-      theme: THEMES[t.theme] ? t.theme : DEFAULT_THEME,
-      effect: EFFECTS[t.effect] ? t.effect : DEFAULT_EFFECT,
       useWho: t.useWho !== false,
       removePicked: t.removePicked === true,
     };
@@ -319,8 +298,6 @@
       name: String(w.name || 'ルーレット').slice(0, 30),
       items,
       removePicked: w.removePicked === true,
-      theme: THEMES[w.theme] ? w.theme : DEFAULT_THEME,       // 知らない色合い・演出（古い保存・壊れた保存）は、既定にする
-      effect: EFFECTS[w.effect] ? w.effect : DEFAULT_EFFECT,
       useWho: w.useWho !== false,                              // 当てた人を記録するか（前の版の保存には無いので、あり）
       who: typeof w.who === 'string' ? w.who.slice(0, MAX_WHO) : '',
       history,
@@ -341,7 +318,8 @@
         template: typeof s.template === 'string' && s.template.trim() ? s.template.slice(0, 200) : DEFAULT_TEMPLATE,
         discordLink: typeof s.discordLink === 'string' ? s.discordLink.slice(0, 300) : '',
         people: sanitizePeople(s.people),
-        look: lookFields(s.look),
+        // 前の版の保存は、色合い・演出をルーレットごとに持っていた。まとめて決める形になったので、最初のルーレットの選びを引き継ぐ（設定に無いときだけ）
+        look: lookFields(Object.assign({}, d.wheels[0] && typeof d.wheels[0] === 'object' ? { theme: d.wheels[0].theme, effect: d.wheels[0].effect } : {}, s.look && typeof s.look === 'object' ? s.look : {})),
       },
     };
   }
@@ -752,8 +730,8 @@
   // 円盤: 縁・立体的な切れ目・模様・読みやすい文字・当たりの強調・針。fx = { bulb, winner, tilt, theme, look }（theme は色合い、look は絵柄（設定でまとめて決める））
   function drawWheel(ctx, S, rot, items, ff, fx) {
     fx = fx || {};
-    const T = fx.theme || themeOf(DEFAULT_THEME);
     const L = Object.assign(lookFields({}), fx.look || {});
+    const T = themeOf(L.theme);
     const cx = S / 2;
     const cy = S * 0.52;                 // 針のぶんを上に空ける
     const outerR = S * 0.455;
@@ -968,7 +946,7 @@
     const wc = document.createElement('canvas');
     wc.width = 620;
     wc.height = 620;
-    drawWheel(wc.getContext('2d'), 620, last.rot, last.items, ff, { bulb: 0, winner: last.winner, tilt: 0, theme: themeOf(last.theme), look: last.look });
+    drawWheel(wc.getContext('2d'), 620, last.rot, last.items, ff, { bulb: 0, winner: last.winner, tilt: 0, look: last.look });
     x.drawImage(wc, 16, 28);
 
     const left = 660, maxW = 500;
@@ -1087,7 +1065,7 @@
       x.fillRect(40, 170, W - 80, 52);
       x.fillStyle = '#3a1a00';
       x.font = `800 28px ${ff}`;
-      x.fillText('当てた人', 64, 207);
+      x.fillText('回す人', 64, 207);
       x.fillText('当たったもの', 400, 207);
       let y = 226;
       pg.rows.forEach((r, i) => {
@@ -1241,7 +1219,7 @@
     // ブラウザ標準の候補（datalist）は配色に合わず端末ごとに見た目も操作も違ったので、ライブラリの Tom Select に替えた（利用者の指示「当てた人の名前のやつ、uiがダメだ。
     // なんかいいライブラリとかない？」「有名で安定しているライブラリがいい」）。欄を押すと設定で登録した人が出て、選ぶとすぐ入る。直接入れて確定してもよい（候補に無い名前もそのまま使える）。
     const whoSelect = h('select', 'rl-who-select');
-    whoSelect.setAttribute('aria-label', '当てた人の名前（登録した人から選べます）');
+    whoSelect.setAttribute('aria-label', '回す人の名前（登録した人から選べます）');
     whoRow.append(whoSelect);
     const whoPicker = new window.TomSelect(whoSelect, {
       maxItems: 1,
@@ -1256,10 +1234,10 @@
       selectOnTab: true,
       maxOptions: MAX_PEOPLE,
       plugins: ['clear_button'],
-      placeholder: '当てた人の名前（空でも回せます）',
+      placeholder: '回す人の名前（空でも回せます）',
       dropdownParent: 'body',    // カードの外にはみ出して出す（円盤の枠は overflow を隠すため）
       render: {
-        option_create: (data, escape) => `<div class="create">「${escape(data.input)}」を当てた人にする</div>`,
+        option_create: (data, escape) => `<div class="create">「${escape(data.input)}」を回す人にする</div>`,
         no_results: () => '<div class="no-results">登録した人はいません。名前を入れて確定すると使えます</div>',
       },
       onChange: (value) => { wheel.who = String(value || '').slice(0, MAX_WHO); save(); },
@@ -1329,26 +1307,21 @@
     // 色合い・演出・当てた人を記録するか・テンプレートに保存
     const lookBox = h('details', 'rl-more');
     lookBox.append(h('summary', null, '設定'));
-    const lookRow = h('div', 'rl-row');
-    const themeField = selectField('色合い', THEMES, wheel.theme);
-    const effectField = selectField('演出', EFFECTS, wheel.effect);
-    lookRow.append(themeField.label, effectField.label);
-    const effectNote = h('p', 'rl-note');
     const useWhoRow = h('div', 'rl-options');
     const useWhoLabel = h('label');
     const useWhoCheck = h('input');
     useWhoCheck.type = 'checkbox';
     useWhoCheck.checked = wheel.useWho;
-    useWhoLabel.append(useWhoCheck, document.createTextNode(' 当てた人を記録する'));
+    useWhoLabel.append(useWhoCheck, document.createTextNode(' 回す人を記録する'));
     useWhoRow.append(useWhoLabel);
-    const useWhoNote = h('p', 'rl-note', 'なしにすると、名前の欄・履歴の「当てた人」・まとめに出しません（罰ゲームなど）。');
+    const useWhoNote = h('p', 'rl-note', 'なしにすると、名前の欄・履歴の「回す人」・まとめに出しません（罰ゲームなど）。');
     const saveTplRow = h('div', 'rl-row');
     const saveTplBtn = h('button', 'rl-btn', 'このルーレットをテンプレートに保存');
     saveTplBtn.type = 'button';
     saveTplRow.append(saveTplBtn);
-    const saveTplNote = h('p', 'rl-note', '保存すると、「＋ ルーレットを追加」で、このルーレットの項目・重み・色合い・演出・当てた人の設定から作れます。');
+    const saveTplNote = h('p', 'rl-note', '保存すると、「＋ ルーレットを追加」で、このルーレットの項目・重み・回す人の設定から作れます。');
     // 「当たった項目を一覧から除く」も、ここに入れた（利用者の指示「当たった項目…は設定の中に入れちゃって」）
-    lookBox.append(lookRow, effectNote, useWhoRow, useWhoNote, opts, saveTplRow, saveTplNote);
+    lookBox.append(useWhoRow, useWhoNote, opts, saveTplRow, saveTplNote);
     // 履歴（全部表示）
     const histBox = h('details', 'rl-more');
     histBox.open = true;
@@ -1358,7 +1331,7 @@
     const histTable = h('table', 'rl-hist');
     const thead = h('thead');
     const hr = h('tr');
-    for (const t of ['日時', '当てた人', '結果']) hr.append(h('th', t === '当てた人' ? 'col-who' : null, t));
+    for (const t of ['日時', '回す人', '結果']) hr.append(h('th', t === '回す人' ? 'col-who' : null, t));
     thead.append(hr);
     const tbody = h('tbody');
     histTable.append(thead, tbody);
@@ -1386,7 +1359,7 @@
         canvas.height = S;
       }
       canvas.setAttribute('aria-label', `ルーレットの円盤（${wheel.name}）。押すと回ります`);
-      drawWheel(canvas.getContext('2d'), S, v.rot, displayItems(), fontFamily(), { bulb: v.bulb, winner: v.winnerIdx, tilt: v.tilt, theme: themeOf(wheel.theme), look: currentLook() });
+      drawWheel(canvas.getContext('2d'), S, v.rot, displayItems(), fontFamily(), { bulb: v.bulb, winner: v.winnerIdx, tilt: v.tilt, look: currentLook() });
     }
     v.redraw = redraw;
 
@@ -1407,7 +1380,7 @@
       const oy = wr.top - sr.top + wr.height * 0.52;
       const unit = Math.max(260, wr.width);
       v.confetti = [];
-      const pal = themeOf(wheel.theme).palette;
+      const pal = themeOf(data.settings.look.theme).palette;
       for (let i = 0; i < 170; i++) {
         const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.15;
         const sp = unit * (0.7 + Math.random() * 1.1);
@@ -1479,7 +1452,7 @@
       clearFx();
       const entry = layoutOf(wheel.items).find((e) => e.index === idx);
       const from = v.rot;
-      const eff = effectOf(wheel.effect);   // 演出（回す時間・回転数）はルーレットごと
+      const eff = effectOf(data.settings.look.effect);   // 演出（回す時間・回転数）は設定でまとめて決める
       v.anim = {
         from,
         to: targetRotation(from, entry, randomUnit, eff.turns),
@@ -1495,7 +1468,7 @@
     }
     function finish(a, now) {
       const text = a.label.trim();
-      v.last = { name: wheel.name, items: a.snapshot, rot: v.rot, text, winner: a.idx, who: a.who, theme: wheel.theme, look: currentLook(), at: Date.now() };
+      v.last = { name: wheel.name, items: a.snapshot, rot: v.rot, text, winner: a.idx, who: a.who, look: currentLook(), at: Date.now() };
       wheel.history.unshift({ at: v.last.at, result: a.label, who: a.who });
       wheel.history.length = Math.min(wheel.history.length, HISTORY_KEEP);
       v.winnerIdx = a.idx;
@@ -1506,7 +1479,7 @@
       save();
       setSpinning(false);
       result.textContent = a.who ? `${text}（${a.who} さん）` : text;
-      const eff = effectOf(wheel.effect);
+      const eff = effectOf(data.settings.look.effect);
       if (!reduced) {
         if (eff.pop) {
           void result.offsetWidth;
@@ -1536,7 +1509,7 @@
       const spinning = !!v.anim;
       if (spinning) stepSpin(now);
       const celebrating = v.confetti.length > 0 || now < v.celebrateUntil;
-      const blink = !reduced && effectOf(wheel.effect).blink;   // 演出が「控えめ」・動きを減らす設定のときは、ランプを点滅させない
+      const blink = !reduced && effectOf(data.settings.look.effect).blink;   // 演出が「控えめ」・動きを減らす設定のときは、ランプを点滅させない
       if (!v.anim && !celebrating) {
         if (v.tilt !== 0) { v.tilt = 0; redraw(); }
         if (!blink || now - v.lastIdle < 500) return;
@@ -1590,9 +1563,6 @@
     });
 
     // 見た目と演出の選択
-    const showEffectNote = () => { effectNote.textContent = effectOf(wheel.effect).desc; };
-    themeField.sel.addEventListener('change', () => { wheel.theme = THEMES[themeField.sel.value] ? themeField.sel.value : DEFAULT_THEME; save(); renderItems(); });
-    effectField.sel.addEventListener('change', () => { wheel.effect = EFFECTS[effectField.sel.value] ? effectField.sel.value : DEFAULT_EFFECT; save(); showEffectNote(); });
 
     // 当てた人: 候補（設定で登録した人）の一覧を作り直す。選んでいる名前は、候補に無くても残す。
     // 選び直しの通知（onChange）は出さない（保存の中身は wheel.who がもとで、ここで変えない）
@@ -1637,7 +1607,7 @@
       wheel.items.forEach((it, i) => {
         const li = document.createElement('li');
         const dot = h('span', 'rl-dot');
-        dot.style.background = sliceColor(i, wheel.items.length, themeOf(wheel.theme));
+        dot.style.background = sliceColor(i, wheel.items.length, themeOf(data.settings.look.theme));
         const lab = h('input');
         lab.type = 'text';
         lab.maxLength = 40;
@@ -1720,7 +1690,7 @@
         input.maxLength = MAX_WHO;
         input.value = entry.who || '';
         input.placeholder = '名前なし';
-        input.setAttribute('aria-label', `履歴 ${i + 1} の当てた人`);
+        input.setAttribute('aria-label', `履歴 ${i + 1} の回す人`);
         input.addEventListener('input', () => { entry.who = input.value.slice(0, MAX_WHO); save(); renderSummary(); });
         who.append(input);
         const r = h('td', null, entry.result.trim() || NO_WHO);
@@ -1773,7 +1743,7 @@
       if (name) whoPicker.setValue(name); else whoPicker.clear();
     };
     el.setAttribute('aria-label', wheel.name || 'ルーレット');
-    showEffectNote();
+    v.renderItems = renderItems;   // 色合いを変えたとき、項目の色の点を描き直す
     refreshPeople();
     renderItems();
     renderHistory();
@@ -1817,7 +1787,7 @@
   // 同じ名前のテンプレートがあれば上書きする。'added'・'updated'・'full'（上限）を返す。
   function saveTemplate(wheel) {
     const name = (wheel.name || '').trim().slice(0, 30) || 'ルーレット';
-    const src = { name, items: cloneItems(wheel.items), theme: wheel.theme, effect: wheel.effect, useWho: wheel.useWho !== false, removePicked: wheel.removePicked === true };
+    const src = { name, items: cloneItems(wheel.items), useWho: wheel.useWho !== false, removePicked: wheel.removePicked === true };
     const i = data.templates.findIndex((t) => t.name === name);
     let result;
     if (i >= 0) {
@@ -1853,7 +1823,7 @@
     for (const t of data.templates) {
       const li = h('li', 'rl-tpl');
       li.append(h('span', 'rl-tpl-name', t.name));
-      li.append(h('span', 'rl-tpl-meta', `項目 ${t.items.length} 個・${themeOf(t.theme).name}・${effectOf(t.effect).name}・当てた人${t.useWho ? 'あり' : 'なし'}`));
+      li.append(h('span', 'rl-tpl-meta', `項目 ${t.items.length} 個・回す人${t.useWho ? 'あり' : 'なし'}`));
       const del = h('button', 'rl-btn rl-btn-small', '消す');
       del.type = 'button';
       del.setAttribute('aria-label', `テンプレート「${t.name}」を消す`);
@@ -2049,11 +2019,12 @@
   const previewItems = ['あたり', 'はずれ', 'ラッキー', 'おめでとう', 'もう一回', 'スペシャル'].map((label) => ({ label, weight: 1 }));
   function renderLookPreview() {
     const c = $('look-preview');
-    drawWheel(c.getContext('2d'), c.width, 0.35, previewItems, fontFamily(), { bulb: 0, winner: null, tilt: 0, theme: themeOf(DEFAULT_THEME), look: currentLook() });
+    drawWheel(c.getContext('2d'), c.width, 0.35, previewItems, fontFamily(), { bulb: 0, winner: null, tilt: 0, look: currentLook() });
   }
   function syncLookUi() {
     const l = data.settings.look;
-    for (const [key, id] of [['pattern', 'look-pattern'], ['rim', 'look-rim'], ['shape', 'look-shape'], ['hub', 'look-hub']]) $(id).value = l[key];
+    $('look-effect-note').textContent = effectOf(l.effect).desc;
+    for (const [key, id] of [['theme', 'look-theme'], ['effect', 'look-effect'], ['pattern', 'look-pattern'], ['rim', 'look-rim'], ['shape', 'look-shape'], ['hub', 'look-hub']]) $(id).value = l[key];
     $('look-hub-text').value = l.hubText;
     $('look-hub-text-row').hidden = l.hub !== 'emoji';
     $('look-hub-image-row').hidden = l.hub !== 'image';
@@ -2107,7 +2078,7 @@
     return true;
   }
   function setupLook() {
-    const defs = [['pattern', 'look-pattern', PATTERNS, 'plain'], ['rim', 'look-rim', RIMS, 'lamp'], ['shape', 'look-shape', SHAPES, 'disc'], ['hub', 'look-hub', HUBS, 'star']];
+    const defs = [['theme', 'look-theme', THEMES, DEFAULT_THEME], ['effect', 'look-effect', EFFECTS, DEFAULT_EFFECT], ['pattern', 'look-pattern', PATTERNS, 'plain'], ['rim', 'look-rim', RIMS, 'lamp'], ['shape', 'look-shape', SHAPES, 'disc'], ['hub', 'look-hub', HUBS, 'star']];
     for (const [key, id, map, fallback] of defs) {
       const sel = $(id);
       for (const [k, def] of Object.entries(map)) {
@@ -2119,6 +2090,7 @@
         data.settings.look[key] = pickKey(map, sel.value, fallback);
         save();
         syncLookUi();
+        if (key === 'theme') for (const v of views) v.renderItems();   // 項目の色の点も、色合いに合わせる
         redrawAll();
       });
     }
@@ -2205,7 +2177,7 @@
     setHubImage, lookFields, currentLook,
     makeCard: (i) => {
       const v = views[i || 0];
-      return makeCard(v.last || { name: v.w.name, items: v.w.items, rot: v.rot, text: '見本', winner: null, who: '', theme: v.w.theme, look: currentLook(), at: Date.now() });
+      return makeCard(v.last || { name: v.w.name, items: v.w.items, rot: v.rot, text: '見本', winner: null, who: '', look: currentLook(), at: Date.now() });
     },
     makeSummaryPages: () => makeSummaryPages(summarize(data.wheels, summaryScope()), summaryTitle(), showWheelNames()),
   };

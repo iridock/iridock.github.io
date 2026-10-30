@@ -55,7 +55,7 @@
 
   <!-- まとめ: 全部のルーレットの履歴を合わせて、誰が何を当てたかを表にする。共有は表の画像（文章だと文字数の制限に引っかかるため。長いときは複数枚） -->
   <section id="summary" class="panel rl-wide" aria-labelledby="summary-title">
-    <div class="panel-head"><h2 id="summary-title">まとめ <small>誰が何を当てたか（履歴の「当てた人」から作ります）</small></h2></div>
+    <div class="panel-head"><h2 id="summary-title">まとめ <small>誰が何を当てたか（履歴の「回す人」から作ります）</small></h2></div>
     <div class="rl-row">
       <label class="rl-field">対象
         <select id="summary-scope" aria-label="まとめに入れるルーレット"></select>
@@ -65,7 +65,7 @@
     <p id="summary-empty" class="rl-note">まだありません。ルーレットを回すと、ここに集まります。</p>
     <div id="summary-wrap" class="rl-histwrap" hidden>
       <table class="rl-hist rl-summary">
-        <thead><tr><th>当てた人</th><th>当たったもの</th></tr></thead>
+        <thead><tr><th>回す人</th><th>当たったもの</th></tr></thead>
         <tbody id="summary-body"></tbody>
       </table>
     </div>
@@ -82,10 +82,19 @@
   <section class="panel rl-wide" aria-labelledby="settings-title">
     <div class="panel-head"><h2 id="settings-title">設定</h2></div>
 
-    <!-- ルーレットの絵柄（利用者の指示、2026-10-30。ルーレットごとではなく、ここで全部のルーレットにまとめて決める。色合い・演出はルーレットごとの「設定」） -->
+    <!-- ルーレットの見た目（利用者の指示、2026-10-30。色合い・演出・絵柄は、ルーレットごとではなく、ここで全部のルーレットにまとめて決める） -->
     <div class="rl-block">
-      <h3 class="rl-h3">ルーレットの絵柄</h3>
-      <p class="rl-note">全部のルーレットにまとめて反映されます（色合いと演出は、ルーレットごとの「設定」で選びます）。</p>
+      <h3 class="rl-h3">ルーレットの見た目</h3>
+      <p class="rl-note">色合い・演出・絵柄は、全部のルーレットにまとめて反映されます。</p>
+      <div class="rl-row">
+        <label class="rl-field">色合い
+          <select id="look-theme"></select>
+        </label>
+        <label class="rl-field">演出
+          <select id="look-effect"></select>
+        </label>
+      </div>
+      <p id="look-effect-note" class="rl-note"></p>
       <div class="rl-row">
         <label class="rl-field">切れ目の模様
           <select id="look-pattern"></select>
@@ -116,7 +125,7 @@
 
     <!-- 当てた人の登録（ルーレットごとの「当てた人」の欄の候補に出る。選ぶとすぐ入る。名前を直接入れてもよい） -->
     <div class="rl-block">
-      <h3 class="rl-h3">当てた人の登録</h3>
+      <h3 class="rl-h3">回す人の登録</h3>
       <label class="rl-field">名前（複数は、改行か「、」で区切ります）
         <textarea id="people-input" rows="2" maxlength="2000" autocomplete="off" placeholder="例: たろう、はなこ"></textarea>
       </label>
@@ -134,7 +143,7 @@
       <ul id="templates-list" class="rl-tpls" aria-label="保存したテンプレート"></ul>
     </div>
 
-    <label class="rl-field">共有時に入れる文面（{result} が結果、{who} が当てた人になります）
+    <label class="rl-field">共有時に入れる文面（{result} が結果、{who} が回す人になります）
       <input id="template" type="text" maxlength="200" autocomplete="off">
     </label>
     <label class="rl-field">Discord のチャンネルのリンク（任意。「Discord」ボタンで、画像をコピーしてこのチャンネルを開きます）
@@ -159,6 +168,6 @@
         crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
 <!-- 当てた人の欄の部品（Tom Select。Apache License 2.0。サイトに同梱している。vendor/tom-select/README.md） -->
 <script src="vendor/tom-select/tom-select.complete.min.js?v=8f9d7d34"></script>
-<script src="roulette.js?v=4899d20e"></script>
+<script src="roulette.js?v=1e33ec50"></script>
 </body>
 </html>
