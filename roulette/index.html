@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0e16">
+<!-- ボーダー予想のページと同じ決まり。ページの中のスクリプト・スタイルは使えない。画像の下見は data: で出す。外への通信は無い -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="項目と重みを決めて回せるルーレット。結果の画像をコピーして、X や Discord に貼り付けられます。">
+<meta property="og:title" content="IriDock ルーレット">
+<meta property="og:type" content="website">
+<link rel="icon" href="../icon.png" type="image/png">
+<link rel="apple-touch-icon" href="../icon.png">
+<script src="../theme.js"></script>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="roulette.css">
+<title>IriDock ルーレット</title>
+</head>
+<body>
+<!-- web 版ルーレット（利用者の指示、2026-10-30）。設計書 16。ボーダー予想のデータには頼らない（あとで別の場所へ移せるように） -->
+<header class="topbar">
+  <div class="brand">
+    <img src="../icon.png" alt="" width="28" height="28">
+    <span class="name">IriDock</span>
+    <span class="product">ルーレット</span>
+  </div>
+  <div class="bar-right">
+    <a class="back" href="../">ボーダー予想へ</a>
+  </div>
+</header>
+
+<main class="rl">
+  <noscript><p class="notice">ルーレットは JavaScript が必要です。</p></noscript>
+  <p id="notice" class="notice" role="status" hidden></p>
+
+  <section id="stage" class="panel rl-stage" aria-label="ルーレット">
+    <div class="rl-wheelbox"><canvas id="wheel" role="img" aria-label="ルーレットの円盤"></canvas></div>
+    <p id="result" class="rl-result" role="status" aria-live="polite">　</p>
+    <div class="rl-actions">
+      <button id="spin" type="button" class="rl-primary">回す</button>
+      <button id="fullscreen" type="button" class="rl-btn" hidden>全画面</button>
+    </div>
+    <div id="share" class="rl-share" hidden>
+      <button id="copy-image" type="button" class="rl-btn">画像をコピー</button>
+      <button id="post-x" type="button" class="rl-btn">X に投稿</button>
+      <button id="post-discord" type="button" class="rl-btn">Discord</button>
+      <button id="share-native" type="button" class="rl-btn" hidden>共有</button>
+    </div>
+    <p id="status" class="rl-status" role="status" aria-live="polite"></p>
+    <img id="preview" class="rl-preview" alt="結果の画像（長押しで保存できます）" hidden>
+  </section>
+
+  <section class="panel rl-edit" aria-labelledby="items-title">
+    <div class="panel-head">
+      <h2 id="items-title">項目と重み <small>重みが大きいほど当たりやすくなります（0 は当たりません）</small></h2>
+    </div>
+
+    <div class="rl-row">
+      <label class="rl-field">ルーレット
+        <select id="wheel-select" aria-label="ルーレットを選ぶ"></select>
+      </label>
+      <button id="wheel-add" type="button" class="rl-btn">追加</button>
+      <button id="wheel-del" type="button" class="rl-btn">削除</button>
+    </div>
+    <label class="rl-field">名前
+      <input id="wheel-name" type="text" maxlength="30" autocomplete="off">
+    </label>
+
+    <ul id="items" class="rl-items" aria-label="項目の一覧"></ul>
+    <div class="rl-row">
+      <button id="item-add" type="button" class="rl-btn">項目を足す</button>
+      <span id="item-count" class="rl-count"></span>
+    </div>
+
+    <details class="rl-more">
+      <summary>まとめて追加</summary>
+      <textarea id="bulk" rows="5" placeholder="1 行に 1 つ。「名前,重み」でも入れられます（例: ゲーム,2）"></textarea>
+      <button id="bulk-add" type="button" class="rl-btn">追加する</button>
+    </details>
+
+    <div class="rl-options">
+      <label><input id="opt-avoid" type="checkbox"> 直前と同じ項目を避ける</label>
+      <label><input id="opt-remove" type="checkbox"> 当たった項目を一覧から除く</label>
+    </div>
+    <p class="hint">直前を避けるときは、直前の項目が出ないぶん、ほかの確率が少し上がります。</p>
+  </section>
+
+  <section class="panel rl-edit" aria-labelledby="history-title">
+    <div class="panel-head"><h2 id="history-title">履歴 <small>このルーレットの直近 10 件</small></h2></div>
+    <ol id="history" class="rl-history"></ol>
+    <button id="history-clear" type="button" class="rl-btn">履歴を消す</button>
+  </section>
+
+  <section class="panel rl-edit" aria-labelledby="post-title">
+    <div class="panel-head"><h2 id="post-title">投稿と保存 <small>X・Discord への投稿は API を使わず、貼り付けで行います</small></h2></div>
+    <label class="rl-field">X に入れる文面（{result} が結果になります）
+      <input id="template" type="text" maxlength="200" autocomplete="off">
+    </label>
+    <label class="rl-field">Discord のチャンネルのリンク（任意）
+      <input id="discord-link" type="url" inputmode="url" placeholder="https://discord.com/channels/…" autocomplete="off">
+    </label>
+    <p class="hint">X は画像をコピーしてから投稿画面を開きます。投稿画面で貼り付けてください（PC は Ctrl+V、スマホは長押しして「ペースト」）。Discord も同じで、チャンネルを開いて貼り付けます。スマホの「共有」ボタンなら、貼り付けなしで画像つきで送れます。</p>
+    <div class="rl-row">
+      <button id="export" type="button" class="rl-btn">ファイルに書き出す</button>
+      <button id="import" type="button" class="rl-btn">ファイルから読み込む</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </div>
+    <p class="hint">項目や履歴は、このブラウザの中だけに保存します（サーバーには送りません）。ブラウザの閲覧データを消すと、なくなります。iPhone の Safari は、しばらく使わないと消えることがあるので、ときどき書き出しておくと安心です。</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
+</footer>
+<script src="roulette.js"></script>
+</body>
+</html>
