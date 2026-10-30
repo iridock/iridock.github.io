@@ -146,19 +146,68 @@
 }
 .rl-field textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* 当てた人（ルーレットごと）: 名前の欄（登録した人の候補が出る）。「当てた人を記録する」がなしのルーレットでは、この行ごと隠す */
+/* 当てた人（ルーレットごと）: 名前の欄。部品は Tom Select（vendor/tom-select）。登録した人の候補が出て、候補に無い名前も入れて確定できる。
+   部品の色・角・文字は、サイトの配色の変数（--fill・--text・--panel…）に合わせて上書きする（部品の CSS は書き換えない）。
+   「当てた人を記録する」がなしのルーレットでは、この行ごと隠す */
 .rl-whorow { margin: 10px 0 0; }
 .rl-whorow[hidden] { display: none; }
-.rl-whorow input {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 8px 10px;
+.rl-whorow .ts-wrapper { --ts-pr-caret: 26px; width: 100%; }
+.rl-whorow .ts-wrapper .ts-control,
+.rl-whorow .ts-wrapper.single.input-active .ts-control {
+  min-height: 40px;
+  padding: 8px 12px;
+  align-items: center;
   border: 0;
   border-radius: var(--r-sm);
   background: var(--fill);
+  box-shadow: none;
   color: var(--text);
+  font-size: 15px;
+  line-height: 22px;
+  cursor: pointer;
 }
-.rl-whorow input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rl-whorow .ts-wrapper .ts-control input { color: var(--text); font-size: 15px; line-height: 22px; cursor: text; }
+.rl-whorow .ts-wrapper .ts-control input::placeholder { color: var(--muted); opacity: 1; }
+.rl-whorow .ts-wrapper.focus .ts-control { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rl-whorow .ts-wrapper.single.has-items .ts-control > .item { color: var(--text); font-weight: 600; }
+/* 右の「∨」（開く印）。押せることが分かるように。消す「×」は、この左に出る */
+.rl-whorow .ts-wrapper.single .ts-control::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+.rl-whorow .ts-wrapper.dropdown-active.single .ts-control::after { transform: translateY(-30%) rotate(225deg); }
+.rl-whorow .plugin-clear_button .clear-button { color: var(--muted); font-size: 20px; line-height: 1; padding: 0 4px; }
+.rl-whorow .plugin-clear_button .clear-button:hover { color: var(--text); }
+/* 候補の一覧（body の直下に出るので、カードの中の指定は効かない。.rl-who-dd で当てる） */
+.ts-dropdown.rl-who-dd {
+  z-index: 1000;
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  font-size: 15px;
+  line-height: 22px;
+  overflow: hidden;
+}
+.ts-dropdown.rl-who-dd .ts-dropdown-content { max-height: 260px; scroll-behavior: auto; }
+.ts-dropdown.rl-who-dd .option,
+.ts-dropdown.rl-who-dd .create,
+.ts-dropdown.rl-who-dd .no-results { padding: 10px 14px; }
+.ts-dropdown.rl-who-dd .no-results { color: var(--muted); font-size: 13px; }
+.ts-dropdown.rl-who-dd .active { background: var(--tint, var(--fill)); color: var(--text); }
+.ts-dropdown.rl-who-dd .create { color: var(--accent); font-weight: 600; }
+.ts-dropdown.rl-who-dd .active.create { color: var(--accent); }
+.ts-dropdown.rl-who-dd [data-selectable] .highlight { background: var(--tint, var(--fill)); }
 .rl-nowho .col-who { display: none; }
 
 /* 設定: 登録した人（札）とテンプレートの一覧 */

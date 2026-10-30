@@ -29,7 +29,7 @@
   const REQUIRED_IDS = ['notice', 'new-template', 'wheel-add', 'add-note', 'wheels', 'summary-scope', 'summary-body', 'summary-wrap', 'summary-empty', 'summary-count',
     'summary-copy', 'summary-x', 'summary-discord', 'summary-share', 'summary-pages', 'summary-status', 'template', 'discord-link', 'export', 'import', 'import-file', 'settings-status',
     'people-input', 'people-add', 'people-list', 'people-note', 'templates-list', 'templates-note'];
-  if (REQUIRED_IDS.some((id) => !document.getElementById(id))) {
+  if (REQUIRED_IDS.some((id) => !document.getElementById(id)) || typeof window.TomSelect !== 'function') {
     const box = document.createElement('p');
     box.setAttribute('role', 'alert');
     box.textContent = 'ページの一部が前の版のままになっているようです。Ctrl+F5（スマホは、ページを閉じて開き直す）でもう一度開いてください。';
@@ -222,14 +222,15 @@
   // ルーレットのテンプレート（利用者の指示、2026-10-30「ルーレットを保存して、あたらしいルーレット作ったときにそのルーレットの設定をつかえるようにしたい。
   // デフォルトとして罰ゲームとプレゼントルーレットを表示するようにしてほしい」）。項目と重み・色合い・演出・当てた人のあり／なし・当たった項目を除く、を覚える。
   // 既定の 2 つは、初めて開いたときに画面に出るルーレットにもなる。
+  // 中身は、利用者が実際に作った画面（2026-10-30「ルーレットのデフォルト値はこれにして」）をそのまま写した。
   const DEFAULT_TEMPLATES = [
     {
       name: '罰ゲーム', theme: 'lively', effect: 'full', useWho: false, removePicked: false,
-      items: [['腕立て伏せ 10 回', 1], ['変顔を披露する', 1], ['一発ギャグ', 1], ['好きな食べ物を告白する', 1], ['次の曲をリクエスト', 1], ['早口言葉に挑戦', 1], ['ひとこと自己 PR', 1], ['セーフ（なし）', 1]],
+      items: [['テキーラ２杯', 1], ['テキーラ１杯', 1], ['禁煙１時間', 1], ['禁煙２時間', 1], ['禁煙６時間', 1], ['救済：禁煙－１時間', 1]],
     },
     {
       name: 'プレゼントルーレット', theme: 'luxe', effect: 'full', useWho: true, removePicked: false,
-      items: [['ステッカー', 4], ['サイン入りポスター', 1], ['ぬいぐるみ', 0.5], ['おはようボイス', 3], ['おやすみボイス', 3], ['お名前呼びボイス', 1], ['ハズレ', 6]],
+      items: [['ステッカー１', 3], ['ステッカー２', 3], ['ステッカー３', 3], ['アクリルスタンド１', 0.5], ['アクリルスタンド２', 0.5], ['キーホルダー１', 2], ['キーホルダー２', 2]],
     },
   ];
   const sanitizeItems = (items) => (Array.isArray(items)
@@ -378,6 +379,29 @@
     while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
     return t + '…';
   }
+  // 円盤の名前用の折り返し: 文字で折り返すが、空白があればそこで切る（英単語の途中で切れないように）
+  function wrapLabel(ctx, text, maxW) {
+    const lines = [];
+    let line = '';
+    const isSpace = (c) => c === ' ' || c === '　';
+    for (const ch of Array.from(text)) {
+      if (line && ctx.measureText(line + ch).width > maxW) {
+        const sp = Math.max(line.lastIndexOf(' '), line.lastIndexOf('　'));
+        if (sp > 0 && !isSpace(ch)) {
+          lines.push(line.slice(0, sp));
+          line = line.slice(sp + 1) + ch;
+        } else {
+          lines.push(line);
+          line = isSpace(ch) ? '' : ch;
+        }
+      } else {
+        line += ch;
+      }
+    }
+    if (line) lines.push(line);
+    const out = lines.map((l) => l.trim()).filter(Boolean);
+    return out.length ? out : [text];
+  }
   function wrapLines(ctx, text, maxW) {
     const lines = [];
     let line = '';
@@ -512,21 +536,35 @@
         ctx.textAlign = leftward ? 'left' : 'right';
         ctx.textBaseline = 'middle';
         const label = items[e.index].label.trim();
-        const maxW = R * 0.64;
+        const maxW = R * 0.68;
+        // 長い名前は、折り返して何行かに分け、収まる範囲でいちばん大きい文字にする（利用者の指示「ルーレットにもっと文字数表示できる方法ないかな？折り返すとかもう少し小さくするとか」）。
+        // 切れ目の幅（中心に近いほど狭い）に行が収まる大きさまで小さくし、それでも入らない最小の大きさのときだけ、行数を絞って最後の行を「…」にする。
+        const minSize = S * 0.024;
+        const roomFor = (lines, sz) => {
+          const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
+          return span * Math.max(R * 0.92 - widest, R * 0.25) * 0.94;
+        };
         let size = size0;
-        ctx.font = `800 ${size}px ${ff}`;
-        while (size > size0 * 0.65 && ctx.measureText(label).width > maxW) {   // まず小さくして収める。それでも長ければ「…」
-          size *= 0.92;
+        let lines;
+        for (;;) {
           ctx.font = `800 ${size}px ${ff}`;
+          lines = wrapLabel(ctx, label, maxW);
+          if (lines.length * size * 1.14 <= roomFor(lines, size) || size <= minSize) break;
+          size = Math.max(minSize, size * 0.93);
         }
-        const text = fitText(ctx, label, maxW);
+        const maxLines = Math.max(1, Math.floor(roomFor(lines, size) / (size * 1.14)));
+        if (lines.length > maxLines) {
+          lines = lines.slice(0, maxLines);
+          lines[maxLines - 1] = fitText(ctx, lines[maxLines - 1] + '…', maxW);
+        }
+        const lh = size * 1.14;
         const tx = leftward ? -R * 0.92 : R * 0.92;
         ctx.lineJoin = 'round';
         ctx.lineWidth = size * 0.24;
         ctx.strokeStyle = 'rgba(25, 10, 45, 0.65)';
-        ctx.strokeText(text, tx, 0);
+        lines.forEach((l, k) => ctx.strokeText(l, tx, (k - (lines.length - 1) / 2) * lh));
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(text, tx, 0);
+        lines.forEach((l, k) => ctx.fillText(l, tx, (k - (lines.length - 1) / 2) * lh));
         ctx.restore();
       }
       // 当たりの強調: ほかの切れ目を暗くして、当たりを光らせる
@@ -924,7 +962,6 @@
     if (mq.addEventListener) mq.addEventListener('change', onChange);
   }
   let lastNow = performance.now();
-  let peopleListSeq = 0;   // 当てた人の候補（datalist）の id を、カードごとに別にする
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - lastNow) / 1000);
@@ -963,19 +1000,34 @@
     // もちろん通常入力も可能で」「当てた人はありなしをルーレット毎に設定できるようにしたい」）。「なし」のルーレット（罰ゲームなど）では、この欄を出さない。
     const whoRow = h('div', 'rl-whorow');
     whoRow.hidden = !wheel.useWho;
-    // 入力と「登録した人から選ぶ」は1つの欄にまとめた（利用者の指示「当てた人の入力、ドロップダウンと入力まとめられない？」）:
-    // 直接入れてもよく、欄を押すと設定で登録した人の候補（datalist）が出て、選ぶとすぐ入る
-    const whoInput = h('input', 'rl-who-input');
-    whoInput.type = 'text';
-    whoInput.maxLength = MAX_WHO;
-    whoInput.autocomplete = 'off';
-    whoInput.placeholder = '当てた人の名前（空でも回せます）';
-    whoInput.value = wheel.who || '';
-    whoInput.setAttribute('aria-label', '当てた人の名前（登録した人から選べます）');
-    const whoList = h('datalist');
-    whoList.id = `rl-people-${++peopleListSeq}`;
-    whoInput.setAttribute('list', whoList.id);
-    whoRow.append(whoInput, whoList);
+    // 入力と「登録した人から選ぶ」は1つの欄にまとめた（利用者の指示「当てた人の入力、ドロップダウンと入力まとめられない？」）。
+    // ブラウザ標準の候補（datalist）は配色に合わず端末ごとに見た目も操作も違ったので、ライブラリの Tom Select に替えた（利用者の指示「当てた人の名前のやつ、uiがダメだ。
+    // なんかいいライブラリとかない？」「有名で安定しているライブラリがいい」）。欄を押すと設定で登録した人が出て、選ぶとすぐ入る。直接入れて確定してもよい（候補に無い名前もそのまま使える）。
+    const whoSelect = h('select', 'rl-who-select');
+    whoSelect.setAttribute('aria-label', '当てた人の名前（登録した人から選べます）');
+    whoRow.append(whoSelect);
+    const whoPicker = new window.TomSelect(whoSelect, {
+      maxItems: 1,
+      create: (input) => {
+        const name = String(input).trim().slice(0, MAX_WHO);
+        return name ? { value: name, text: name } : false;
+      },
+      createOnBlur: true,        // 入れて確定しないまま「回す」を押しても、その名前で回る
+      persist: false,            // 候補に無い名前は、選び直したら候補から消える（候補は設定で登録した人だけ）
+      openOnFocus: true,
+      closeAfterSelect: true,
+      selectOnTab: true,
+      maxOptions: MAX_PEOPLE,
+      plugins: ['clear_button'],
+      placeholder: '当てた人の名前（空でも回せます）',
+      dropdownParent: 'body',    // カードの外にはみ出して出す（円盤の枠は overflow を隠すため）
+      render: {
+        option_create: (data, escape) => `<div class="create">「${escape(data.input)}」を当てた人にする</div>`,
+        no_results: () => '<div class="no-results">登録した人はいません。名前を入れて確定すると使えます</div>',
+      },
+      onChange: (value) => { wheel.who = String(value || '').slice(0, MAX_WHO); save(); },
+    });
+    whoPicker.dropdown.classList.add('rl-who-dd');
     const actions = h('div', 'rl-actions');
     const spinBtn = h('button', 'rl-primary', '回す');
     spinBtn.type = 'button';
@@ -1198,7 +1250,7 @@
         dur: reduced ? SPIN_MS_REDUCED : eff.spinMs,
         idx,
         label: wheel.items[idx].label,
-        who: wheel.useWho ? whoInput.value.trim().slice(0, MAX_WHO) : '',   // 回し始めの名前の欄の中身（回している間に直しても、この回は変わらない）。なしのルーレットは空
+        who: wheel.useWho ? (wheel.who || '').trim().slice(0, MAX_WHO) : '',   // 回し始めの名前の欄の中身（回している間に直しても、この回は変わらない）。なしのルーレットは空
         snapshot: wheel.items.map((it) => ({ label: it.label, weight: it.weight })),
       };
       setSpinning(true);
@@ -1305,15 +1357,17 @@
     themeField.sel.addEventListener('change', () => { wheel.theme = THEMES[themeField.sel.value] ? themeField.sel.value : DEFAULT_THEME; save(); renderItems(); });
     effectField.sel.addEventListener('change', () => { wheel.effect = EFFECTS[effectField.sel.value] ? effectField.sel.value : DEFAULT_EFFECT; save(); showEffectNote(); });
 
-    // 当てた人: 直接入れても、候補（設定で登録した人）から選んでも、入れた時点でそのルーレットの「当てた人」になる（候補を選ぶのも input の動き）
-    whoInput.addEventListener('input', () => { wheel.who = whoInput.value.slice(0, MAX_WHO); save(); });
+    // 当てた人: 候補（設定で登録した人）の一覧を作り直す。選んでいる名前は、候補に無くても残す。
+    // 選び直しの通知（onChange）は出さない（保存の中身は wheel.who がもとで、ここで変えない）
     function refreshPeople() {
-      whoList.replaceChildren();
-      for (const p of data.settings.people) {
-        const o = h('option');
-        o.value = p;
-        whoList.append(o);
+      whoPicker.clear(true);
+      whoPicker.clearOptions();
+      for (const p of data.settings.people) whoPicker.addOption({ value: p, text: p });
+      if (wheel.who) {
+        if (!whoPicker.options[wheel.who]) whoPicker.addOption({ value: wheel.who, text: wheel.who });
+        whoPicker.setValue(wheel.who, true);
       }
+      whoPicker.refreshOptions(false);
     }
     v.refreshPeople = refreshPeople;
     // 当てた人を記録するか（ルーレットごと）。なしにすると、名前の欄・履歴の「当てた人」の列・まとめから外れる
@@ -1476,7 +1530,11 @@
     }
     if (window.ResizeObserver) v.ro = new ResizeObserver(() => { redraw(); fxFit(); }), v.ro.observe(stage);
 
-    v.destroy = () => { if (v.ro) v.ro.disconnect(); };
+    v.destroy = () => { if (v.ro) v.ro.disconnect(); whoPicker.destroy(); };
+    v.setWho = (name) => {   // 確かめの道具から呼ぶ（候補に無い名前も入れられる。選んだのと同じ動き）
+      if (name && !whoPicker.options[name]) whoPicker.addOption({ value: name, text: name });
+      if (name) whoPicker.setValue(name); else whoPicker.clear();
+    };
     el.setAttribute('aria-label', wheel.name || 'ルーレット');
     showEffectNote();
     refreshPeople();
@@ -1780,13 +1838,14 @@
 
   // 確かめの道具から呼ぶ（画面の見た目に関わらない部分と、状態の読み出し）
   window.IriRoulette = {
-    pickIndex, layoutOf, indexAtPointer, targetRotation, randomUnit, cleanWeight, sanitizeData, sliceColor, pointerTilt, summarize, summaryLines,
+    pickIndex, wrapLabel, layoutOf, indexAtPointer, targetRotation, randomUnit, cleanWeight, sanitizeData, sliceColor, pointerTilt, summarize, summaryLines,
     themes: Object.keys(THEMES), effects: Object.keys(EFFECTS), themeOf,
     state: () => ({
       data,
       phone: isPhone(),
       views: views.map((v) => ({ id: v.w.id, rot: v.rot, spinning: !!v.anim, last: v.last, winner: v.winnerIdx, confetti: v.confetti.length, tilt: v.tilt })),
     }),
+    setWho: (i, name) => views[i].setWho(name),
     makeCard: (i) => {
       const v = views[i || 0];
       return makeCard(v.last || { name: v.w.name, items: v.w.items, rot: v.rot, text: '見本', winner: null, who: '', theme: v.w.theme, at: Date.now() });
