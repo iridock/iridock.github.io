@@ -14,9 +14,7 @@
   const MAX_WHO = 30;
   const HISTORY_KEEP = 100;      // ルーレットごとに 100 件まで保存（利用者の指示）。画面にも全部出す
   const DEFAULT_TEMPLATE = 'ルーレットの結果は「{result}」になりました！';   // デスクトップ版と同じ。共有に添える文面（{result}＝結果、{who}＝当てた人）
-  const SPIN_MS = 6000;
-  const SPIN_MS_REDUCED = 800;   // 「動きを減らす」設定のとき
-  const SPIN_TURNS = 7;
+  const SPIN_MS_REDUCED = 800;   // 「動きを減らす」設定のとき（演出ごとの回す時間は EFFECTS）
   const SUMMARY_PAGE_ENTRIES = 25;   // まとめの画像 1 枚に入れる当たりの数の目安（超えたら複数枚に分ける）
   const SUMMARY_PAGE_BODY = 1500;    // まとめの画像 1 枚の表の高さの上限（px）
   const NO_WHO = '（名前なし）';
@@ -27,7 +25,7 @@
   // ページとスクリプトを同時に入れ替えた直後は、組み合わせがずれて何も動かなくなった）。ずれていたら、真っ白のまま黙らず、読み込み直しを案内する。
   // 公開のたびにスクリプトの名前に指紋（?v=）が付くので、ふだんはずれないが、念のための備え。
   const REQUIRED_IDS = ['notice', 'who', 'wheel-add', 'add-note', 'wheels', 'summary-scope', 'summary-body', 'summary-wrap', 'summary-empty', 'summary-count',
-    'summary-copy', 'summary-share', 'summary-pages', 'summary-status', 'template', 'export', 'import', 'import-file', 'settings-status'];
+    'summary-copy', 'summary-x', 'summary-discord', 'summary-share', 'summary-pages', 'summary-status', 'template', 'discord-link', 'export', 'import', 'import-file', 'settings-status'];
   if (REQUIRED_IDS.some((id) => !document.getElementById(id))) {
     const box = document.createElement('p');
     box.setAttribute('role', 'alert');
@@ -42,22 +40,66 @@
     if (text != null) e.textContent = text;
     return e;
   }
+  // 「ラベル ＋ 選ぶ欄」（色合い・演出の選択。map は { キー: { name } }）
+  function selectField(text, map, value) {
+    const label = h('label', 'rl-field');
+    label.append(document.createTextNode(text));
+    const sel = h('select');
+    for (const [key, def] of Object.entries(map)) {
+      const o = h('option', null, def.name);
+      o.value = key;
+      sel.append(o);
+    }
+    sel.value = value;
+    label.append(sel);
+    return { label, sel };
+  }
 
-  // 円盤の色（明るい色・暗い色）。切れ目の中は、中心が暗く外側が明るいグラデーションにして立体感を出す。隣どうしが同じ色にならないよう 12 色を順に使う。
-  const PALETTE = [
-    ['#ff5d7d', '#b0123a'],   // 桃赤
-    ['#ffa63d', '#c2490d'],   // 橙
-    ['#ffd93d', '#b98300'],   // 黄
-    ['#34d1bf', '#087a72'],   // 青緑
-    ['#4d94ff', '#1740b8'],   // 青
-    ['#9b5cf6', '#5019a8'],   // 紫
-    ['#2fe08f', '#0a7d4b'],   // 緑
-    ['#f56bbd', '#a31f78'],   // 桃
-    ['#32c5ff', '#0369a1'],   // 水色
-    ['#ff6a3d', '#a82600'],   // 朱
-    ['#b6f23a', '#4f8a00'],   // 黄緑
-    ['#c24ae0', '#701a8c'],   // 赤紫
-  ];
+  // 色合い（ルーレットごとに選べる。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」。種類は色合いと演出で、見た目は円盤だけ）。
+  // palette = 切れ目の色（明るい色・暗い色）。切れ目の中は、中心が暗く外側が明るいグラデーションにして立体感を出す。隣どうしが同じ色にならないよう順に使う。
+  // rim = 縁の金属の色（4 色のグラデーション）、bulb = ランプ（点灯・光・消灯）、pointer = 針（明・中・暗）。文字は、どの色合いでも白の太字に濃いふちどり。
+  const THEMES = {
+    lively: {
+      name: 'にぎやか',
+      palette: [['#ff5d7d', '#b0123a'], ['#ffa63d', '#c2490d'], ['#ffd93d', '#b98300'], ['#34d1bf', '#087a72'], ['#4d94ff', '#1740b8'], ['#9b5cf6', '#5019a8'],
+        ['#2fe08f', '#0a7d4b'], ['#f56bbd', '#a31f78'], ['#32c5ff', '#0369a1'], ['#ff6a3d', '#a82600'], ['#b6f23a', '#4f8a00'], ['#c24ae0', '#701a8c']],
+      rim: ['#fff3b0', '#f6c445', '#b07a0a', '#ffe08a'], bulb: ['#fffbe3', '#ffe27a', '#b8781a'], pointer: ['#ff9aa9', '#e11d48', '#8a0b27'],
+    },
+    calm: {
+      name: '落ち着いた',
+      palette: [['#5f8fb5', '#1d3f5e'], ['#4f9a94', '#16504d'], ['#8a7fb5', '#3b3366'], ['#b0826b', '#5c3322'], ['#6f9a6a', '#244a25'], ['#a86f86', '#552c40'],
+        ['#7d8fa3', '#2c3a4c'], ['#c0a05c', '#5f4812'], ['#5a7fa0', '#1c344d'], ['#9a6a5e', '#4a251e']],
+      rim: ['#f4f6f9', '#bcc4cf', '#6c7787', '#e6eaf0'], bulb: ['#f6f9ff', '#cfe0ff', '#7a8798'], pointer: ['#a9bdd4', '#3f6a97', '#1d3a5c'],
+    },
+    wafu: {
+      name: '和風',
+      palette: [['#d04a3c', '#6e1612'], ['#2f6aa0', '#10304f'], ['#e8ad43', '#8d5a0f'], ['#468a63', '#1a4430'], ['#94559a', '#4a2150'], ['#d9617f', '#862445'],
+        ['#3f969d', '#154d52'], ['#b8702a', '#5f330a'], ['#5a78b0', '#1f3158'], ['#7aa14c', '#2f4a14']],
+      rim: ['#ffe7b0', '#dcab48', '#8d5f12', '#f6dc92'], bulb: ['#fff3d6', '#ffb347', '#8a5a2b'], pointer: ['#ff8a70', '#c8372d', '#6e1612'],
+    },
+    cute: {
+      name: 'かわいい',
+      palette: [['#ff8fb8', '#d63b7a'], ['#ffb36b', '#e57a26'], ['#ffe066', '#d8a51a'], ['#7fe3d1', '#2ba892'], ['#8ec5ff', '#3a7fd1'], ['#c3a1ff', '#7a4fd1'],
+        ['#9ee89a', '#3fae52'], ['#ff9ecf', '#d14a97'], ['#7fd8ff', '#2a9ad1'], ['#ffa38a', '#d9573b'], ['#d4f07a', '#8fb52a'], ['#e3a4ff', '#a54fd1']],
+      rim: ['#ffe9ef', '#f5aabd', '#b5576f', '#ffd3df'], bulb: ['#fff6f9', '#ffb3c9', '#c27a8c'], pointer: ['#ffb3c9', '#ec407a', '#9c1a4e'],
+    },
+    luxe: {
+      name: 'ゴージャス',
+      palette: [['#3a3a46', '#0b0b10'], ['#b02a40', '#4a0813'], ['#e0b246', '#7a5612'], ['#23704f', '#0b2b20'], ['#3b4fb0', '#111a4a'], ['#7a35a6', '#2b0f45']],
+      rim: ['#fff3b0', '#f6c445', '#8a5a00', '#ffe9a3'], bulb: ['#fffbe3', '#ffe27a', '#a87414'], pointer: ['#ff8fa3', '#d81b43', '#7a0a22'],
+    },
+  };
+  const DEFAULT_THEME = 'lively';
+  // 演出（ルーレットごとに選べる）。華やか = いまの動き。ふつう = 紙吹雪なし。控えめ = 点滅・紙吹雪・はずみなし（針のしなりと当たりの強調だけ）。
+  // OS の「動きを減らす」設定のときは、どれを選んでも 0.8 秒で、動きは出さない。
+  const EFFECTS = {
+    full: { name: '華やか', desc: '回すのは 6 秒。ランプの点滅・紙吹雪・結果がはずむ動きが出ます。', spinMs: 6000, turns: 7, confetti: true, pop: true, blink: true },
+    normal: { name: 'ふつう', desc: '回すのは 4.5 秒。紙吹雪は出ません（ランプの点滅と、結果がはずむ動きは出ます）。', spinMs: 4500, turns: 5, confetti: false, pop: true, blink: true },
+    quiet: { name: '控えめ', desc: '回すのは 3 秒。点滅・紙吹雪・はずむ動きは出ません（針のしなりと、当たりの強調だけ）。', spinMs: 3000, turns: 4, confetti: false, pop: false, blink: false },
+  };
+  const DEFAULT_EFFECT = 'full';
+  const themeOf = (name) => THEMES[name] || THEMES[DEFAULT_THEME];
+  const effectOf = (name) => EFFECTS[name] || EFFECTS[DEFAULT_EFFECT];
 
   // ---- 抽選（画面に触らない部分。確かめの道具からも呼ぶ） ----
   // 53 ビットの乱数（0 以上 1 未満）。Math.random ではなく、ブラウザの安全な乱数を使う。
@@ -118,8 +160,8 @@
     return hit.index;
   }
   // 切れ目の色の番号。最後の切れ目が最初と同じ色になる（隣どうしが同じ）ときだけ、ずらす。
-  const colorIndex = (i, n) => (i + (n > 1 && i === n - 1 && i % PALETTE.length === 0 ? 5 : 0)) % PALETTE.length;
-  const sliceColor = (i, n) => PALETTE[colorIndex(i, n || i + 1)][0];
+  const colorIndex = (i, n, len) => (i + (n > 1 && i === n - 1 && i % len === 0 ? 5 : 0)) % len;
+  const sliceColor = (i, n, theme) => { const p = (theme || themeOf(DEFAULT_THEME)).palette; return p[colorIndex(i, n || i + 1, p.length)][0]; };
   // 針のしなり: 円盤の切れ目が針に当たった直後がいちばん大きく、そのあと元に戻る（針が切れ目を押し分けて進むように見える）
   function pointerTilt(items, rot) {
     const list = layoutOf(items);
@@ -172,7 +214,7 @@
 
   // ---- 保存（ブラウザの中だけ） ----
   const newId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const newWheel = (name, items) => ({ id: newId(), name, items: items || [], removePicked: false, history: [] });
+  const newWheel = (name, items) => ({ id: newId(), name, items: items || [], removePicked: false, theme: DEFAULT_THEME, effect: DEFAULT_EFFECT, history: [] });
   const sampleWheel = () => newWheel('今日の配信', [
     { label: '雑談', weight: 3 },
     { label: '歌枠', weight: 2 },
@@ -181,7 +223,7 @@
   ]);
   const defaultData = () => {
     const w = sampleWheel();
-    return { version: 1, wheels: [w], settings: { template: DEFAULT_TEMPLATE, who: '' } };
+    return { version: 1, wheels: [w], settings: { template: DEFAULT_TEMPLATE, who: '', discordLink: '' } };
   };
   function sanitizeWheel(w) {
     if (!w || typeof w !== 'object') return null;
@@ -197,6 +239,8 @@
       name: String(w.name || 'ルーレット').slice(0, 30),
       items,
       removePicked: w.removePicked === true,
+      theme: THEMES[w.theme] ? w.theme : DEFAULT_THEME,       // 知らない色合い・演出（古い保存・壊れた保存）は、既定にする
+      effect: EFFECTS[w.effect] ? w.effect : DEFAULT_EFFECT,
       history,
     };
   }
@@ -212,6 +256,7 @@
       settings: {
         template: typeof s.template === 'string' && s.template.trim() ? s.template.slice(0, 200) : DEFAULT_TEMPLATE,
         who: typeof s.who === 'string' ? s.who.slice(0, MAX_WHO) : '',
+        discordLink: typeof s.discordLink === 'string' ? s.discordLink.slice(0, 300) : '',
       },
     };
   }
@@ -319,9 +364,10 @@
     }
     ctx.closePath();
   }
-  // 円盤: 金の縁とランプ・立体的な切れ目・読みやすい文字・当たりの強調・針。fx = { bulb, winner, tilt }
+  // 円盤: 金属の縁とランプ・立体的な切れ目・読みやすい文字・当たりの強調・針。fx = { bulb, winner, tilt, theme }（theme は色合い）
   function drawWheel(ctx, S, rot, items, ff, fx) {
     fx = fx || {};
+    const T = fx.theme || themeOf(DEFAULT_THEME);
     const cx = S / 2;
     const cy = S * 0.52;                 // 針のぶんを上に空ける
     const outerR = S * 0.455;
@@ -342,10 +388,10 @@
 
     // 金の縁
     const rim = ctx.createLinearGradient(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
-    rim.addColorStop(0, '#fff3b0');
-    rim.addColorStop(0.3, '#f6c445');
-    rim.addColorStop(0.65, '#b07a0a');
-    rim.addColorStop(1, '#ffe08a');
+    rim.addColorStop(0, T.rim[0]);
+    rim.addColorStop(0.3, T.rim[1]);
+    rim.addColorStop(0.65, T.rim[2]);
+    rim.addColorStop(1, T.rim[3]);
     ctx.beginPath();
     ctx.arc(cx, cy, outerR, 0, TAU);
     ctx.fillStyle = rim;
@@ -371,7 +417,7 @@
       for (const e of list) {
         const a0 = -Math.PI / 2 + rot + e.start * TAU;
         const a1 = -Math.PI / 2 + rot + e.end * TAU;
-        const [light, dark] = PALETTE[colorIndex(e.index, items.length)];
+        const [light, dark] = T.palette[colorIndex(e.index, items.length, T.palette.length)];
         const g = ctx.createRadialGradient(cx, cy, R * 0.12, cx, cy, R);
         g.addColorStop(0, dark);
         g.addColorStop(1, light);
@@ -467,11 +513,11 @@
       ctx.beginPath();
       ctx.arc(bx, by, S * 0.0105, 0, TAU);
       if (on) {
-        ctx.shadowColor = '#ffe27a';
+        ctx.shadowColor = T.bulb[1];
         ctx.shadowBlur = S * 0.025;
-        ctx.fillStyle = '#fffbe3';
+        ctx.fillStyle = T.bulb[0];
       } else {
-        ctx.fillStyle = '#b8781a';
+        ctx.fillStyle = T.bulb[2];
       }
       ctx.fill();
       ctx.restore();
@@ -514,9 +560,9 @@
     ctx.arc(0, 0, pw, Math.PI, 0);
     ctx.closePath();
     const pg = ctx.createLinearGradient(-pw, -pw, pw, S * 0.09);
-    pg.addColorStop(0, '#ff9aa9');
-    pg.addColorStop(0.45, '#e11d48');
-    pg.addColorStop(1, '#8a0b27');
+    pg.addColorStop(0, T.pointer[0]);
+    pg.addColorStop(0.45, T.pointer[1]);
+    pg.addColorStop(1, T.pointer[2]);
     ctx.fillStyle = pg;
     ctx.fill();
     ctx.shadowColor = 'transparent';
@@ -583,7 +629,7 @@
     const wc = document.createElement('canvas');
     wc.width = 620;
     wc.height = 620;
-    drawWheel(wc.getContext('2d'), 620, last.rot, last.items, ff, { bulb: 0, winner: last.winner, tilt: 0 });
+    drawWheel(wc.getContext('2d'), 620, last.rot, last.items, ff, { bulb: 0, winner: last.winner, tilt: 0, theme: themeOf(last.theme) });
     x.drawImage(wc, 16, 28);
 
     const left = 660, maxW = 500;
@@ -774,6 +820,35 @@
   }
   const textFor = (last) => (data.settings.template || DEFAULT_TEMPLATE).split('{result}').join(last.text).split('{who}').join(last.who || '');
 
+  // X・Discord への投稿（API は使わない。利用者の指示、2026-10-30「PCだと共有ができない場合もあるからやっぱりXとDiscordボタンもつけよう」）。
+  // どちらも、画像をコピーしてから、X の投稿画面（デスクトップ版 XBrowserTarget と同じ x.com/intent/post）か、設定したチャンネルのリンクを開く。貼り付けは 1 回要る。
+  // 開く処理は、クリックの直後（同じ動きの中）で呼ぶ。そうしないと、ブラウザがポップアップとして止める。
+  const isDiscordLink = (s) => /^https:\/\/((canary|ptb)\.)?(discord|discordapp)\.com\//i.test(s);   // Discord の https のリンクだけ開く
+  const openTab = (url) => window.open(url, '_blank', 'noopener');
+  const xUrl = (text) => 'https://x.com/intent/post?text=' + encodeURIComponent(text);
+  // extra は、複数枚のときの補足（1 枚目だけコピーしたことなど）
+  function postTo(kind, canvas, text, fileName, setMsg, extra) {
+    const copied = copyCanvas(canvas, fileName);
+    let opened = true;
+    if (kind === 'x') {
+      openTab(xUrl(text));
+    } else {
+      const link = ((data.settings && data.settings.discordLink) || '').trim();
+      opened = isDiscordLink(link);
+      if (opened) openTab(link);
+    }
+    copied.then((r) => {
+      const more = extra ? ` ${extra}` : '';
+      if (r !== 'copied') {
+        setMsg(`コピーできなかったので、画像を保存しました。${kind === 'x' ? '投稿画面' : 'Discord'}で添付してください。${more}`);
+      } else if (kind === 'x') {
+        setMsg(`画像をコピーしました。X の投稿画面で貼り付けてください（PC は Ctrl+V、スマホは長押し）。${more}`);
+      } else {
+        setMsg(`画像をコピーしました。${opened ? 'Discord のチャンネルで' : 'Discord で'}貼り付けてください。${opened ? '' : '（設定にチャンネルのリンクを入れると、ここから開けます）'}${more}`);
+      }
+    });
+  }
+
   // ---- 動きのまとめ役（回している間・当たりの演出は毎コマ、ふだんはランプだけ 0.5 秒ごと） ----
   let reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   if (window.matchMedia) {
@@ -827,10 +902,16 @@
     share.hidden = true;
     const copyBtn = h('button', 'rl-btn', '画像をコピー');
     copyBtn.type = 'button';
+    // X・Discord のボタン（利用者の指示、2026-10-30「PCだと共有ができない場合もあるからやっぱりXとDiscordボタンもつけよう」。API は使わない）。
+    // どちらも「画像をコピーしてから、投稿画面（X）・チャンネル（Discord）を開く」。貼り付けは 1 回要る。「共有」は、使える端末だけ。
+    const xBtn = h('button', 'rl-btn', 'X に投稿');
+    xBtn.type = 'button';
+    const discordBtn = h('button', 'rl-btn', 'Discord');
+    discordBtn.type = 'button';
     const shareBtn = h('button', 'rl-btn', '共有');
     shareBtn.type = 'button';
     shareBtn.hidden = !canShareFiles();
-    share.append(copyBtn, shareBtn);
+    share.append(copyBtn, xBtn, discordBtn, shareBtn);
     const status = h('p', 'rl-status');
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
@@ -869,6 +950,15 @@
     removeLabel.append(removeCheck, document.createTextNode(' 当たった項目を一覧から除く'));
     opts.append(removeLabel);
     itemsBox.append(ul, addRow, bulkBox, opts);
+    // 見た目と演出（ルーレットごとに選べる。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」）
+    const lookBox = h('details', 'rl-more');
+    lookBox.append(h('summary', null, '見た目と演出'));
+    const lookRow = h('div', 'rl-row');
+    const themeField = selectField('色合い', THEMES, wheel.theme);
+    const effectField = selectField('演出', EFFECTS, wheel.effect);
+    lookRow.append(themeField.label, effectField.label);
+    const effectNote = h('p', 'rl-note');
+    lookBox.append(lookRow, effectNote);
     // 履歴（全部表示）
     const histBox = h('details', 'rl-more');
     histBox.open = true;
@@ -887,7 +977,7 @@
     const histClear = h('button', 'rl-btn', '履歴を消す');
     histClear.type = 'button';
     histBox.append(histWrap, histEmpty, histClear);
-    edit.append(itemsBox, histBox);
+    edit.append(itemsBox, lookBox, histBox);
     body.append(stage, edit);
     el.append(head, body);
     v.el = el;
@@ -906,7 +996,7 @@
         canvas.height = S;
       }
       canvas.setAttribute('aria-label', `ルーレットの円盤（${wheel.name}）。押すと回ります`);
-      drawWheel(canvas.getContext('2d'), S, v.rot, displayItems(), fontFamily(), { bulb: v.bulb, winner: v.winnerIdx, tilt: v.tilt });
+      drawWheel(canvas.getContext('2d'), S, v.rot, displayItems(), fontFamily(), { bulb: v.bulb, winner: v.winnerIdx, tilt: v.tilt, theme: themeOf(wheel.theme) });
     }
     v.redraw = redraw;
 
@@ -927,6 +1017,7 @@
       const oy = wr.top - sr.top + wr.height * 0.52;
       const unit = Math.max(260, wr.width);
       v.confetti = [];
+      const pal = themeOf(wheel.theme).palette;
       for (let i = 0; i < 170; i++) {
         const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.15;
         const sp = unit * (0.7 + Math.random() * 1.1);
@@ -934,7 +1025,7 @@
           x: ox, y: oy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
           rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 14,
           w: 6 + Math.random() * 7, h: 10 + Math.random() * 9,
-          color: PALETTE[Math.floor(Math.random() * PALETTE.length)][0],
+          color: pal[Math.floor(Math.random() * pal.length)][0],
           life: 0, max: 2.2 + Math.random() * 1.4, round: Math.random() < 0.25,
         });
       }
@@ -998,11 +1089,12 @@
       clearFx();
       const entry = layoutOf(wheel.items).find((e) => e.index === idx);
       const from = v.rot;
+      const eff = effectOf(wheel.effect);   // 演出（回す時間・回転数）はルーレットごと
       v.anim = {
         from,
-        to: targetRotation(from, entry, randomUnit, SPIN_TURNS),
+        to: targetRotation(from, entry, randomUnit, eff.turns),
         t0: performance.now(),
-        dur: reduced ? SPIN_MS_REDUCED : SPIN_MS,
+        dur: reduced ? SPIN_MS_REDUCED : eff.spinMs,
         idx,
         label: wheel.items[idx].label,
         who: currentWho(),   // 回し始めの名前の欄の中身（回している間に直しても、この回は変わらない）
@@ -1013,7 +1105,7 @@
     }
     function finish(a, now) {
       const text = a.label.trim();
-      v.last = { name: wheel.name, items: a.snapshot, rot: v.rot, text, winner: a.idx, who: a.who, at: Date.now() };
+      v.last = { name: wheel.name, items: a.snapshot, rot: v.rot, text, winner: a.idx, who: a.who, theme: wheel.theme, at: Date.now() };
       wheel.history.unshift({ at: v.last.at, result: a.label, who: a.who });
       wheel.history.length = Math.min(wheel.history.length, HISTORY_KEEP);
       v.winnerIdx = a.idx;
@@ -1024,11 +1116,14 @@
       save();
       setSpinning(false);
       result.textContent = a.who ? `${text}（${a.who} さん）` : text;
+      const eff = effectOf(wheel.effect);
       if (!reduced) {
-        void result.offsetWidth;
-        result.classList.add('pop');
-        v.celebrateUntil = now + 1800;
-        spawnConfetti();
+        if (eff.pop) {
+          void result.offsetWidth;
+          result.classList.add('pop');
+        }
+        if (eff.confetti) spawnConfetti();
+        if (eff.confetti || eff.blink) v.celebrateUntil = now + 1800;   // ランプの速い点滅（と紙吹雪）の間
       }
       share.hidden = false;
       renderHistory();
@@ -1051,15 +1146,16 @@
       const spinning = !!v.anim;
       if (spinning) stepSpin(now);
       const celebrating = v.confetti.length > 0 || now < v.celebrateUntil;
+      const blink = !reduced && effectOf(wheel.effect).blink;   // 演出が「控えめ」・動きを減らす設定のときは、ランプを点滅させない
       if (!v.anim && !celebrating) {
         if (v.tilt !== 0) { v.tilt = 0; redraw(); }
-        if (reduced || now - v.lastIdle < 500) return;
+        if (!blink || now - v.lastIdle < 500) return;
         v.lastIdle = now;
         v.bulb = (v.bulb + 1) % 2;
         redraw();
         return;
       }
-      v.bulb = reduced ? 0 : Math.floor(now / (spinning ? 70 : 150)) % 2;
+      v.bulb = blink ? Math.floor(now / (spinning ? 70 : 150)) % 2 : 0;
       if (v.confetti.length > 0) {
         stepConfetti(dt);
         drawConfetti();
@@ -1088,6 +1184,25 @@
       showPreview(c);
       await shareImages([c], 'iridock-roulette', textFor(v.last), setStatus);
     });
+    xBtn.addEventListener('click', () => {
+      if (!v.last) return;
+      countEvent('roulette-x', 'X に投稿のボタンを押した');
+      const c = makeCard(v.last);
+      showPreview(c);
+      postTo('x', c, textFor(v.last), 'iridock-roulette.png', setStatus);
+    });
+    discordBtn.addEventListener('click', () => {
+      if (!v.last) return;
+      countEvent('roulette-discord', 'Discord のボタンを押した');
+      const c = makeCard(v.last);
+      showPreview(c);
+      postTo('discord', c, textFor(v.last), 'iridock-roulette.png', setStatus);
+    });
+
+    // 見た目と演出の選択
+    const showEffectNote = () => { effectNote.textContent = effectOf(wheel.effect).desc; };
+    themeField.sel.addEventListener('change', () => { wheel.theme = THEMES[themeField.sel.value] ? themeField.sel.value : DEFAULT_THEME; save(); renderItems(); });
+    effectField.sel.addEventListener('change', () => { wheel.effect = EFFECTS[effectField.sel.value] ? effectField.sel.value : DEFAULT_EFFECT; save(); showEffectNote(); });
 
     // 項目と重みの編集
     function updatePercents() {
@@ -1102,7 +1217,7 @@
       wheel.items.forEach((it, i) => {
         const li = document.createElement('li');
         const dot = h('span', 'rl-dot');
-        dot.style.background = sliceColor(i, wheel.items.length);
+        dot.style.background = sliceColor(i, wheel.items.length, themeOf(wheel.theme));
         const lab = h('input');
         lab.type = 'text';
         lab.maxLength = 40;
@@ -1233,6 +1348,7 @@
 
     v.destroy = () => { if (v.ro) v.ro.disconnect(); };
     el.setAttribute('aria-label', wheel.name || 'ルーレット');
+    showEffectNote();
     renderItems();
     renderHistory();
     return v;
@@ -1316,7 +1432,7 @@
     $('summary-wrap').hidden = s.groups.length === 0;
     $('summary-empty').hidden = s.groups.length > 0;
     $('summary-count').textContent = s.groups.length ? `${s.groups.length} 人・${s.entries} 件` : '';
-    $('summary-copy').disabled = $('summary-share').disabled = s.groups.length === 0;
+    for (const id of ['summary-copy', 'summary-x', 'summary-discord', 'summary-share']) $(id).disabled = s.groups.length === 0;
     $('summary-pages').replaceChildren();
     $('summary-status').textContent = '';
   }
@@ -1354,6 +1470,15 @@
       $('summary-status').textContent = r === 'copied' ? `画像をコピーしました。貼り付けて使えます。${more}` : 'コピーできなかったので、画像を保存しました。';
     });
   });
+  // X・Discord: 1 枚目の画像をコピーして開く（複数枚のときは、ほかの枚を下のボタンでコピーして続けて貼り付けてもらう）
+  function postSummary(kind) {
+    countEvent(kind === 'x' ? 'roulette-summary-x' : 'roulette-summary-discord', kind === 'x' ? 'まとめを X に投稿のボタンを押した' : 'まとめの Discord のボタンを押した');
+    const { pages, summary } = buildSummaryPages();
+    const extra = pages.length > 1 ? `（全 ${pages.length} 枚のうち 1 枚目をコピーしました。ほかの枚は、下の「N 枚目をコピー」で順にコピーして、続けて貼り付けてください）` : '';
+    postTo(kind, pages[0], `${summaryTitle()}（${summary.groups.length} 人・${summary.entries} 件）`, 'iridock-roulette-summary.png', (t) => { $('summary-status').textContent = t; }, extra);
+  }
+  $('summary-x').addEventListener('click', () => postSummary('x'));
+  $('summary-discord').addEventListener('click', () => postSummary('discord'));
   $('summary-share').addEventListener('click', async () => {
     countEvent('roulette-summary-share', 'まとめの画像を共有した');
     const { pages, summary } = buildSummaryPages();
@@ -1394,12 +1519,14 @@
     }
     $('who').value = data.settings.who;
     $('template').value = data.settings.template;
+    $('discord-link').value = data.settings.discordLink;
     for (const w of data.wheels) addWheel(w);
     renderScope();
     renderSummary();
   }
   $('who').addEventListener('input', (e) => { data.settings.who = e.target.value.slice(0, MAX_WHO); save(); });
   $('template').addEventListener('input', (e) => { data.settings.template = e.target.value.slice(0, 200) || DEFAULT_TEMPLATE; save(); });
+  $('discord-link').addEventListener('input', (e) => { data.settings.discordLink = e.target.value.slice(0, 300); save(); });
   $('export').addEventListener('click', exportData);
   $('import').addEventListener('click', () => $('import-file').click());
   $('import-file').addEventListener('change', (e) => {
@@ -1411,6 +1538,7 @@
   // 確かめの道具から呼ぶ（画面の見た目に関わらない部分と、状態の読み出し）
   window.IriRoulette = {
     pickIndex, layoutOf, indexAtPointer, targetRotation, randomUnit, cleanWeight, sanitizeData, sliceColor, pointerTilt, summarize, summaryLines,
+    themes: Object.keys(THEMES), effects: Object.keys(EFFECTS), themeOf,
     state: () => ({
       data,
       who: $('who').value,
@@ -1418,7 +1546,7 @@
     }),
     makeCard: (i) => {
       const v = views[i || 0];
-      return makeCard(v.last || { name: v.w.name, items: v.w.items, rot: v.rot, text: '見本', winner: null, who: '', at: Date.now() });
+      return makeCard(v.last || { name: v.w.name, items: v.w.items, rot: v.rot, text: '見本', winner: null, who: '', theme: v.w.theme, at: Date.now() });
     },
     makeSummaryPages: () => makeSummaryPages(summarize(data.wheels, summaryScope()), summaryTitle(), showWheelNames()),
   };

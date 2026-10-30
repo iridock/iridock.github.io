@@ -70,6 +70,8 @@
     </div>
     <div class="rl-row">
       <button id="summary-copy" type="button" class="rl-btn">画像をコピー</button>
+      <button id="summary-x" type="button" class="rl-btn">X に投稿</button>
+      <button id="summary-discord" type="button" class="rl-btn">Discord</button>
       <button id="summary-share" type="button" class="rl-btn" hidden>共有</button>
     </div>
     <p id="summary-status" class="rl-status" role="status" aria-live="polite"></p>
@@ -81,13 +83,16 @@
     <label class="rl-field">共有時に入れる文面（{result} が結果、{who} が当てた人になります）
       <input id="template" type="text" maxlength="200" autocomplete="off">
     </label>
+    <label class="rl-field">Discord のチャンネルのリンク（任意。「Discord」ボタンで、画像をコピーしてこのチャンネルを開きます）
+      <input id="discord-link" type="url" inputmode="url" placeholder="https://discord.com/channels/…" autocomplete="off">
+    </label>
     <div class="rl-row">
       <button id="export" type="button" class="rl-btn">ファイルに書き出す</button>
       <button id="import" type="button" class="rl-btn">ファイルから読み込む</button>
       <input id="import-file" type="file" accept="application/json,.json" hidden>
     </div>
     <p id="settings-status" class="rl-status" role="status" aria-live="polite"></p>
-    <p class="hint">ルーレット・項目・重み・履歴は、このブラウザの中だけに保存します。閲覧データを消すと、なくなります。ときどき書き出しておくと安心です。</p>
+    <p class="hint">「X に投稿」「Discord」は、画像をコピーしてから、投稿画面・チャンネルを開きます。開いたら貼り付けてください（PC は Ctrl+V、スマホは長押しして「ペースト」）。「共有」は、使える端末だけに出ます。ルーレット・項目・重み・履歴は、このブラウザの中だけに保存します。閲覧データを消すと、なくなります。ときどき書き出しておくと安心です。</p>
   </section>
 </main>
 
@@ -98,6 +103,6 @@
 <!-- アクセス解析（GoatCounter。ボーダー予想のページと同じ。版を固定し、改ざん防止の印（integrity）を付ける。版を上げるときは両方のページの印を取り直す） -->
 <script data-goatcounter="https://iridock.goatcounter.com/count" async src="https://gc.zgo.at/count.v5.js"
         crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
-<script src="roulette.js?v=3b760b55"></script>
+<script src="roulette.js?v=a49fdd0e"></script>
 </body>
 </html>
