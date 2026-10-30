@@ -146,22 +146,19 @@
 }
 .rl-field textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* 当てた人（ルーレットごと）: 名前の欄と、登録した人から選ぶ欄。「当てた人を記録する」がなしのルーレットでは、この行ごと隠す */
-.rl-whorow { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+/* 当てた人（ルーレットごと）: 名前の欄（登録した人の候補が出る）。「当てた人を記録する」がなしのルーレットでは、この行ごと隠す */
+.rl-whorow { margin: 10px 0 0; }
 .rl-whorow[hidden] { display: none; }
-.rl-whorow input, .rl-whorow select {
+.rl-whorow input {
   box-sizing: border-box;
-  min-width: 0;
+  width: 100%;
   padding: 8px 10px;
   border: 0;
   border-radius: var(--r-sm);
   background: var(--fill);
   color: var(--text);
 }
-.rl-whorow input { flex: 2 1 140px; }
-.rl-whorow select { flex: 1 1 140px; }
-.rl-whorow select option { background: var(--panel); color: var(--text); }
-.rl-whorow input:focus-visible, .rl-whorow select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rl-whorow input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .rl-nowho .col-who { display: none; }
 
 /* 設定: 登録した人（札）とテンプレートの一覧 */

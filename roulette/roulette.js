@@ -924,6 +924,7 @@
     if (mq.addEventListener) mq.addEventListener('change', onChange);
   }
   let lastNow = performance.now();
+  let peopleListSeq = 0;   // 当てた人の候補（datalist）の id を、カードごとに別にする
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - lastNow) / 1000);
@@ -962,16 +963,19 @@
     // もちろん通常入力も可能で」「当てた人はありなしをルーレット毎に設定できるようにしたい」）。「なし」のルーレット（罰ゲームなど）では、この欄を出さない。
     const whoRow = h('div', 'rl-whorow');
     whoRow.hidden = !wheel.useWho;
+    // 入力と「登録した人から選ぶ」は1つの欄にまとめた（利用者の指示「当てた人の入力、ドロップダウンと入力まとめられない？」）:
+    // 直接入れてもよく、欄を押すと設定で登録した人の候補（datalist）が出て、選ぶとすぐ入る
     const whoInput = h('input', 'rl-who-input');
     whoInput.type = 'text';
     whoInput.maxLength = MAX_WHO;
     whoInput.autocomplete = 'off';
     whoInput.placeholder = '当てた人の名前（空でも回せます）';
     whoInput.value = wheel.who || '';
-    whoInput.setAttribute('aria-label', '当てた人の名前');
-    const whoSel = h('select', 'rl-who-pick');
-    whoSel.setAttribute('aria-label', '登録した人から選ぶ');
-    whoRow.append(whoInput, whoSel);
+    whoInput.setAttribute('aria-label', '当てた人の名前（登録した人から選べます）');
+    const whoList = h('datalist');
+    whoList.id = `rl-people-${++peopleListSeq}`;
+    whoInput.setAttribute('list', whoList.id);
+    whoRow.append(whoInput, whoList);
     const actions = h('div', 'rl-actions');
     const spinBtn = h('button', 'rl-primary', '回す');
     spinBtn.type = 'button';
@@ -1031,11 +1035,11 @@
     removeCheck.checked = wheel.removePicked;
     removeLabel.append(removeCheck, document.createTextNode(' 当たった項目を一覧から除く'));
     opts.append(removeLabel);
-    itemsBox.append(ul, addRow, bulkBox, opts);
+    itemsBox.append(ul, addRow, bulkBox);
     // このルーレットの設定（ルーレットごとに選べる。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」）:
     // 色合い・演出・当てた人を記録するか・テンプレートに保存
     const lookBox = h('details', 'rl-more');
-    lookBox.append(h('summary', null, '設定（見た目・演出・当てた人）'));
+    lookBox.append(h('summary', null, '設定'));
     const lookRow = h('div', 'rl-row');
     const themeField = selectField('色合い', THEMES, wheel.theme);
     const effectField = selectField('演出', EFFECTS, wheel.effect);
@@ -1054,7 +1058,8 @@
     saveTplBtn.type = 'button';
     saveTplRow.append(saveTplBtn);
     const saveTplNote = h('p', 'rl-note', '保存すると、「＋ ルーレットを追加」で、このルーレットの項目・重み・色合い・演出・当てた人の設定から作れます。');
-    lookBox.append(lookRow, effectNote, useWhoRow, useWhoNote, saveTplRow, saveTplNote);
+    // 「当たった項目を一覧から除く」も、ここに入れた（利用者の指示「当たった項目…は設定の中に入れちゃって」）
+    lookBox.append(lookRow, effectNote, useWhoRow, useWhoNote, opts, saveTplRow, saveTplNote);
     // 履歴（全部表示）
     const histBox = h('details', 'rl-more');
     histBox.open = true;
@@ -1300,28 +1305,15 @@
     themeField.sel.addEventListener('change', () => { wheel.theme = THEMES[themeField.sel.value] ? themeField.sel.value : DEFAULT_THEME; save(); renderItems(); });
     effectField.sel.addEventListener('change', () => { wheel.effect = EFFECTS[effectField.sel.value] ? effectField.sel.value : DEFAULT_EFFECT; save(); showEffectNote(); });
 
-    // 当てた人: 入力（通常入力）と、設定で登録した人の選択（選ぶとすぐ名前の欄に入り、次に回すときから使われる）
+    // 当てた人: 直接入れても、候補（設定で登録した人）から選んでも、入れた時点でそのルーレットの「当てた人」になる（候補を選ぶのも input の動き）
     whoInput.addEventListener('input', () => { wheel.who = whoInput.value.slice(0, MAX_WHO); save(); });
-    whoSel.addEventListener('change', () => {
-      if (!whoSel.value) return;
-      whoInput.value = whoSel.value;
-      wheel.who = whoInput.value;
-      save();
-      whoSel.value = '';   // 選んだあとは、見出しに戻す（続けて別の人を選べる）
-    });
     function refreshPeople() {
-      const people = data.settings.people;
-      whoSel.replaceChildren();
-      const first = h('option', null, people.length ? '登録した人から選ぶ' : '（登録した人はいません）');
-      first.value = '';
-      whoSel.append(first);
-      for (const p of people) {
-        const o = h('option', null, p);
+      whoList.replaceChildren();
+      for (const p of data.settings.people) {
+        const o = h('option');
         o.value = p;
-        whoSel.append(o);
+        whoList.append(o);
       }
-      whoSel.disabled = people.length === 0;
-      whoSel.value = '';
     }
     v.refreshPeople = refreshPeople;
     // 当てた人を記録するか（ルーレットごと）。なしにすると、名前の欄・履歴の「当てた人」の列・まとめから外れる
