@@ -19,6 +19,7 @@
 </head>
 <body>
 <header class="topbar">
+ <div class="topbar-row">
   <div class="brand">
     <img src="icon.png" alt="" width="28" height="28">
     <span class="name">IriDock</span>
@@ -38,6 +39,13 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
     </button>
   </div>
+ </div>
+  <!-- 機能の行き来（利用者の指示、2026-10-30「ボーダー予想からの入口はヘッダーにわかりやすいように。今後もいろんな機能増やしていく予定だから。フッターはけしていいよ」）。
+       機能を足したら、ここと roulette/index.html の同じ所に足す -->
+  <nav class="sitenav" aria-label="機能">
+    <a href="./" aria-current="page">ボーダー予想</a>
+    <a href="roulette/">ルーレット</a>
+  </nav>
 </header>
 
 <main>
@@ -243,8 +251,6 @@
 
 <footer class="foot">
   <p>ボーダー予想は目安です。外れることがあります。</p>
-  <!-- ルーレットへの入り口（2026-10-30、設計書 16）。上の帯は帯の札と↑ボタンで狭いので、まずフッターに 1 行だけ置いた -->
-  <p><a href="roulette/">ルーレット</a>も使えます（項目と重みを決めて回せます）。</p>
   <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
   <p>アクセス数を数えるために <a href="https://www.goatcounter.com/">GoatCounter</a> を使っています（Cookie は使いません）。</p>
 </footer>

@@ -444,11 +444,6 @@ button, select, input { font: inherit; color: inherit; }
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
   padding: 10px max(var(--gutter), env(safe-area-inset-left));
   background: var(--bar-bg);
   backdrop-filter: saturate(180%) blur(20px);
@@ -457,6 +452,24 @@ button, select, input { font: inherit; color: inherit; }
   color: var(--on-bg);
 }
 
+/* 上の帯は2段: 1段目（ブランドと右の道具）と、2段目の機能の行き来（2026-10-30。機能が増えても並べられるよう、横に流せる） */
+.topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sitenav { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; scrollbar-width: none; }
+.sitenav::-webkit-scrollbar { display: none; }
+.sitenav a {
+  flex: none;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--on-bg-fill);
+  color: var(--on-bg);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sitenav a:hover { opacity: 0.8; }
+.sitenav a[aria-current="page"] { background: var(--on-bg); color: var(--bg); }   /* いま開いているページ。地の色と文字の色を入れ替えて、はっきり見せる */
+.sitenav a:focus-visible { outline: 2px solid var(--on-bg); outline-offset: 2px; }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .brand img { display: block; border-radius: 7px; }
 .brand .name { font-weight: 700; }
@@ -1053,7 +1066,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .brand .product { display: none; }
   /* スマホの幅では更新日時を出さない（利用者の指示「スマホぐらい小さくしているときは更新日時はけしていい」）。帯の札と↑ボタンを1行に収めるため。 */
   .updated { display: none; }
-  .topbar { flex-wrap: nowrap; padding-top: 8px; padding-bottom: 8px; }
+  .topbar { padding-top: 8px; padding-bottom: 8px; }
+  .topbar-row { flex-wrap: nowrap; }
   /* 表は横にはみ出さないように余白を詰める（iPhone 風の書体は少し幅広で、1週間の表が 390px の幅で 14px はみ出し、+6 の列が切れた） */
   .panel { padding: 14px; }
   table.week th, table.week td { padding: 8px 5px; }

@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0e16">
-<!-- ボーダー予想のページと同じ決まり。ページの中のスクリプト・スタイルは使えない。画像の下見は data: で出す。外への通信は無い -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<!-- ボーダー予想のページと同じ決まり。ページの中のスクリプト・スタイルは使えない。画像の下見は data: で出す。外への通信は GoatCounter（アクセス数）だけ -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; style-src 'self'; img-src 'self' data: https://iridock.goatcounter.com; connect-src 'self' https://iridock.goatcounter.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="description" content="項目と重みを決めて回せるルーレット。結果の画像をコピーして、X や Discord に貼り付けられます。">
+<meta name="description" content="項目と重みを決めて回せるルーレット。結果の画像をコピーしたり、共有したりできます。">
 <meta property="og:title" content="IriDock ルーレット">
 <meta property="og:type" content="website">
 <link rel="icon" href="../icon.png" type="image/png">
@@ -21,14 +21,17 @@
 <body>
 <!-- web 版ルーレット（利用者の指示、2026-10-30）。設計書 16。ボーダー予想のデータには頼らない（あとで別の場所へ移せるように） -->
 <header class="topbar">
-  <div class="brand">
-    <img src="../icon.png" alt="" width="28" height="28">
-    <span class="name">IriDock</span>
-    <span class="product">ルーレット</span>
+  <div class="topbar-row">
+    <div class="brand">
+      <img src="../icon.png" alt="" width="28" height="28">
+      <span class="name">IriDock</span>
+    </div>
   </div>
-  <div class="bar-right">
-    <a class="back" href="../">ボーダー予想へ</a>
-  </div>
+  <!-- 機能の行き来（利用者の指示、2026-10-30「ボーダー予想からの入口はヘッダーにわかりやすいように。今後もいろんな機能増やしていく予定だから」）。機能を足したら、ここに足す -->
+  <nav class="sitenav" aria-label="機能">
+    <a href="../">ボーダー予想</a>
+    <a href="./" aria-current="page">ルーレット</a>
+  </nav>
 </header>
 
 <main class="rl">
@@ -36,7 +39,7 @@
   <p id="notice" class="notice" role="status" hidden></p>
 
   <section id="stage" class="panel rl-stage" aria-label="ルーレット">
-    <div class="rl-wheelbox"><canvas id="wheel" role="img" aria-label="ルーレットの円盤"></canvas></div>
+    <div class="rl-wheelbox"><canvas id="wheel" role="img" aria-label="ルーレットの円盤。押すと回ります"></canvas></div>
     <p id="result" class="rl-result" role="status" aria-live="polite">　</p>
     <div class="rl-actions">
       <button id="spin" type="button" class="rl-primary">回す</button>
@@ -44,12 +47,11 @@
     </div>
     <div id="share" class="rl-share" hidden>
       <button id="copy-image" type="button" class="rl-btn">画像をコピー</button>
-      <button id="post-x" type="button" class="rl-btn">X に投稿</button>
-      <button id="post-discord" type="button" class="rl-btn">Discord</button>
       <button id="share-native" type="button" class="rl-btn" hidden>共有</button>
     </div>
     <p id="status" class="rl-status" role="status" aria-live="polite"></p>
     <img id="preview" class="rl-preview" alt="結果の画像（長押しで保存できます）" hidden>
+    <canvas id="fx" class="rl-fx" aria-hidden="true"></canvas>
   </section>
 
   <section class="panel rl-edit" aria-labelledby="items-title">
@@ -81,10 +83,8 @@
     </details>
 
     <div class="rl-options">
-      <label><input id="opt-avoid" type="checkbox"> 直前と同じ項目を避ける</label>
       <label><input id="opt-remove" type="checkbox"> 当たった項目を一覧から除く</label>
     </div>
-    <p class="hint">直前を避けるときは、直前の項目が出ないぶん、ほかの確率が少し上がります。</p>
   </section>
 
   <section class="panel rl-edit" aria-labelledby="history-title">
@@ -94,14 +94,11 @@
   </section>
 
   <section class="panel rl-edit" aria-labelledby="post-title">
-    <div class="panel-head"><h2 id="post-title">投稿と保存 <small>X・Discord への投稿は API を使わず、貼り付けで行います</small></h2></div>
-    <label class="rl-field">X に入れる文面（{result} が結果になります）
+    <div class="panel-head"><h2 id="post-title">共有と保存 <small>X や Discord へは、「共有」か「画像をコピー」で送ります</small></h2></div>
+    <label class="rl-field">共有に添える文面（{result} が結果になります）
       <input id="template" type="text" maxlength="200" autocomplete="off">
     </label>
-    <label class="rl-field">Discord のチャンネルのリンク（任意）
-      <input id="discord-link" type="url" inputmode="url" placeholder="https://discord.com/channels/…" autocomplete="off">
-    </label>
-    <p class="hint">X は画像をコピーしてから投稿画面を開きます。投稿画面で貼り付けてください（PC は Ctrl+V、スマホは長押しして「ペースト」）。Discord も同じで、チャンネルを開いて貼り付けます。スマホの「共有」ボタンなら、貼り付けなしで画像つきで送れます。</p>
+    <p class="hint">「共有」は、スマホなどの共有メニューから X や Discord のアプリを選ぶと、画像つきで送れます（使えない端末では出ません）。「画像をコピー」は、コピーした画像を、投稿画面に貼り付けて使います（PC は Ctrl+V、スマホは長押しして「ペースト」）。</p>
     <div class="rl-row">
       <button id="export" type="button" class="rl-btn">ファイルに書き出す</button>
       <button id="import" type="button" class="rl-btn">ファイルから読み込む</button>
@@ -113,7 +110,11 @@
 
 <footer class="foot">
   <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
+  <p>アクセス数を数えるために <a href="https://www.goatcounter.com/">GoatCounter</a> を使っています（Cookie は使いません）。数えるのは、ページを開いた数と、回した・コピーした・共有した回数だけです（項目や結果の中身は送りません）。</p>
 </footer>
+<!-- アクセス解析（GoatCounter。ボーダー予想のページと同じ。版を固定し、改ざん防止の印（integrity）を付ける。版を上げるときは両方のページの印を取り直す） -->
+<script data-goatcounter="https://iridock.goatcounter.com/count" async src="https://gc.zgo.at/count.v5.js"
+        crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
 <script src="roulette.js"></script>
 </body>
 </html>
