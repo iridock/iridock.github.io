@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="../icon.png">
 <script src="../theme.js?v=2cd238f2"></script>
 <link rel="stylesheet" href="../style.css?v=262d1bb2">
-<link rel="stylesheet" href="roulette.css?v=92e260e6">
+<link rel="stylesheet" href="roulette.css?v=92321a4c">
 <title>IriDock ルーレット</title>
 </head>
 <body>
@@ -38,10 +38,10 @@
   <noscript><p class="notice">ルーレットは JavaScript が必要です。</p></noscript>
   <p id="notice" class="notice" role="status" hidden></p>
 
-  <!-- 当てた人の名前（回す前に入れる。入れた名前は次の回にも残る。空でも回せる。履歴であとから直せる）と、ルーレットの追加 -->
-  <section class="panel rl-top" aria-label="当てた人とルーレットの追加">
-    <label class="rl-field rl-who">当てた人の名前（空でも回せます。罰ゲームなどは空のままで）
-      <input id="who" type="text" maxlength="30" autocomplete="off" placeholder="例: 〇〇さん">
+  <!-- ルーレットの追加。保存したテンプレート（項目と重み・色合い・演出・当てた人のあり／なし）から作れる。当てた人の名前は、ルーレットごとのカードで入れる -->
+  <section class="panel rl-top" aria-label="ルーレットの追加">
+    <label class="rl-field rl-who">新しいルーレットのもと（ルーレットの「設定」で保存したテンプレートを選べます）
+      <select id="new-template" aria-label="新しいルーレットのもと"></select>
     </label>
     <div class="rl-addwrap">
       <button id="wheel-add" type="button" class="rl-btn rl-add">＋ ルーレットを追加</button>
@@ -80,6 +80,27 @@
 
   <section class="panel rl-wide" aria-labelledby="settings-title">
     <div class="panel-head"><h2 id="settings-title">設定</h2></div>
+
+    <!-- 当てた人の登録（ルーレットごとの「登録した人から選ぶ」に出る。選ぶとすぐ名前の欄に入る。名前の欄に直接入れてもよい） -->
+    <div class="rl-block">
+      <h3 class="rl-h3">当てた人の登録</h3>
+      <label class="rl-field">名前（複数は、改行か「、」で区切ります）
+        <textarea id="people-input" rows="2" maxlength="2000" autocomplete="off" placeholder="例: たろう、はなこ"></textarea>
+      </label>
+      <div class="rl-row">
+        <button id="people-add" type="button" class="rl-btn">登録する</button>
+        <span id="people-note" class="rl-count" role="status"></span>
+      </div>
+      <ul id="people-list" class="rl-chips" aria-label="登録した人"></ul>
+    </div>
+
+    <!-- テンプレート（ルーレットの「設定」で保存したもの。上の「ルーレットを追加」で選べる） -->
+    <div class="rl-block">
+      <h3 class="rl-h3">テンプレート</h3>
+      <p id="templates-note" class="rl-note" role="status"></p>
+      <ul id="templates-list" class="rl-tpls" aria-label="保存したテンプレート"></ul>
+    </div>
+
     <label class="rl-field">共有時に入れる文面（{result} が結果、{who} が当てた人になります）
       <input id="template" type="text" maxlength="200" autocomplete="off">
     </label>
@@ -103,6 +124,6 @@
 <!-- アクセス解析（GoatCounter。ボーダー予想のページと同じ。版を固定し、改ざん防止の印（integrity）を付ける。版を上げるときは両方のページの印を取り直す） -->
 <script data-goatcounter="https://iridock.goatcounter.com/count" async src="https://gc.zgo.at/count.v5.js"
         crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
-<script src="roulette.js?v=a49fdd0e"></script>
+<script src="roulette.js?v=545711ef"></script>
 </body>
 </html>

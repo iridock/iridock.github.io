@@ -9,6 +9,8 @@
   // ---- 決まり ----
   const STORE_KEY = 'roulette.v1';
   const MAX_WHEELS = 30;
+  const MAX_PEOPLE = 200;         // 登録できる「当てた人」
+  const MAX_TEMPLATES = 30;       // 保存できるテンプレート
   const MAX_ITEMS = 50;          // 円盤の文字が読める範囲
   const MAX_WEIGHT = 100;
   const MAX_WHO = 30;
@@ -24,8 +26,9 @@
   // ページ（index.html）と、このスクリプトの版が食い違っていないかを確かめる（2026-10-30。ブラウザが前の版のファイルを最大 10 分覚えているため、
   // ページとスクリプトを同時に入れ替えた直後は、組み合わせがずれて何も動かなくなった）。ずれていたら、真っ白のまま黙らず、読み込み直しを案内する。
   // 公開のたびにスクリプトの名前に指紋（?v=）が付くので、ふだんはずれないが、念のための備え。
-  const REQUIRED_IDS = ['notice', 'who', 'wheel-add', 'add-note', 'wheels', 'summary-scope', 'summary-body', 'summary-wrap', 'summary-empty', 'summary-count',
-    'summary-copy', 'summary-x', 'summary-discord', 'summary-share', 'summary-pages', 'summary-status', 'template', 'discord-link', 'export', 'import', 'import-file', 'settings-status'];
+  const REQUIRED_IDS = ['notice', 'new-template', 'wheel-add', 'add-note', 'wheels', 'summary-scope', 'summary-body', 'summary-wrap', 'summary-empty', 'summary-count',
+    'summary-copy', 'summary-x', 'summary-discord', 'summary-share', 'summary-pages', 'summary-status', 'template', 'discord-link', 'export', 'import', 'import-file', 'settings-status',
+    'people-input', 'people-add', 'people-list', 'people-note', 'templates-list', 'templates-note'];
   if (REQUIRED_IDS.some((id) => !document.getElementById(id))) {
     const box = document.createElement('p');
     box.setAttribute('role', 'alert');
@@ -181,8 +184,10 @@
   // ---- まとめ（誰が何を当てたか。ルーレットごとの履歴を合わせる） ----
   // scope は 'all'（全部のルーレット）かルーレットの id。当てた人ごとに、ルーレットごとの景品（同じものは ×回数）をまとめる。
   // 人の並びは、最初に当てた順。名前なしは最後。
+  // 「当てた人を記録する」がなしのルーレット（罰ゲームなど）は、誰が当てたかが無いので、まとめに入れない。
   function summarize(wheels, scope) {
-    const target = scope && scope !== 'all' ? wheels.filter((w) => w.id === scope) : wheels;
+    const eligible = wheels.filter((w) => w.useWho !== false);
+    const target = scope && scope !== 'all' ? eligible.filter((w) => w.id === scope) : eligible;
     const byWho = new Map();
     let entries = 0;
     for (const w of target) {
@@ -214,22 +219,78 @@
 
   // ---- 保存（ブラウザの中だけ） ----
   const newId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const newWheel = (name, items) => ({ id: newId(), name, items: items || [], removePicked: false, theme: DEFAULT_THEME, effect: DEFAULT_EFFECT, history: [] });
-  const sampleWheel = () => newWheel('今日の配信', [
-    { label: '雑談', weight: 3 },
-    { label: '歌枠', weight: 2 },
-    { label: 'ゲーム', weight: 2 },
-    { label: 'お絵描き', weight: 1 },
-  ]);
+  // ルーレットのテンプレート（利用者の指示、2026-10-30「ルーレットを保存して、あたらしいルーレット作ったときにそのルーレットの設定をつかえるようにしたい。
+  // デフォルトとして罰ゲームとプレゼントルーレットを表示するようにしてほしい」）。項目と重み・色合い・演出・当てた人のあり／なし・当たった項目を除く、を覚える。
+  // 既定の 2 つは、初めて開いたときに画面に出るルーレットにもなる。
+  const DEFAULT_TEMPLATES = [
+    {
+      name: '罰ゲーム', theme: 'lively', effect: 'full', useWho: false, removePicked: false,
+      items: [['腕立て伏せ 10 回', 1], ['変顔を披露する', 1], ['一発ギャグ', 1], ['好きな食べ物を告白する', 1], ['次の曲をリクエスト', 1], ['早口言葉に挑戦', 1], ['ひとこと自己 PR', 1], ['セーフ（なし）', 1]],
+    },
+    {
+      name: 'プレゼントルーレット', theme: 'luxe', effect: 'full', useWho: true, removePicked: false,
+      items: [['ステッカー', 4], ['サイン入りポスター', 1], ['ぬいぐるみ', 0.5], ['おはようボイス', 3], ['おやすみボイス', 3], ['お名前呼びボイス', 1], ['ハズレ', 6]],
+    },
+  ];
+  const sanitizeItems = (items) => (Array.isArray(items)
+    ? items.filter((it) => it && typeof it === 'object').slice(0, MAX_ITEMS).map((it) => ({ label: String(it.label != null ? it.label : '').slice(0, 40), weight: cleanWeight(it.weight) }))
+    : []);
+  const cloneItems = (items) => items.map((it) => ({ label: it.label, weight: it.weight }));
+  const newTemplate = (src) => ({
+    id: newId(),
+    name: String(src.name || 'ルーレット').slice(0, 30),
+    items: Array.isArray(src.items) && src.items.length && Array.isArray(src.items[0]) ? src.items.map(([label, weight]) => ({ label, weight })) : cloneItems(src.items || []),
+    theme: THEMES[src.theme] ? src.theme : DEFAULT_THEME,
+    effect: EFFECTS[src.effect] ? src.effect : DEFAULT_EFFECT,
+    useWho: src.useWho !== false,
+    removePicked: src.removePicked === true,
+  });
+  const defaultTemplates = () => DEFAULT_TEMPLATES.map(newTemplate);
+  // テンプレート（なければ空のルーレット）から、新しいルーレットを作る。履歴と名前の欄は空から始める。
+  const newWheel = (name, t) => ({
+    id: newId(),
+    name: String(name || (t && t.name) || 'ルーレット').slice(0, 30),
+    items: t ? cloneItems(t.items) : [],
+    removePicked: t ? t.removePicked === true : false,
+    theme: t ? t.theme : DEFAULT_THEME,
+    effect: t ? t.effect : DEFAULT_EFFECT,
+    useWho: t ? t.useWho !== false : true,
+    who: '',
+    history: [],
+  });
   const defaultData = () => {
-    const w = sampleWheel();
-    return { version: 1, wheels: [w], settings: { template: DEFAULT_TEMPLATE, who: '', discordLink: '' } };
+    const templates = defaultTemplates();
+    return { version: 1, wheels: templates.map((t) => newWheel(t.name, t)), templates, settings: { template: DEFAULT_TEMPLATE, discordLink: '', people: [] } };
   };
+  // 登録した人: 前後の空白を除き、重複・空・長すぎるものを除く
+  function sanitizePeople(list) {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set();
+    const out = [];
+    for (const x of list) {
+      const name = String(x == null ? '' : x).trim().slice(0, MAX_WHO);
+      if (name && !seen.has(name)) {
+        seen.add(name);
+        out.push(name);
+      }
+    }
+    return out.slice(0, MAX_PEOPLE);
+  }
+  function sanitizeTemplate(t) {
+    if (!t || typeof t !== 'object') return null;
+    return {
+      id: typeof t.id === 'string' && t.id ? t.id.slice(0, 40) : newId(),
+      name: String(t.name || 'ルーレット').slice(0, 30),
+      items: sanitizeItems(t.items),
+      theme: THEMES[t.theme] ? t.theme : DEFAULT_THEME,
+      effect: EFFECTS[t.effect] ? t.effect : DEFAULT_EFFECT,
+      useWho: t.useWho !== false,
+      removePicked: t.removePicked === true,
+    };
+  }
   function sanitizeWheel(w) {
     if (!w || typeof w !== 'object') return null;
-    const items = Array.isArray(w.items)
-      ? w.items.filter((it) => it && typeof it === 'object').slice(0, MAX_ITEMS).map((it) => ({ label: String(it.label != null ? it.label : '').slice(0, 40), weight: cleanWeight(it.weight) }))
-      : [];
+    const items = sanitizeItems(w.items);
     const history = Array.isArray(w.history)
       ? w.history.filter((x) => x && typeof x.result === 'string' && Number.isFinite(x.at)).slice(0, HISTORY_KEEP)
         .map((x) => ({ at: x.at, result: x.result.slice(0, 40), who: typeof x.who === 'string' ? x.who.slice(0, MAX_WHO) : '' }))
@@ -241,6 +302,8 @@
       removePicked: w.removePicked === true,
       theme: THEMES[w.theme] ? w.theme : DEFAULT_THEME,       // 知らない色合い・演出（古い保存・壊れた保存）は、既定にする
       effect: EFFECTS[w.effect] ? w.effect : DEFAULT_EFFECT,
+      useWho: w.useWho !== false,                              // 当てた人を記録するか（前の版の保存には無いので、あり）
+      who: typeof w.who === 'string' ? w.who.slice(0, MAX_WHO) : '',
       history,
     };
   }
@@ -253,10 +316,12 @@
     return {
       version: 1,
       wheels,
+      // テンプレートが保存に無い（前の版の保存）ときだけ、既定の 2 つを入れる。あるもの（空の一覧も）は、そのまま
+      templates: Array.isArray(d.templates) ? d.templates.slice(0, MAX_TEMPLATES).map(sanitizeTemplate).filter(Boolean) : defaultTemplates(),
       settings: {
         template: typeof s.template === 'string' && s.template.trim() ? s.template.slice(0, 200) : DEFAULT_TEMPLATE,
-        who: typeof s.who === 'string' ? s.who.slice(0, MAX_WHO) : '',
         discordLink: typeof s.discordLink === 'string' ? s.discordLink.slice(0, 300) : '',
+        people: sanitizePeople(s.people),
       },
     };
   }
@@ -292,7 +357,6 @@
   }
   const pad2 = (n) => String(n).padStart(2, '0');
   const stampOf = (ms) => { const d = new Date(ms); return `${d.getMonth() + 1}/${d.getDate()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
-  const currentWho = () => $('who').value.trim().slice(0, MAX_WHO);
 
   // アクセス解析（GoatCounter。利用者の決定、2026-10-30「GoatCounterはいい感じに」）。ページの数え方に加えて、回した・コピーした・共有した回数を数える。
   // 項目や結果・名前の中身は送らない（回数だけ）。count.js がまだ読み込まれていなければ、読み込まれたときに送る。読めない（広告ブロックなど）ときは何もしない。
@@ -804,6 +868,9 @@
       return false;
     }
   };
+  // スマホ（タッチが主で、画像つきの共有が使える端末）では、X・Discord のボタンを出さない（利用者の指示、2026-10-30「スマホの場合XとDiscordは表示しなくていいや」。
+  // 「共有」から選べるため）。共有が使えない端末は、スマホでも出す。
+  const isPhone = () => canShareFiles() && !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   const toBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   // 共有メニュー（X・Discord などのアプリを選べる）。画像（複数枚も可）と文面を一緒に渡す。
   async function shareImages(canvases, baseName, text, onError) {
@@ -891,6 +958,20 @@
     const result = h('p', 'rl-result', '　');
     result.setAttribute('role', 'status');
     result.setAttribute('aria-live', 'polite');
+    // 当てた人（ルーレットごと。利用者の指示、2026-10-30「当てた人の名前はルーレット毎に設定できるようにして。設定で登録できるようにして、登録した人を選択してすぐ反映できるようにして、
+    // もちろん通常入力も可能で」「当てた人はありなしをルーレット毎に設定できるようにしたい」）。「なし」のルーレット（罰ゲームなど）では、この欄を出さない。
+    const whoRow = h('div', 'rl-whorow');
+    whoRow.hidden = !wheel.useWho;
+    const whoInput = h('input', 'rl-who-input');
+    whoInput.type = 'text';
+    whoInput.maxLength = MAX_WHO;
+    whoInput.autocomplete = 'off';
+    whoInput.placeholder = '当てた人の名前（空でも回せます）';
+    whoInput.value = wheel.who || '';
+    whoInput.setAttribute('aria-label', '当てた人の名前');
+    const whoSel = h('select', 'rl-who-pick');
+    whoSel.setAttribute('aria-label', '登録した人から選ぶ');
+    whoRow.append(whoInput, whoSel);
     const actions = h('div', 'rl-actions');
     const spinBtn = h('button', 'rl-primary', '回す');
     spinBtn.type = 'button';
@@ -911,6 +992,7 @@
     const shareBtn = h('button', 'rl-btn', '共有');
     shareBtn.type = 'button';
     shareBtn.hidden = !canShareFiles();
+    xBtn.hidden = discordBtn.hidden = isPhone();
     share.append(copyBtn, xBtn, discordBtn, shareBtn);
     const status = h('p', 'rl-status');
     status.setAttribute('role', 'status');
@@ -919,7 +1001,7 @@
     preview.hidden = true;
     const fx = h('canvas', 'rl-fx');
     fx.setAttribute('aria-hidden', 'true');
-    stage.append(box, result, actions, share, status, preview, fx);
+    stage.append(box, result, whoRow, actions, share, status, preview, fx);
 
     const edit = h('div', 'rl-edit');
     // 項目と重み
@@ -950,15 +1032,29 @@
     removeLabel.append(removeCheck, document.createTextNode(' 当たった項目を一覧から除く'));
     opts.append(removeLabel);
     itemsBox.append(ul, addRow, bulkBox, opts);
-    // 見た目と演出（ルーレットごとに選べる。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」）
+    // このルーレットの設定（ルーレットごとに選べる。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」）:
+    // 色合い・演出・当てた人を記録するか・テンプレートに保存
     const lookBox = h('details', 'rl-more');
-    lookBox.append(h('summary', null, '見た目と演出'));
+    lookBox.append(h('summary', null, '設定（見た目・演出・当てた人）'));
     const lookRow = h('div', 'rl-row');
     const themeField = selectField('色合い', THEMES, wheel.theme);
     const effectField = selectField('演出', EFFECTS, wheel.effect);
     lookRow.append(themeField.label, effectField.label);
     const effectNote = h('p', 'rl-note');
-    lookBox.append(lookRow, effectNote);
+    const useWhoRow = h('div', 'rl-options');
+    const useWhoLabel = h('label');
+    const useWhoCheck = h('input');
+    useWhoCheck.type = 'checkbox';
+    useWhoCheck.checked = wheel.useWho;
+    useWhoLabel.append(useWhoCheck, document.createTextNode(' 当てた人を記録する'));
+    useWhoRow.append(useWhoLabel);
+    const useWhoNote = h('p', 'rl-note', 'なしにすると、名前の欄・履歴の「当てた人」・まとめに出しません（罰ゲームなど）。');
+    const saveTplRow = h('div', 'rl-row');
+    const saveTplBtn = h('button', 'rl-btn', 'このルーレットをテンプレートに保存');
+    saveTplBtn.type = 'button';
+    saveTplRow.append(saveTplBtn);
+    const saveTplNote = h('p', 'rl-note', '保存すると、「＋ ルーレットを追加」で、このルーレットの項目・重み・色合い・演出・当てた人の設定から作れます。');
+    lookBox.append(lookRow, effectNote, useWhoRow, useWhoNote, saveTplRow, saveTplNote);
     // 履歴（全部表示）
     const histBox = h('details', 'rl-more');
     histBox.open = true;
@@ -968,7 +1064,7 @@
     const histTable = h('table', 'rl-hist');
     const thead = h('thead');
     const hr = h('tr');
-    for (const t of ['日時', '当てた人', '結果']) hr.append(h('th', null, t));
+    for (const t of ['日時', '当てた人', '結果']) hr.append(h('th', t === '当てた人' ? 'col-who' : null, t));
     thead.append(hr);
     const tbody = h('tbody');
     histTable.append(thead, tbody);
@@ -1097,7 +1193,7 @@
         dur: reduced ? SPIN_MS_REDUCED : eff.spinMs,
         idx,
         label: wheel.items[idx].label,
-        who: currentWho(),   // 回し始めの名前の欄の中身（回している間に直しても、この回は変わらない）
+        who: wheel.useWho ? whoInput.value.trim().slice(0, MAX_WHO) : '',   // 回し始めの名前の欄の中身（回している間に直しても、この回は変わらない）。なしのルーレットは空
         snapshot: wheel.items.map((it) => ({ label: it.label, weight: it.weight })),
       };
       setSpinning(true);
@@ -1204,6 +1300,47 @@
     themeField.sel.addEventListener('change', () => { wheel.theme = THEMES[themeField.sel.value] ? themeField.sel.value : DEFAULT_THEME; save(); renderItems(); });
     effectField.sel.addEventListener('change', () => { wheel.effect = EFFECTS[effectField.sel.value] ? effectField.sel.value : DEFAULT_EFFECT; save(); showEffectNote(); });
 
+    // 当てた人: 入力（通常入力）と、設定で登録した人の選択（選ぶとすぐ名前の欄に入り、次に回すときから使われる）
+    whoInput.addEventListener('input', () => { wheel.who = whoInput.value.slice(0, MAX_WHO); save(); });
+    whoSel.addEventListener('change', () => {
+      if (!whoSel.value) return;
+      whoInput.value = whoSel.value;
+      wheel.who = whoInput.value;
+      save();
+      whoSel.value = '';   // 選んだあとは、見出しに戻す（続けて別の人を選べる）
+    });
+    function refreshPeople() {
+      const people = data.settings.people;
+      whoSel.replaceChildren();
+      const first = h('option', null, people.length ? '登録した人から選ぶ' : '（登録した人はいません）');
+      first.value = '';
+      whoSel.append(first);
+      for (const p of people) {
+        const o = h('option', null, p);
+        o.value = p;
+        whoSel.append(o);
+      }
+      whoSel.disabled = people.length === 0;
+      whoSel.value = '';
+    }
+    v.refreshPeople = refreshPeople;
+    // 当てた人を記録するか（ルーレットごと）。なしにすると、名前の欄・履歴の「当てた人」の列・まとめから外れる
+    useWhoCheck.addEventListener('change', () => {
+      wheel.useWho = useWhoCheck.checked;
+      whoRow.hidden = !wheel.useWho;
+      save();
+      renderHistory();
+      renderScope();
+      renderSummary();
+    });
+    // テンプレートに保存（同じ名前のテンプレートがあれば、上書きする）
+    saveTplBtn.addEventListener('click', () => {
+      const r = saveTemplate(wheel);
+      saveTplNote.textContent = r === 'full'
+        ? `テンプレートは ${MAX_TEMPLATES} 個までです。設定で、使わないものを消してください。`
+        : r === 'updated' ? `テンプレート「${wheel.name}」を上書きしました。` : `テンプレート「${wheel.name}」として保存しました。「＋ ルーレットを追加」で選べます。`;
+    });
+
     // 項目と重みの編集
     function updatePercents() {
       const total = wheel.items.reduce((s, it) => s + (isLive(it) ? it.weight : 0), 0);
@@ -1286,6 +1423,7 @@
     // 履歴（全部表示。「当てた人」はあとから直せる）
     function renderHistory() {
       tbody.replaceChildren();
+      histTable.classList.toggle('rl-nowho', !wheel.useWho);   // 当てた人を記録しないルーレットは、「当てた人」の列を出さない
       histSum.textContent = `履歴（${wheel.history.length} 件。保存は ${HISTORY_KEEP} 件まで）`;
       histWrap.hidden = wheel.history.length === 0;
       histEmpty.hidden = wheel.history.length > 0;
@@ -1293,7 +1431,7 @@
       wheel.history.forEach((entry, i) => {
         const tr = document.createElement('tr');
         const t = h('td', 'at', stampOf(entry.at));
-        const who = document.createElement('td');
+        const who = h('td', 'col-who');
         const input = h('input');
         input.type = 'text';
         input.maxLength = MAX_WHO;
@@ -1349,6 +1487,7 @@
     v.destroy = () => { if (v.ro) v.ro.disconnect(); };
     el.setAttribute('aria-label', wheel.name || 'ルーレット');
     showEffectNote();
+    refreshPeople();
     renderItems();
     renderHistory();
     return v;
@@ -1368,7 +1507,7 @@
     v.el.remove();
     views.splice(views.indexOf(v), 1);
     if (data.wheels.length === 0) {   // 1 つも無いと、画面に何も出ないので、空のルーレットを 1 つ置く
-      const w = newWheel('ルーレット 1');
+      const w = newWheel('ルーレット');
       data.wheels.push(w);
       addWheel(w);
     }
@@ -1376,13 +1515,122 @@
     renderScope();
     renderSummary();
   }
+  // 同じ名前がすでにあれば、「名前 2」「名前 3」…にする（まとめの表で見分けがつくように）
+  function uniqueName(base) {
+    const taken = new Set(data.wheels.map((w) => w.name));
+    if (!taken.has(base)) return base;
+    for (let k = 2; k < 1000; k++) {
+      const name = `${base.slice(0, 30 - String(k).length - 1)} ${k}`;
+      if (!taken.has(name)) return name;
+    }
+    return base;
+  }
+
+  // ---- テンプレート（ルーレットの設定を覚えておき、新しいルーレットを作るときに使う） ----
+  // 同じ名前のテンプレートがあれば上書きする。'added'・'updated'・'full'（上限）を返す。
+  function saveTemplate(wheel) {
+    const name = (wheel.name || '').trim().slice(0, 30) || 'ルーレット';
+    const src = { name, items: cloneItems(wheel.items), theme: wheel.theme, effect: wheel.effect, useWho: wheel.useWho !== false, removePicked: wheel.removePicked === true };
+    const i = data.templates.findIndex((t) => t.name === name);
+    let result;
+    if (i >= 0) {
+      data.templates[i] = Object.assign({ id: data.templates[i].id }, src);
+      result = 'updated';
+    } else {
+      if (data.templates.length >= MAX_TEMPLATES) return 'full';
+      data.templates.push(Object.assign({ id: newId() }, src));
+      result = 'added';
+    }
+    save();
+    renderTemplates();
+    return result;
+  }
+  function renderTemplates() {
+    // 上の「新しいルーレットのもと」の選択肢
+    const sel = $('new-template');
+    const keep = sel.value;
+    sel.replaceChildren();
+    const blank = h('option', null, '空のルーレット');
+    blank.value = '';
+    sel.append(blank);
+    for (const t of data.templates) {
+      const o = h('option', null, t.name);
+      o.value = t.id;
+      sel.append(o);
+    }
+    sel.value = data.templates.some((t) => t.id === keep) ? keep : '';
+    // 設定の一覧
+    const list = $('templates-list');
+    list.replaceChildren();
+    $('templates-note').textContent = data.templates.length ? '' : 'テンプレートはありません。ルーレットの「設定」から保存できます。';
+    for (const t of data.templates) {
+      const li = h('li', 'rl-tpl');
+      li.append(h('span', 'rl-tpl-name', t.name));
+      li.append(h('span', 'rl-tpl-meta', `項目 ${t.items.length} 個・${themeOf(t.theme).name}・${effectOf(t.effect).name}・当てた人${t.useWho ? 'あり' : 'なし'}`));
+      const del = h('button', 'rl-btn rl-btn-small', '消す');
+      del.type = 'button';
+      del.setAttribute('aria-label', `テンプレート「${t.name}」を消す`);
+      del.addEventListener('click', () => {
+        if (!window.confirm(`テンプレート「${t.name}」を消します（すでに作ったルーレットは消えません）。よろしいですか？`)) return;
+        data.templates = data.templates.filter((x) => x !== t);
+        save();
+        renderTemplates();
+      });
+      li.append(del);
+      list.append(li);
+    }
+  }
+
+  // ---- 当てた人の登録（設定。ルーレットごとの「登録した人から選ぶ」に出る） ----
+  function renderPeople() {
+    const list = $('people-list');
+    list.replaceChildren();
+    for (const p of data.settings.people) {
+      const li = h('li', 'rl-chip');
+      li.append(h('span', null, p));
+      const del = h('button', 'rl-chip-x', '×');
+      del.type = 'button';
+      del.setAttribute('aria-label', `${p} を消す`);
+      del.addEventListener('click', () => {
+        data.settings.people = data.settings.people.filter((x) => x !== p);
+        save();
+        renderPeople();
+      });
+      li.append(del);
+      list.append(li);
+    }
+    $('people-note').textContent = data.settings.people.length ? `${data.settings.people.length} 人` : '登録した人はいません。';
+    for (const v of views) v.refreshPeople();
+  }
+  function addPeople() {
+    const box = $('people-input');
+    // 改行・「、」「,」で区切って、まとめて登録できる
+    const names = sanitizePeople(box.value.split(/[\n\r,、，]/));
+    if (names.length === 0) return;
+    const merged = sanitizePeople([...data.settings.people, ...names]);
+    box.value = '';
+    data.settings.people = merged;
+    save();
+    renderPeople();
+    if (merged.length >= MAX_PEOPLE) $('people-note').textContent = `${merged.length} 人（上限 ${MAX_PEOPLE} 人です）`;
+  }
+  $('people-add').addEventListener('click', addPeople);
+  $('people-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.isComposing && (e.ctrlKey || e.metaKey || !e.shiftKey)) {   // 変換の確定の Enter は除く。Shift+Enter は改行
+      e.preventDefault();
+      addPeople();
+    }
+  });
+
   $('wheel-add').addEventListener('click', () => {
     if (data.wheels.length >= MAX_WHEELS) {
       $('add-note').textContent = `ルーレットは ${MAX_WHEELS} 個までです。`;
       return;
     }
     $('add-note').textContent = '';
-    const w = newWheel(`ルーレット ${data.wheels.length + 1}`);
+    // 選んだテンプレートの設定（項目と重み・色合い・演出・当てた人のあり／なし）で作る。「空のルーレット」なら何も入れない
+    const t = data.templates.find((x) => x.id === $('new-template').value);
+    const w = newWheel(uniqueName(t ? t.name : 'ルーレット'), t);
     data.wheels.push(w);
     const v = addWheel(w);
     save();
@@ -1402,20 +1650,22 @@
     const all = h('option', null, '全部のルーレット');
     all.value = 'all';
     sel.append(all);
-    for (const w of data.wheels) {
+    for (const w of whoWheels()) {
       const o = h('option', null, w.name || 'ルーレット');
       o.value = w.id;
       sel.append(o);
     }
-    sel.value = data.wheels.some((w) => w.id === keep) ? keep : 'all';
+    sel.value = whoWheels().some((w) => w.id === keep) ? keep : 'all';
   }
+  // まとめの対象にできるのは、「当てた人を記録する」ルーレットだけ
+  const whoWheels = () => data.wheels.filter((w) => w.useWho !== false);
   const summaryScope = () => $('summary-scope').value || 'all';
   const summaryTitle = () => {
     const s = summaryScope();
     const w = data.wheels.find((x) => x.id === s);
     return w ? `${w.name} の結果` : '誰が何を当てたか';
   };
-  const showWheelNames = () => summaryScope() === 'all' && data.wheels.length > 1;
+  const showWheelNames = () => summaryScope() === 'all' && whoWheels().length > 1;
   function renderSummary() {
     const s = summarize(data.wheels, summaryScope());
     const tbody = $('summary-body');
@@ -1485,6 +1735,7 @@
     await shareImages(pages, 'iridock-roulette-summary', `${summaryTitle()}（${summary.groups.length} 人・${summary.entries} 件）`, (t) => { $('summary-status').textContent = t; });
   });
   if (canShareFiles()) $('summary-share').hidden = false;
+  if (isPhone()) $('summary-x').hidden = $('summary-discord').hidden = true;
 
   // ---- 設定・書き出し・読み込み ----
   function exportData() {
@@ -1517,14 +1768,14 @@
       v.destroy();
       v.el.remove();
     }
-    $('who').value = data.settings.who;
     $('template').value = data.settings.template;
     $('discord-link').value = data.settings.discordLink;
+    renderTemplates();
+    renderPeople();
     for (const w of data.wheels) addWheel(w);
     renderScope();
     renderSummary();
   }
-  $('who').addEventListener('input', (e) => { data.settings.who = e.target.value.slice(0, MAX_WHO); save(); });
   $('template').addEventListener('input', (e) => { data.settings.template = e.target.value.slice(0, 200) || DEFAULT_TEMPLATE; save(); });
   $('discord-link').addEventListener('input', (e) => { data.settings.discordLink = e.target.value.slice(0, 300); save(); });
   $('export').addEventListener('click', exportData);
@@ -1541,7 +1792,7 @@
     themes: Object.keys(THEMES), effects: Object.keys(EFFECTS), themeOf,
     state: () => ({
       data,
-      who: $('who').value,
+      phone: isPhone(),
       views: views.map((v) => ({ id: v.w.id, rot: v.rot, spinning: !!v.anim, last: v.last, winner: v.winnerIdx, confetti: v.confetti.length, tilt: v.tilt })),
     }),
     makeCard: (i) => {

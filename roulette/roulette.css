@@ -2,7 +2,7 @@
    円盤・結果・「回す」ボタンは、配色に関わらず華やかな色にする（利用者の指示「まわしたくなるような華やかさ」）。
    ルーレットは「＋ ルーレットを追加」で何個でも並ぶ（利用者の指示）。1 つのときは、円盤と編集が左右に並び、増えると 2〜3 列のカードになる。 */
 .rl {
-  max-width: 1180px;
+  max-width: 1480px;   /* PC の通常の画面で、ルーレットを横に 3 つまで並べられる幅 */
   margin: 0 auto;
   padding: 18px var(--gutter) 40px;
   display: grid;
@@ -20,7 +20,9 @@
 .rl-add:hover:not(:disabled) { opacity: 0.85; }
 
 /* ルーレットのカード */
-.rl-wheels { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; align-items: start; }
+/* 横に並ぶのは 3 つまで（利用者の指示、2026-10-30）。1 列の最小の幅は「全体の 3 分の 1」なので、広い画面でも 4 列にはならない。
+   狭い画面では 340px を下限に 2 列・1 列に減る。1 つや 2 つのときは、auto-fit で空の列がつぶれて、幅いっぱいに広がる */
+.rl-wheels { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(340px, calc((100% - 32px) / 3))), 1fr)); gap: 16px; align-items: start; }
 .rl-card { container-type: inline-size; min-width: 0; }
 .rl-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .rl-title {
@@ -131,6 +133,51 @@
 }
 .rl-field select option { background: var(--panel); color: var(--text); }
 .rl-card textarea { display: block; margin: 8px 0; resize: vertical; }
+.rl-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+.rl-field textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 当てた人（ルーレットごと）: 名前の欄と、登録した人から選ぶ欄。「当てた人を記録する」がなしのルーレットでは、この行ごと隠す */
+.rl-whorow { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.rl-whorow[hidden] { display: none; }
+.rl-whorow input, .rl-whorow select {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+  color: var(--text);
+}
+.rl-whorow input { flex: 2 1 140px; }
+.rl-whorow select { flex: 1 1 140px; }
+.rl-whorow select option { background: var(--panel); color: var(--text); }
+.rl-whorow input:focus-visible, .rl-whorow select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rl-nowho .col-who { display: none; }
+
+/* 設定: 登録した人（札）とテンプレートの一覧 */
+.rl-block { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.rl-block:first-of-type { margin-top: 8px; padding-top: 0; border-top: 0; }
+.rl-h3 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
+.rl-chips, .rl-tpls { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+.rl-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--fill); font-size: 14px; }
+.rl-chip-x { width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; }
+.rl-chip-x:hover { background: var(--line); color: var(--text); }
+.rl-chip-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rl-tpls { flex-direction: column; gap: 6px; }
+.rl-tpl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 8px 6px 12px; border-radius: var(--r-sm); background: var(--fill); }
+.rl-tpl-name { font-weight: 700; }
+.rl-tpl-meta { flex: 1 1 200px; color: var(--muted); font-size: 13px; }
+.rl-btn-small { padding: 4px 10px; font-size: 13px; }
 
 /* 項目の一覧: 色の点・名前・重み・確率・削除 */
 .rl-items { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
