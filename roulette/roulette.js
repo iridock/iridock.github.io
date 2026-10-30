@@ -22,6 +22,20 @@
   const NO_WHO = '（名前なし）';
   const TAU = Math.PI * 2;
   const $ = (id) => document.getElementById(id);
+
+  // ページ（index.html）と、このスクリプトの版が食い違っていないかを確かめる（2026-10-30。ブラウザが前の版のファイルを最大 10 分覚えているため、
+  // ページとスクリプトを同時に入れ替えた直後は、組み合わせがずれて何も動かなくなった）。ずれていたら、真っ白のまま黙らず、読み込み直しを案内する。
+  // 公開のたびにスクリプトの名前に指紋（?v=）が付くので、ふだんはずれないが、念のための備え。
+  const REQUIRED_IDS = ['notice', 'who', 'wheel-add', 'add-note', 'wheels', 'summary-scope', 'summary-body', 'summary-wrap', 'summary-empty', 'summary-count',
+    'summary-copy', 'summary-share', 'summary-pages', 'summary-status', 'template', 'export', 'import', 'import-file', 'settings-status'];
+  if (REQUIRED_IDS.some((id) => !document.getElementById(id))) {
+    const box = document.createElement('p');
+    box.setAttribute('role', 'alert');
+    box.textContent = 'ページの一部が前の版のままになっているようです。Ctrl+F5（スマホは、ページを閉じて開き直す）でもう一度開いてください。';
+    box.style.cssText = 'margin:16px;padding:12px 16px;border-radius:12px;background:#fff3cd;color:#5c4400;font-size:15px;font-weight:600';
+    document.body.prepend(box);
+    return;
+  }
   function h(tag, cls, text) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
