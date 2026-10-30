@@ -9,7 +9,7 @@
   const STORE_KEY = 'roulette.v1';
   const MAX_ITEMS = 50;          // 円盤の文字が読める範囲
   const MAX_WEIGHT = 100;
-  const HISTORY_KEEP = 50;       // デスクトップ版と同じ（保存は 50 件、画面には 10 件）
+  const HISTORY_KEEP = 100;      // 保存は 100 件まで（利用者の指示、2026-10-30。デスクトップ版は 50 件）。画面と共有には新しい 10 件
   const HISTORY_SHOW = 10;
   const DEFAULT_TEMPLATE = 'ルーレットの結果は「{result}」になりました！';   // デスクトップ版と同じ。共有に添える文面
   const SPIN_MS = 6000;
@@ -767,19 +767,22 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
   }
   // クリックの直後に呼ぶ。画像は同期で作り（ブラウザの「クリックされた直後」の許可を使い切る前に書き込みを始める）、クリップボードへ。
-  // 使えない環境では、ファイルとして保存する。
-  async function copyCard() {
-    const canvas = makeCard(state.last);
+  // 使えない環境では、ファイルとして保存する。結果の画像と履歴の画像の両方で使う。
+  async function copyCanvas(canvas, fileName) {
     const blobPromise = new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    showPreview(canvas);
     if (navigator.clipboard && window.ClipboardItem) {
       try {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]);
         return 'copied';
       } catch (e) { /* 下で保存に切り替える */ }
     }
-    download(await blobPromise, 'iridock-roulette.png');
+    download(await blobPromise, fileName);
     return 'downloaded';
+  }
+  function copyCard() {
+    const canvas = makeCard(state.last);
+    showPreview(canvas);
+    return copyCanvas(canvas, 'iridock-roulette.png');
   }
   function onCopy() {
     if (!state.last) return;
@@ -798,6 +801,113 @@
       if (navigator.canShare && navigator.canShare(payload)) await navigator.share(payload);
     } catch (e) {
       if (e && e.name !== 'AbortError') setStatus('共有できませんでした。「画像をコピー」を使ってください。');
+    }
+  }
+
+  // ---- 履歴の共有（利用者の指示、2026-10-30「履歴も共有できるようにして」）。画像（新しい 10 件の一覧）と文面を、結果と同じ「画像をコピー」「共有」で ----
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const stampOf = (ms) => { const d = new Date(ms); return `${d.getMonth() + 1}/${d.getDate()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+  const historyEntries = () => cur().history.slice(0, HISTORY_SHOW);
+  const historyText = () => `${cur().name} の履歴\n` + historyEntries().map((h, i) => `${i + 1}. ${h.result.trim() || '（名前なし）'}（${stampOf(h.at)}）`).join('\n');
+  function makeHistoryCard(name, entries) {
+    const W = 1200;
+    const rowH = 46;
+    const H = 190 + Math.max(1, entries.length) * rowH + 70;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const x = c.getContext('2d');
+    const ff = fontFamily();
+    const bg = x.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#1b1450');
+    bg.addColorStop(0.55, '#41187a');
+    bg.addColorStop(1, '#0f2f5c');
+    x.fillStyle = bg;
+    x.fillRect(0, 0, W, H);
+    let seed = 11;
+    for (const ch of Array.from(name)) seed = (seed * 31 + ch.charCodeAt(0)) % 100003;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 40; i++) {
+      const sx = 20 + rnd() * (W - 40), sy = 14 + rnd() * (H - 28), sr = 2 + rnd() * 5;
+      x.fillStyle = `rgba(255, 240, 190, ${0.2 + rnd() * 0.45})`;
+      if (i % 3 === 0) {
+        starPath(x, sx, sy, sr * 1.8);
+        x.fill();
+      } else {
+        x.beginPath();
+        x.arc(sx, sy, sr * 0.6, 0, TAU);
+        x.fill();
+      }
+    }
+    x.textAlign = 'left';
+    x.textBaseline = 'alphabetic';
+    const gold = x.createLinearGradient(0, 60, 0, 120);
+    gold.addColorStop(0, '#fff6c8');
+    gold.addColorStop(0.5, '#ffd23f');
+    gold.addColorStop(1, '#ff9f1c');
+    x.font = `800 56px ${ff}`;
+    x.lineJoin = 'round';
+    x.lineWidth = 9;
+    x.strokeStyle = 'rgba(40, 10, 70, 0.75)';
+    const title = fitText(x, `${name} の履歴`, W - 120);
+    x.strokeText(title, 60, 112);
+    x.fillStyle = gold;
+    x.fillText(title, 60, 112);
+    x.fillStyle = '#d9ccff';
+    x.font = `600 26px ${ff}`;
+    x.fillText(`新しい順に ${entries.length} 件`, 60, 156);
+    entries.forEach((h, i) => {
+      const y = 190 + i * rowH + 34;
+      x.fillStyle = 'rgba(255, 255, 255, 0.07)';
+      if (i % 2 === 0) x.fillRect(40, y - 34, W - 80, rowH);
+      x.fillStyle = i === 0 ? '#ffd23f' : '#c4b4f0';
+      x.font = `700 28px ${ff}`;
+      x.fillText(`${i + 1}`, 64, y);
+      x.font = `600 26px ${ff}`;
+      x.fillText(stampOf(h.at), 120, y);
+      x.fillStyle = i === 0 ? '#ffd23f' : '#ffffff';
+      x.font = `800 34px ${ff}`;
+      x.fillText(fitText(x, h.result.trim() || '（名前なし）', W - 420), 380, y);
+    });
+    const d = new Date();
+    x.fillStyle = '#c4b4f0';
+    x.font = `600 24px ${ff}`;
+    x.textAlign = 'right';
+    x.fillText(`${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}　IriDock ルーレット`, W - 60, H - 24);
+    return c;
+  }
+  const setHistoryStatus = (text) => { $('history-status').textContent = text || ''; };
+  function showHistoryPreview(canvas) {
+    const img = $('history-preview');
+    img.src = canvas.toDataURL('image/png');
+    img.hidden = false;
+  }
+  function onHistoryCopy() {
+    const entries = historyEntries();
+    if (entries.length === 0) {
+      setHistoryStatus('履歴がありません。');
+      return;
+    }
+    countEvent('roulette-history-copy', '履歴の画像をコピーした');
+    const canvas = makeHistoryCard(cur().name, entries);
+    showHistoryPreview(canvas);
+    copyCanvas(canvas, 'iridock-roulette-history.png').then((r) => setHistoryStatus(r === 'copied' ? '履歴の画像をコピーしました。貼り付けて使えます。' : 'コピーできなかったので、画像を保存しました。'));
+  }
+  async function onHistoryShare() {
+    const entries = historyEntries();
+    if (entries.length === 0) {
+      setHistoryStatus('履歴がありません。');
+      return;
+    }
+    countEvent('roulette-history-share', '履歴を共有した');
+    const canvas = makeHistoryCard(cur().name, entries);
+    showHistoryPreview(canvas);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    const payload = { files: [new File([blob], 'iridock-roulette-history.png', { type: 'image/png' })], text: historyText() };
+    try {
+      if (navigator.canShare && navigator.canShare(payload)) await navigator.share(payload);
+    } catch (e) {
+      if (e && e.name !== 'AbortError') setHistoryStatus('共有できませんでした。「画像をコピー」を使ってください。');
     }
   }
 
@@ -878,8 +988,10 @@
   function renderHistory() {
     const ol = $('history');
     ol.replaceChildren();
-    const pad = (n) => String(n).padStart(2, '0');
-    const list = cur().history.slice(0, HISTORY_SHOW);
+    const list = historyEntries();
+    for (const b of ['history-copy', 'history-share', 'history-clear']) $(b).disabled = list.length === 0;
+    $('history-preview').hidden = true;
+    setHistoryStatus('');
     if (list.length === 0) {
       const li = document.createElement('li');
       li.textContent = 'まだありません';
@@ -887,11 +999,10 @@
       return;
     }
     for (const h of list) {
-      const d = new Date(h.at);
       const li = document.createElement('li');
       const at = document.createElement('span');
       at.className = 'at';
-      at.textContent = `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      at.textContent = stampOf(h.at);
       li.append(at, document.createTextNode(h.result.trim() || '（名前なし）'));
       ol.append(li);
     }
@@ -1001,7 +1112,17 @@
       renderItems();
     });
     $('opt-remove').addEventListener('change', (e) => { cur().removePicked = e.target.checked; save(); });
-    $('history-clear').addEventListener('click', () => { cur().history = []; save(); renderHistory(); });
+    $('history-copy').addEventListener('click', onHistoryCopy);
+    $('history-share').addEventListener('click', onHistoryShare);
+    // 履歴を消す前に確認する（利用者の指示、2026-10-30「履歴を消す際に確認がでるようにして」）
+    $('history-clear').addEventListener('click', () => {
+      const n = cur().history.length;
+      if (n === 0) return;
+      if (!window.confirm(`「${cur().name}」の履歴 ${n} 件を消します。元には戻せません。よろしいですか？`)) return;
+      cur().history = [];
+      save();
+      renderHistory();
+    });
     $('template').addEventListener('input', (e) => { data.settings.template = e.target.value.slice(0, 200) || DEFAULT_TEMPLATE; save(); });
     $('export').addEventListener('click', exportData);
     $('import').addEventListener('click', () => $('import-file').click());
@@ -1021,7 +1142,10 @@
     }
     // 画像つきの共有メニューが使える端末（おもにスマホ）だけ「共有」を出す
     try {
-      if (navigator.canShare && navigator.canShare({ files: [new File(['x'], 'a.png', { type: 'image/png' })] })) $('share-native').hidden = false;
+      if (navigator.canShare && navigator.canShare({ files: [new File(['x'], 'a.png', { type: 'image/png' })] })) {
+        $('share-native').hidden = false;
+        $('history-share').hidden = false;
+      }
     } catch (e) { /* 出さない */ }
     if (window.ResizeObserver) new ResizeObserver(() => { redraw(); fxCanvasFit(); }).observe($('stage'));
     else window.addEventListener('resize', redraw);
@@ -1032,6 +1156,8 @@
     pickIndex, layoutOf, indexAtPointer, targetRotation, randomUnit, cleanWeight, sanitizeData, sliceColor, pointerTilt,
     state: () => ({ rot: state.rot, spinning: !!state.anim, last: state.last, data, winner: state.winnerIdx, confetti: state.confetti.length, tilt: state.tilt }),
     makeCard: () => makeCard(state.last || { name: cur().name, items: cur().items, rot: state.rot, text: '見本', winner: null, at: Date.now() }),
+    makeHistoryCard: () => makeHistoryCard(cur().name, historyEntries()),
+    historyText,
   };
 
   bind();

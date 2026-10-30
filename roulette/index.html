@@ -88,23 +88,29 @@
   </section>
 
   <section class="panel rl-edit" aria-labelledby="history-title">
-    <div class="panel-head"><h2 id="history-title">履歴 <small>このルーレットの直近 10 件</small></h2></div>
+    <div class="panel-head"><h2 id="history-title">履歴 <small>このルーレットの新しい 10 件を表示します（保存は 100 件まで）</small></h2></div>
     <ol id="history" class="rl-history"></ol>
-    <button id="history-clear" type="button" class="rl-btn">履歴を消す</button>
+    <div class="rl-row">
+      <button id="history-copy" type="button" class="rl-btn">画像をコピー</button>
+      <button id="history-share" type="button" class="rl-btn" hidden>共有</button>
+      <button id="history-clear" type="button" class="rl-btn">履歴を消す</button>
+    </div>
+    <p id="history-status" class="rl-status" role="status" aria-live="polite"></p>
+    <img id="history-preview" class="rl-preview" alt="履歴の画像（長押しで保存できます）" hidden>
   </section>
 
-  <section class="panel rl-edit" aria-labelledby="post-title">
-    <div class="panel-head"><h2 id="post-title">共有と保存 <small>X や Discord へは、「共有」か「画像をコピー」で送ります</small></h2></div>
-    <label class="rl-field">共有に添える文面（{result} が結果になります）
+  <!-- 設定（利用者の指示、2026-10-30「投稿と保存は設定に変更して。共有時に入れる文面みたいな感じだけでよい」）。説明の文は短くした -->
+  <section class="panel rl-edit" aria-labelledby="settings-title">
+    <div class="panel-head"><h2 id="settings-title">設定</h2></div>
+    <label class="rl-field">共有時に入れる文面（{result} が結果になります）
       <input id="template" type="text" maxlength="200" autocomplete="off">
     </label>
-    <p class="hint">「共有」は、スマホなどの共有メニューから X や Discord のアプリを選ぶと、画像つきで送れます（使えない端末では出ません）。「画像をコピー」は、コピーした画像を、投稿画面に貼り付けて使います（PC は Ctrl+V、スマホは長押しして「ペースト」）。</p>
     <div class="rl-row">
       <button id="export" type="button" class="rl-btn">ファイルに書き出す</button>
       <button id="import" type="button" class="rl-btn">ファイルから読み込む</button>
       <input id="import-file" type="file" accept="application/json,.json" hidden>
     </div>
-    <p class="hint">項目や履歴は、このブラウザの中だけに保存します（サーバーには送りません）。ブラウザの閲覧データを消すと、なくなります。iPhone の Safari は、しばらく使わないと消えることがあるので、ときどき書き出しておくと安心です。</p>
+    <p class="hint">項目や履歴は、このブラウザの中だけに保存します。閲覧データを消すと、なくなります。ときどき書き出しておくと安心です。</p>
   </section>
 </main>
 
