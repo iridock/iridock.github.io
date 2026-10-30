@@ -1,36 +1,61 @@
 /* web 版ルーレット（利用者の指示、2026-10-30。設計書 16）。色・角丸・書体は、サイトの共通の変数（../style.css）を使う。
-   円盤・結果・「回す」ボタンは、配色に関わらず華やかな色にする（利用者の指示「まわしたくなるような華やかさ」）。 */
+   円盤・結果・「回す」ボタンは、配色に関わらず華やかな色にする（利用者の指示「まわしたくなるような華やかさ」）。
+   ルーレットは「＋ ルーレットを追加」で何個でも並ぶ（利用者の指示）。1 つのときは、円盤と編集が左右に並び、増えると 2〜3 列のカードになる。 */
 .rl {
   max-width: 1180px;
   margin: 0 auto;
   padding: 18px var(--gutter) 40px;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
 }
-.rl > .notice, .rl > noscript { grid-column: 1 / -1; margin: 0; }
-.rl > .rl-stage { grid-column: 1; grid-row: span 4; }   /* 行は自動（お知らせが出ていれば、その下から。前は 2 行目に決めていて、左上が空いた） */
-.rl > .rl-edit { grid-column: 2; }
+.rl > .notice, .rl > noscript { margin: 0; }
 .rl .panel { margin: 0; }
 .rl .panel-head { margin-bottom: 8px; }
 
+/* 上の欄: 当てた人の名前と、ルーレットの追加 */
+.rl-top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.rl-top .rl-who { flex: 1 1 280px; margin-top: 0; }
+.rl-addwrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rl-add { padding: 10px 18px; background: var(--accent); color: var(--panel); font-size: 15px; font-weight: 700; }
+.rl-add:hover:not(:disabled) { opacity: 0.85; }
+
+/* ルーレットのカード */
+.rl-wheels { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; align-items: start; }
+.rl-card { container-type: inline-size; min-width: 0; }
+.rl-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.rl-title {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+}
+.rl-title:hover, .rl-title:focus { background: var(--fill); }
+.rl-card-body { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 760px) {
+  .rl-card-body { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; }
+}
+
 /* 円盤と結果。円盤のまわりに、ふんわりした金色の光 */
-.rl-stage { position: relative; overflow: hidden; }
+.rl-stage { position: relative; overflow: hidden; border-radius: var(--r-md); }
 .rl-wheelbox {
   width: min(100%, 560px);
   margin: 0 auto;
   aspect-ratio: 1;
   background: radial-gradient(closest-side, rgba(255, 210, 63, 0.26), rgba(255, 210, 63, 0.08) 62%, transparent 78%);
 }
-#wheel { display: block; width: 100%; height: 100%; cursor: pointer; }
-#wheel.is-spinning { cursor: default; }
+.rl-wheel { display: block; width: 100%; height: 100%; cursor: pointer; }
+.rl-wheel.is-spinning { cursor: default; }
 .rl-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }   /* 紙吹雪（当たりの演出）。円盤の上に重ねる */
 .rl-result {
   margin: 10px 0 8px;
   min-height: 1.4em;
   text-align: center;
-  font-size: clamp(30px, 7vw, 46px);
+  font-size: clamp(26px, 6vw, 42px);
   font-weight: 800;
   line-height: 1.3;
   letter-spacing: 0.01em;
@@ -56,6 +81,7 @@
 .rl-share { margin-top: 12px; }
 .rl-status { min-height: 1.4em; margin: 10px 0 0; text-align: center; color: var(--muted); font-size: 13px; }
 .rl-preview { display: block; max-width: 100%; margin: 12px auto 0; border-radius: var(--r-md); }
+.rl-note { margin: 6px 0; color: var(--muted); font-size: 13px; }
 
 /* ボタン。「回す」は大きく、立体的に押せる金色 */
 .rl-primary {
@@ -85,7 +111,7 @@
 }
 .rl-btn:hover:not(:disabled) { opacity: 0.8; }
 .rl-btn:disabled { opacity: 0.4; cursor: default; }
-.rl-primary:focus-visible, .rl-btn:focus-visible, .rl-items input:focus-visible, .rl-field input:focus-visible, .rl-field select:focus-visible, #bulk:focus-visible, #wheel:focus-visible {
+.rl-primary:focus-visible, .rl-btn:focus-visible, .rl-wheel:focus-visible, .rl-title:focus-visible, .rl-card input:focus-visible, .rl-card textarea:focus-visible, .rl-field input:focus-visible, .rl-field select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -94,7 +120,7 @@
 .rl-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 10px; }
 .rl-row .rl-field { flex: 1 1 160px; margin-top: 0; }
 .rl-field { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; color: var(--muted); font-size: 13px; }
-.rl-field input, .rl-field select, #bulk, .rl-items input[type="text"], .rl-items input[type="number"] {
+.rl-field input, .rl-field select, .rl-card textarea, .rl-items input[type="text"], .rl-items input[type="number"], .rl-hist input {
   box-sizing: border-box;
   width: 100%;
   padding: 8px 10px;
@@ -104,7 +130,7 @@
   color: var(--text);
 }
 .rl-field select option { background: var(--panel); color: var(--text); }
-#bulk { display: block; margin: 8px 0; resize: vertical; }
+.rl-card textarea { display: block; margin: 8px 0; resize: vertical; }
 
 /* 項目の一覧: 色の点・名前・重み・確率・削除 */
 .rl-items { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
@@ -116,25 +142,28 @@
 .rl-del:hover { opacity: 0.8; }
 .rl-count { color: var(--muted); font-size: 13px; }
 
-.rl-more summary { margin-top: 12px; cursor: pointer; color: var(--accent); font-weight: 600; }
+.rl-more { margin-top: 12px; }
+.rl-more > summary { cursor: pointer; color: var(--accent); font-weight: 600; }
 .rl-options { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
 .rl-options label { display: flex; align-items: center; gap: 8px; }
-.rl-history { margin: 0 0 10px; padding-left: 1.5em; color: var(--text); font-variant-numeric: tabular-nums; }
-.rl-history li { margin: 2px 0; }
-.rl-history .at { color: var(--muted); font-size: 13px; margin-right: 8px; }
+
+/* 履歴・まとめの表（全部表示。長いときは枠の中でスクロール） */
+.rl-histwrap { max-height: 360px; overflow: auto; margin: 8px 0; border-radius: var(--r-sm); }
+.rl-hist { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rl-hist th { position: sticky; top: 0; padding: 6px 8px; background: var(--panel); color: var(--muted); font-size: 12.5px; font-weight: 600; text-align: left; }
+.rl-hist td { padding: 4px 8px; border-top: 1px solid var(--line); vertical-align: top; font-variant-numeric: tabular-nums; }
+.rl-hist td.at { color: var(--muted); white-space: nowrap; font-size: 13px; }
+.rl-hist td.who { font-weight: 700; white-space: nowrap; }
+.rl-hist input { padding: 4px 8px; font-size: 14px; }
+.rl-summary td div + div { margin-top: 2px; }
+.rl-pages { display: grid; gap: 12px; margin-top: 12px; }
+.rl-page { margin: 0; display: grid; gap: 8px; justify-items: center; }
+.rl-page img { max-width: 100%; border-radius: var(--r-md); }
 
 /* 全画面（配信の画面共有用）。円盤を大きく出す */
-.rl-stage:fullscreen { display: flex; flex-direction: column; justify-content: center; overflow: auto; background: var(--bg); }
+.rl-stage:fullscreen { display: flex; flex-direction: column; justify-content: center; overflow: auto; background: var(--bg); border-radius: 0; }
 .rl-stage:fullscreen .rl-wheelbox { width: min(90vw, 62vh); }
 
-@media (min-width: 861px) {
-  /* 項目が多くて右の一覧が長くなっても、円盤は画面に残す（上の帯の下に固定。帯は 2 段になったので少し下げる） */
-  .rl > .rl-stage { position: sticky; top: 100px; }
-}
-@media (max-width: 860px) {
-  .rl { grid-template-columns: minmax(0, 1fr); }
-  .rl > .rl-stage, .rl > .rl-edit { grid-column: 1; grid-row: auto; }
-}
 @media (prefers-reduced-motion: reduce) {
   .rl-result.pop { animation: none; }
   .rl-primary { transition: none; }

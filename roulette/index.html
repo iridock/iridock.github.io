@@ -8,7 +8,7 @@
 <!-- ボーダー予想のページと同じ決まり。ページの中のスクリプト・スタイルは使えない。画像の下見は data: で出す。外への通信は GoatCounter（アクセス数）だけ -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; style-src 'self'; img-src 'self' data: https://iridock.goatcounter.com; connect-src 'self' https://iridock.goatcounter.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="description" content="項目と重みを決めて回せるルーレット。結果の画像をコピーしたり、共有したりできます。">
+<meta name="description" content="項目と重みを決めて回せるルーレット。ルーレットを何個でも並べて、誰が何を当てたかを表の画像で共有できます。">
 <meta property="og:title" content="IriDock ルーレット">
 <meta property="og:type" content="website">
 <link rel="icon" href="../icon.png" type="image/png">
@@ -38,71 +38,47 @@
   <noscript><p class="notice">ルーレットは JavaScript が必要です。</p></noscript>
   <p id="notice" class="notice" role="status" hidden></p>
 
-  <section id="stage" class="panel rl-stage" aria-label="ルーレット">
-    <div class="rl-wheelbox"><canvas id="wheel" role="img" aria-label="ルーレットの円盤。押すと回ります"></canvas></div>
-    <p id="result" class="rl-result" role="status" aria-live="polite">　</p>
-    <div class="rl-actions">
-      <button id="spin" type="button" class="rl-primary">回す</button>
-      <button id="fullscreen" type="button" class="rl-btn" hidden>全画面</button>
-    </div>
-    <div id="share" class="rl-share" hidden>
-      <button id="copy-image" type="button" class="rl-btn">画像をコピー</button>
-      <button id="share-native" type="button" class="rl-btn" hidden>共有</button>
-    </div>
-    <p id="status" class="rl-status" role="status" aria-live="polite"></p>
-    <img id="preview" class="rl-preview" alt="結果の画像（長押しで保存できます）" hidden>
-    <canvas id="fx" class="rl-fx" aria-hidden="true"></canvas>
-  </section>
-
-  <section class="panel rl-edit" aria-labelledby="items-title">
-    <div class="panel-head">
-      <h2 id="items-title">項目と重み <small>重みが大きいほど当たりやすくなります（0 は当たりません）</small></h2>
-    </div>
-
-    <div class="rl-row">
-      <label class="rl-field">ルーレット
-        <select id="wheel-select" aria-label="ルーレットを選ぶ"></select>
-      </label>
-      <button id="wheel-add" type="button" class="rl-btn">追加</button>
-      <button id="wheel-del" type="button" class="rl-btn">削除</button>
-    </div>
-    <label class="rl-field">名前
-      <input id="wheel-name" type="text" maxlength="30" autocomplete="off">
+  <!-- 当てた人の名前（回す前に入れる。入れた名前は次の回にも残る。空でも回せる。履歴であとから直せる）と、ルーレットの追加 -->
+  <section class="panel rl-top" aria-label="当てた人とルーレットの追加">
+    <label class="rl-field rl-who">当てた人の名前（空でも回せます。罰ゲームなどは空のままで）
+      <input id="who" type="text" maxlength="30" autocomplete="off" placeholder="例: 〇〇さん">
     </label>
-
-    <ul id="items" class="rl-items" aria-label="項目の一覧"></ul>
-    <div class="rl-row">
-      <button id="item-add" type="button" class="rl-btn">項目を足す</button>
-      <span id="item-count" class="rl-count"></span>
-    </div>
-
-    <details class="rl-more">
-      <summary>まとめて追加</summary>
-      <textarea id="bulk" rows="5" placeholder="1 行に 1 つ。「名前,重み」でも入れられます（例: ゲーム,2）"></textarea>
-      <button id="bulk-add" type="button" class="rl-btn">追加する</button>
-    </details>
-
-    <div class="rl-options">
-      <label><input id="opt-remove" type="checkbox"> 当たった項目を一覧から除く</label>
+    <div class="rl-addwrap">
+      <button id="wheel-add" type="button" class="rl-btn rl-add">＋ ルーレットを追加</button>
+      <span id="add-note" class="rl-count" role="status"></span>
     </div>
   </section>
 
-  <section class="panel rl-edit" aria-labelledby="history-title">
-    <div class="panel-head"><h2 id="history-title">履歴 <small>このルーレットの新しい 10 件を表示します（保存は 100 件まで）</small></h2></div>
-    <ol id="history" class="rl-history"></ol>
+  <!-- ルーレットのカード（スクリプトが並べる。追加した数だけ増える） -->
+  <div id="wheels" class="rl-wheels"></div>
+
+  <!-- まとめ: 全部のルーレットの履歴を合わせて、誰が何を当てたかを表にする。共有は表の画像（文章だと文字数の制限に引っかかるため。長いときは複数枚） -->
+  <section id="summary" class="panel rl-wide" aria-labelledby="summary-title">
+    <div class="panel-head"><h2 id="summary-title">まとめ <small>誰が何を当てたか（履歴の「当てた人」から作ります）</small></h2></div>
     <div class="rl-row">
-      <button id="history-copy" type="button" class="rl-btn">画像をコピー</button>
-      <button id="history-share" type="button" class="rl-btn" hidden>共有</button>
-      <button id="history-clear" type="button" class="rl-btn">履歴を消す</button>
+      <label class="rl-field">対象
+        <select id="summary-scope" aria-label="まとめに入れるルーレット"></select>
+      </label>
+      <span id="summary-count" class="rl-count"></span>
     </div>
-    <p id="history-status" class="rl-status" role="status" aria-live="polite"></p>
-    <img id="history-preview" class="rl-preview" alt="履歴の画像（長押しで保存できます）" hidden>
+    <p id="summary-empty" class="rl-note">まだありません。ルーレットを回すと、ここに集まります。</p>
+    <div id="summary-wrap" class="rl-histwrap" hidden>
+      <table class="rl-hist rl-summary">
+        <thead><tr><th>当てた人</th><th>当たったもの</th></tr></thead>
+        <tbody id="summary-body"></tbody>
+      </table>
+    </div>
+    <div class="rl-row">
+      <button id="summary-copy" type="button" class="rl-btn">画像をコピー</button>
+      <button id="summary-share" type="button" class="rl-btn" hidden>共有</button>
+    </div>
+    <p id="summary-status" class="rl-status" role="status" aria-live="polite"></p>
+    <div id="summary-pages" class="rl-pages"></div>
   </section>
 
-  <!-- 設定（利用者の指示、2026-10-30「投稿と保存は設定に変更して。共有時に入れる文面みたいな感じだけでよい」）。説明の文は短くした -->
-  <section class="panel rl-edit" aria-labelledby="settings-title">
+  <section class="panel rl-wide" aria-labelledby="settings-title">
     <div class="panel-head"><h2 id="settings-title">設定</h2></div>
-    <label class="rl-field">共有時に入れる文面（{result} が結果になります）
+    <label class="rl-field">共有時に入れる文面（{result} が結果、{who} が当てた人になります）
       <input id="template" type="text" maxlength="200" autocomplete="off">
     </label>
     <div class="rl-row">
@@ -110,13 +86,14 @@
       <button id="import" type="button" class="rl-btn">ファイルから読み込む</button>
       <input id="import-file" type="file" accept="application/json,.json" hidden>
     </div>
-    <p class="hint">項目や履歴は、このブラウザの中だけに保存します。閲覧データを消すと、なくなります。ときどき書き出しておくと安心です。</p>
+    <p id="settings-status" class="rl-status" role="status" aria-live="polite"></p>
+    <p class="hint">ルーレット・項目・重み・履歴は、このブラウザの中だけに保存します。閲覧データを消すと、なくなります。ときどき書き出しておくと安心です。</p>
   </section>
 </main>
 
 <footer class="foot">
   <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
-  <p>アクセス数を数えるために <a href="https://www.goatcounter.com/">GoatCounter</a> を使っています（Cookie は使いません）。数えるのは、ページを開いた数と、回した・コピーした・共有した回数だけです（項目や結果の中身は送りません）。</p>
+  <p>アクセス数を数えるために <a href="https://www.goatcounter.com/">GoatCounter</a> を使っています（Cookie は使いません）。数えるのは、ページを開いた数と、回した・コピーした・共有した回数などだけです（項目・結果・名前の中身は送りません）。</p>
 </footer>
 <!-- アクセス解析（GoatCounter。ボーダー予想のページと同じ。版を固定し、改ざん防止の印（integrity）を付ける。版を上げるときは両方のページの印を取り直す） -->
 <script data-goatcounter="https://iridock.goatcounter.com/count" async src="https://gc.zgo.at/count.v5.js"

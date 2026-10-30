@@ -1,22 +1,33 @@
-// web 版ルーレット（利用者の指示、2026-10-30「webにルーレット機能を新規につくりたい」「項目の保存を行えるようにしたい。もちろんブラウザ内に保存ね。
-// 重み付けはしたい。画像のコピーボタンと…APIとかじゃなくてね」。そのあと「共有ボタンで、XもDiscordも投稿できるから画像コピーと共有だけにしよう。直前と同じ項目をさけるはなくてよい。
-// 円盤はもっと豪華さというか、このルーレットがまわしたくなるような華やかさをだしてほしい。演出とか、いろあい、文字の読みやすさ、を含めて」）。設計書 16。
+// web 版ルーレット（利用者の指示、2026-10-30。設計書 16）。
+// 使い方は 2 つ: ①罰ゲームを決めて実行する ②プレゼントルーレット（リアルグッズ・音声・全部の 3 つなどを並べ、視聴者が「ガチャしたい」と言ったら回して当たりを共有し、
+// 最後に「誰が何を当てたか」を表の画像で共有する）。利用者の言葉:「ルーレットの複数表示もしたいし、項目と重みも保存したいな」「新規追加ボタンみたいなかんじでどんどんついかできるように」
+// 「回す前に名前の欄へ入れる」「ルーレットごとの履歴のまま」「共有の画像は人ごとのまとめの表。長いときは複数枚に分ける」。
 // ボーダー予想のデータには頼らない（ボーダー予想のサイトを止めたら止まるので、あとで別の場所へ移せるように）。
 (function () {
   'use strict';
 
   // ---- 決まり ----
   const STORE_KEY = 'roulette.v1';
+  const MAX_WHEELS = 30;
   const MAX_ITEMS = 50;          // 円盤の文字が読める範囲
   const MAX_WEIGHT = 100;
-  const HISTORY_KEEP = 100;      // 保存は 100 件まで（利用者の指示、2026-10-30。デスクトップ版は 50 件）。画面と共有には新しい 10 件
-  const HISTORY_SHOW = 10;
-  const DEFAULT_TEMPLATE = 'ルーレットの結果は「{result}」になりました！';   // デスクトップ版と同じ。共有に添える文面
+  const MAX_WHO = 30;
+  const HISTORY_KEEP = 100;      // ルーレットごとに 100 件まで保存（利用者の指示）。画面にも全部出す
+  const DEFAULT_TEMPLATE = 'ルーレットの結果は「{result}」になりました！';   // デスクトップ版と同じ。共有に添える文面（{result}＝結果、{who}＝当てた人）
   const SPIN_MS = 6000;
   const SPIN_MS_REDUCED = 800;   // 「動きを減らす」設定のとき
   const SPIN_TURNS = 7;
+  const SUMMARY_PAGE_ENTRIES = 25;   // まとめの画像 1 枚に入れる当たりの数の目安（超えたら複数枚に分ける）
+  const SUMMARY_PAGE_BODY = 1500;    // まとめの画像 1 枚の表の高さの上限（px）
+  const NO_WHO = '（名前なし）';
   const TAU = Math.PI * 2;
   const $ = (id) => document.getElementById(id);
+  function h(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
 
   // 円盤の色（明るい色・暗い色）。切れ目の中は、中心が暗く外側が明るいグラデーションにして立体感を出す。隣どうしが同じ色にならないよう 12 色を順に使う。
   const PALETTE = [
@@ -51,7 +62,6 @@
   const isLive = (it) => it.label.trim() !== '' && it.weight > 0;
 
   // 重みに比例して 1 つ選ぶ。選べる項目（名前があり、重みが 0 より大きい）が無ければ null。
-  // （「直前と同じ項目を避ける」は、利用者の指示でやめた。2026-10-30）
   function pickIndex(items, rnd) {
     const live = [];
     items.forEach((it, i) => { if (isLive(it)) live.push(i); });
@@ -96,24 +106,68 @@
   // 切れ目の色の番号。最後の切れ目が最初と同じ色になる（隣どうしが同じ）ときだけ、ずらす。
   const colorIndex = (i, n) => (i + (n > 1 && i === n - 1 && i % PALETTE.length === 0 ? 5 : 0)) % PALETTE.length;
   const sliceColor = (i, n) => PALETTE[colorIndex(i, n || i + 1)][0];
+  // 針のしなり: 円盤の切れ目が針に当たった直後がいちばん大きく、そのあと元に戻る（針が切れ目を押し分けて進むように見える）
+  function pointerTilt(items, rot) {
+    const list = layoutOf(items);
+    if (list.length < 2) return 0;
+    let f = (-rot / TAU) % 1;
+    if (f < 0) f += 1;
+    let d = 1;
+    for (const e of list) {
+      let diff = e.start - f;          // 針は割合が減る向きに進む。いま通り過ぎた境目までの距離
+      if (diff < 0) diff += 1;
+      if (diff < d) d = diff;
+    }
+    const arc = d * TAU * 0.4;
+    return -0.42 * Math.max(0, 1 - arc / 0.05);
+  }
+
+  // ---- まとめ（誰が何を当てたか。ルーレットごとの履歴を合わせる） ----
+  // scope は 'all'（全部のルーレット）かルーレットの id。当てた人ごとに、ルーレットごとの景品（同じものは ×回数）をまとめる。
+  // 人の並びは、最初に当てた順。名前なしは最後。
+  function summarize(wheels, scope) {
+    const target = scope && scope !== 'all' ? wheels.filter((w) => w.id === scope) : wheels;
+    const byWho = new Map();
+    let entries = 0;
+    for (const w of target) {
+      // 履歴は新しい順なので、古い順にたどる
+      for (let i = w.history.length - 1; i >= 0; i--) {
+        const hs = w.history[i];
+        const who = (hs.who || '').trim() || NO_WHO;
+        if (!byWho.has(who)) byWho.set(who, { who, first: hs.at, wheels: new Map(), total: 0 });
+        const g = byWho.get(who);
+        g.first = Math.min(g.first, hs.at);
+        if (!g.wheels.has(w.id)) g.wheels.set(w.id, { name: w.name, items: new Map() });
+        const prizes = g.wheels.get(w.id).items;
+        const label = hs.result.trim() || NO_WHO;
+        prizes.set(label, (prizes.get(label) || 0) + 1);
+        g.total++;
+        entries++;
+      }
+    }
+    const groups = [...byWho.values()].sort((a, b) => (a.who === NO_WHO) - (b.who === NO_WHO) || a.first - b.first);
+    return { groups, entries };
+  }
+  // 1 人ぶんの文（ルーレットごとに 1 行。複数のルーレットを合わせるときは、先頭にルーレットの名前を付ける）
+  function summaryLines(group, showWheel) {
+    return [...group.wheels.values()].map((w) => {
+      const text = [...w.items].map(([label, n]) => (n > 1 ? `${label} ×${n}` : label)).join('、');
+      return showWheel ? `${w.name}: ${text}` : text;
+    });
+  }
 
   // ---- 保存（ブラウザの中だけ） ----
   const newId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const sampleWheel = () => ({
-    id: newId(),
-    name: '今日の配信',
-    items: [
-      { label: '雑談', weight: 3 },
-      { label: '歌枠', weight: 2 },
-      { label: 'ゲーム', weight: 2 },
-      { label: 'お絵描き', weight: 1 },
-    ],
-    removePicked: false,
-    history: [],
-  });
+  const newWheel = (name, items) => ({ id: newId(), name, items: items || [], removePicked: false, history: [] });
+  const sampleWheel = () => newWheel('今日の配信', [
+    { label: '雑談', weight: 3 },
+    { label: '歌枠', weight: 2 },
+    { label: 'ゲーム', weight: 2 },
+    { label: 'お絵描き', weight: 1 },
+  ]);
   const defaultData = () => {
     const w = sampleWheel();
-    return { version: 1, currentId: w.id, wheels: [w], settings: { template: DEFAULT_TEMPLATE } };
+    return { version: 1, wheels: [w], settings: { template: DEFAULT_TEMPLATE, who: '' } };
   };
   function sanitizeWheel(w) {
     if (!w || typeof w !== 'object') return null;
@@ -121,7 +175,8 @@
       ? w.items.filter((it) => it && typeof it === 'object').slice(0, MAX_ITEMS).map((it) => ({ label: String(it.label != null ? it.label : '').slice(0, 40), weight: cleanWeight(it.weight) }))
       : [];
     const history = Array.isArray(w.history)
-      ? w.history.filter((h) => h && typeof h.result === 'string' && Number.isFinite(h.at)).slice(0, HISTORY_KEEP).map((h) => ({ at: h.at, result: h.result.slice(0, 40) }))
+      ? w.history.filter((x) => x && typeof x.result === 'string' && Number.isFinite(x.at)).slice(0, HISTORY_KEEP)
+        .map((x) => ({ at: x.at, result: x.result.slice(0, 40), who: typeof x.who === 'string' ? x.who.slice(0, MAX_WHO) : '' }))
       : [];
     return {
       id: typeof w.id === 'string' && w.id ? w.id.slice(0, 40) : newId(),
@@ -132,17 +187,18 @@
     };
   }
   // 読み込んだ（または取り込んだ）ものは、形を確かめて作り直す。画面には textContent / value だけで出すので、文字が HTML として解釈されることは無い。
-  // 前の版にあった「直前を避ける」「Discord のリンク」は、読み込んでも使わない。
   function sanitizeData(d) {
     if (!d || typeof d !== 'object' || !Array.isArray(d.wheels)) return null;
-    const wheels = d.wheels.slice(0, 30).map(sanitizeWheel).filter(Boolean);
+    const wheels = d.wheels.slice(0, MAX_WHEELS).map(sanitizeWheel).filter(Boolean);
     if (wheels.length === 0) return null;
     const s = d.settings && typeof d.settings === 'object' ? d.settings : {};
     return {
       version: 1,
-      currentId: wheels.some((w) => w.id === d.currentId) ? d.currentId : wheels[0].id,
       wheels,
-      settings: { template: typeof s.template === 'string' && s.template.trim() ? s.template.slice(0, 200) : DEFAULT_TEMPLATE },
+      settings: {
+        template: typeof s.template === 'string' && s.template.trim() ? s.template.slice(0, 200) : DEFAULT_TEMPLATE,
+        who: typeof s.who === 'string' ? s.who.slice(0, MAX_WHO) : '',
+      },
     };
   }
   function loadData() {
@@ -156,20 +212,9 @@
     return defaultData();
   }
 
-  // ---- 状態 ----
+  // ---- 全体の状態 ----
   let data = loadData();
-  const state = {
-    rot: 0,            // 円盤の回転（ラジアン。時計まわりが正）
-    anim: null,        // 回している最中の動き（{ from, to, t0, dur, idx, label, snapshot }）
-    tilt: 0,           // 針のしなり（ラジアン）。切れ目が針に当たるたびに振れる
-    bulb: 0,           // 縁のランプの点滅（0 / 1）
-    winnerIdx: null,   // 当たりの項目の位置（円盤で目立たせる）。項目を直したら消す
-    celebrateUntil: 0, // 当たりの演出（ランプの速い点滅・紙吹雪）をする時刻まで
-    confetti: [],
-    last: null,        // 直前の結果（画像・共有に使う。{ name, items（その時点の写し）, rot, text, winner, at }）
-  };
-  const cur = () => data.wheels.find((w) => w.id === data.currentId) || data.wheels[0];
-  const displayItems = () => (state.anim ? state.anim.snapshot : cur().items);
+  const views = [];
   let warnedStorage = false;
   function save() {
     try {
@@ -186,10 +231,12 @@
     n.textContent = text;
     n.hidden = false;
   }
-  const setStatus = (text) => { $('status').textContent = text || ''; };
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const stampOf = (ms) => { const d = new Date(ms); return `${d.getMonth() + 1}/${d.getDate()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+  const currentWho = () => $('who').value.trim().slice(0, MAX_WHO);
 
   // アクセス解析（GoatCounter。利用者の決定、2026-10-30「GoatCounterはいい感じに」）。ページの数え方に加えて、回した・コピーした・共有した回数を数える。
-  // 項目や結果の中身は送らない（回数だけ）。count.js がまだ読み込まれていなければ、読み込まれたときに送る。読めない（広告ブロックなど）ときは何もしない。
+  // 項目や結果・名前の中身は送らない（回数だけ）。count.js がまだ読み込まれていなければ、読み込まれたときに送る。読めない（広告ブロックなど）ときは何もしない。
   const pendingCounts = [];
   function countEvent(path, title) {
     const gc = window.goatcounter;
@@ -207,6 +254,41 @@
     let t = text;
     while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
     return t + '…';
+  }
+  function wrapLines(ctx, text, maxW) {
+    const lines = [];
+    let line = '';
+    for (const ch of Array.from(text)) {
+      if (line && ctx.measureText(line + ch).width > maxW) {
+        lines.push(line);
+        line = ch;
+      } else {
+        line += ch;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+  // 「、」で区切った言葉の単位で折り返す（「サイン入りポスター ×2」の「×2」だけが次の行に落ちないように）。1 つの言葉が長すぎるときだけ、文字で折り返す。
+  function wrapTokens(ctx, text, maxW) {
+    const tokens = text.split('、').map((t, i, a) => (i < a.length - 1 ? `${t}、` : t));
+    const lines = [];
+    let line = '';
+    for (const t of tokens) {
+      if (line && ctx.measureText(line + t).width > maxW) {
+        lines.push(line);
+        line = '';
+      }
+      if (ctx.measureText(t).width > maxW) {
+        const parts = wrapLines(ctx, t, maxW);
+        lines.push(...parts.slice(0, -1));
+        line = parts[parts.length - 1];
+      } else {
+        line += t;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
   }
   function wedge(ctx, cx, cy, r, a0, a1) {
     ctx.beginPath();
@@ -435,76 +517,28 @@
     ctx.restore();
   }
 
-  // 針のしなり: 円盤の切れ目が針に当たった直後がいちばん大きく、そのあと元に戻る（針が切れ目を押し分けて進むように見える）
-  function pointerTilt(items, rot, S) {
-    const list = layoutOf(items);
-    if (list.length < 2) return 0;
-    let f = (-rot / TAU) % 1;
-    if (f < 0) f += 1;
-    let d = 1;
-    for (const e of list) {
-      let diff = e.start - f;          // 針は割合が減る向きに進む。いま通り過ぎた境目までの距離
-      if (diff < 0) diff += 1;
-      if (diff < d) d = diff;
-    }
-    const arc = d * TAU * S * 0.4;
-    return -0.42 * Math.max(0, 1 - arc / (S * 0.05));
-  }
-
-  function wheelSize() {
-    const box = $('wheel').parentElement;
-    return Math.max(160, Math.round(box.clientWidth * Math.min(window.devicePixelRatio || 1, 3)));
-  }
-  function redraw() {
-    const canvas = $('wheel');
-    const S = wheelSize();
-    if (canvas.width !== S || canvas.height !== S) {
-      canvas.width = S;
-      canvas.height = S;
-    }
-    drawWheel(canvas.getContext('2d'), S, state.rot, displayItems(), fontFamily(), { bulb: state.bulb, winner: state.winnerIdx, tilt: state.tilt });
-  }
-
-  // 結果の画像（1200×675。止まった円盤・結果・ルーレットの名前・日付。配色に関わらず、華やかな濃い色の背景）
-  function wrapLines(ctx, text, maxW) {
-    const lines = [];
-    let line = '';
-    for (const ch of Array.from(text)) {
-      if (line && ctx.measureText(line + ch).width > maxW) {
-        lines.push(line);
-        line = ch;
-      } else {
-        line += ch;
-      }
-    }
-    if (line) lines.push(line);
-    return lines;
-  }
-  function makeCard(last) {
-    const W = 1200, H = 675;
-    const c = document.createElement('canvas');
-    c.width = W;
-    c.height = H;
-    const x = c.getContext('2d');
-    const ff = fontFamily();
+  // 結果・まとめの画像に共通の、華やかな背景（配色に関わらず、濃い紫〜青。きらめきの位置は seedText から決める）
+  function paintBackdrop(x, W, H, seedText, glow) {
     const bg = x.createLinearGradient(0, 0, W, H);
     bg.addColorStop(0, '#1b1450');
     bg.addColorStop(0.55, '#41187a');
     bg.addColorStop(1, '#0f2f5c');
     x.fillStyle = bg;
     x.fillRect(0, 0, W, H);
-    const glow = x.createRadialGradient(330, 340, 40, 330, 340, 420);
-    glow.addColorStop(0, 'rgba(255, 214, 90, 0.35)');
-    glow.addColorStop(1, 'rgba(255, 214, 90, 0)');
-    x.fillStyle = glow;
-    x.fillRect(0, 0, W, H);
-    // きらめき（星と点。位置は結果の文字から決めるので、同じ結果なら同じ並び）
+    if (glow) {
+      const g = x.createRadialGradient(330, 340, 40, 330, 340, 420);
+      g.addColorStop(0, 'rgba(255, 214, 90, 0.35)');
+      g.addColorStop(1, 'rgba(255, 214, 90, 0)');
+      x.fillStyle = g;
+      x.fillRect(0, 0, W, H);
+    }
     let seed = 7;
-    for (const ch of Array.from(last.text)) seed = (seed * 31 + ch.charCodeAt(0)) % 100003;
+    for (const ch of Array.from(seedText)) seed = (seed * 31 + ch.charCodeAt(0)) % 100003;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-    for (let i = 0; i < 46; i++) {
+    const count = Math.round((W * H) / 11000);
+    for (let i = 0; i < count; i++) {
       const sx = 20 + rnd() * (W - 40), sy = 14 + rnd() * (H - 28), sr = 2 + rnd() * 5;
-      x.fillStyle = `rgba(255, 240, 190, ${0.25 + rnd() * 0.5})`;
+      x.fillStyle = `rgba(255, 240, 190, ${0.2 + rnd() * 0.45})`;
       if (i % 3 === 0) {
         starPath(x, sx, sy, sr * 1.8);
         x.fill();
@@ -514,6 +548,24 @@
         x.fill();
       }
     }
+  }
+  function goldGradient(x, y0, y1) {
+    const g = x.createLinearGradient(0, y0, 0, y1);
+    g.addColorStop(0, '#fff6c8');
+    g.addColorStop(0.5, '#ffd23f');
+    g.addColorStop(1, '#ff9f1c');
+    return g;
+  }
+
+  // 結果の画像（1200×675。止まった円盤・結果・ルーレットの名前・当てた人・日付）
+  function makeCard(last) {
+    const W = 1200, H = 675;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const x = c.getContext('2d');
+    const ff = fontFamily();
+    paintBackdrop(x, W, H, last.text, true);
     const wc = document.createElement('canvas');
     wc.width = 620;
     wc.height = 620;
@@ -526,7 +578,7 @@
     x.fillStyle = '#d9ccff';
     x.font = `700 32px ${ff}`;
     x.fillText(fitText(x, last.name, maxW), left, 150);
-    // 「結果」の札
+    // 「結果」の札と、当てた人
     x.fillStyle = '#f6c445';
     x.beginPath();
     if (x.roundRect) x.roundRect(left, 180, 120, 46, 23);
@@ -537,6 +589,11 @@
     x.textAlign = 'center';
     x.fillText('結果', left + 60, 213);
     x.textAlign = 'left';
+    if (last.who) {
+      x.fillStyle = '#ffffff';
+      x.font = `700 34px ${ff}`;
+      x.fillText(fitText(x, `${last.who} さん`, maxW - 150), left + 140, 214);
+    }
     let lines = [last.text];
     let size = 100;
     for (const s of [100, 84, 68, 56, 46, 38]) {
@@ -550,10 +607,7 @@
       lines[2] = fitText(x, lines[2] + '…', maxW);
     }
     x.font = `800 ${size}px ${ff}`;
-    const gold = x.createLinearGradient(0, 260, 0, 260 + size * 1.2 * lines.length);
-    gold.addColorStop(0, '#fff6c8');
-    gold.addColorStop(0.5, '#ffd23f');
-    gold.addColorStop(1, '#ff9f1c');
+    const gold = goldGradient(x, 260, 260 + size * 1.2 * lines.length);
     lines.forEach((l, i) => {
       const y = 262 + size * 1.12 * (i + 1) - size * 0.2;
       x.lineJoin = 'round';
@@ -564,199 +618,103 @@
       x.fillText(l, left, y);
     });
     const d = new Date(last.at || Date.now());
-    const pad = (n) => String(n).padStart(2, '0');
     x.fillStyle = '#c4b4f0';
     x.font = `600 26px ${ff}`;
-    x.fillText(`${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}　IriDock ルーレット`, left, 628);
+    x.fillText(`${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}　IriDock ルーレット`, left, 628);
     return c;
   }
 
-  // ---- 紙吹雪（当たりの演出。「動きを減らす」設定のときは出さない） ----
-  function fxCanvasFit() {
-    const stage = $('stage');
-    const cv = $('fx');
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.round(stage.clientWidth * dpr), h = Math.round(stage.clientHeight * dpr);
-    if (cv.width !== w || cv.height !== h) {
-      cv.width = w;
-      cv.height = h;
+  // まとめの画像（誰が何を当てたかの表）。長いときは複数枚に分ける（文章だと文字数の制限に引っかかるため、表の画像にする。利用者の指示）。
+  // 1 枚の目安: 当たり 25 件・表の高さ 1500px。1 人の分が長いときは、人の途中で次の画像へ「（つづき）」として続ける。
+  function makeSummaryPages(summary, scopeName, showWheel) {
+    const W = 1200;
+    const ff = fontFamily();
+    const measure = document.createElement('canvas').getContext('2d');
+    measure.font = `600 32px ${ff}`;
+    const textW = 700;
+    // 行（1 人ぶん。長い文は折り返して、何行になるかを数える）
+    const rows = [];
+    for (const g of summary.groups) {
+      const lines = [];
+      for (const l of summaryLines(g, showWheel)) lines.push(...wrapTokens(measure, l, textW));
+      // 1 つの行が長すぎるときは分ける（人の途中でも次の画像へ）
+      for (let i = 0; i < lines.length; i += 12) rows.push({ who: g.who, lines: lines.slice(i, i + 12), cont: i > 0, total: g.total });
     }
-    return dpr;
-  }
-  function spawnConfetti() {
-    const stage = $('stage').getBoundingClientRect();
-    const wheel = $('wheel').getBoundingClientRect();
-    const ox = wheel.left - stage.left + wheel.width / 2;
-    const oy = wheel.top - stage.top + wheel.height * 0.52;
-    const unit = Math.max(300, wheel.width);
-    state.confetti = [];
-    for (let i = 0; i < 170; i++) {
-      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.15;
-      const v = unit * (0.7 + Math.random() * 1.1);
-      state.confetti.push({
-        x: ox, y: oy, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-        rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 14,
-        w: 6 + Math.random() * 7, h: 10 + Math.random() * 9,
-        color: PALETTE[Math.floor(Math.random() * PALETTE.length)][0],
-        life: 0, max: 2.2 + Math.random() * 1.4, round: Math.random() < 0.25,
-      });
-    }
-  }
-  function stepConfetti(dt) {
-    const g = Math.max(300, $('wheel').clientWidth) * 2.6;
-    for (const p of state.confetti) {
-      p.life += dt;
-      p.vy += g * dt;
-      p.vx *= 1 - 0.6 * dt;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.rot += p.vr * dt;
-    }
-    state.confetti = state.confetti.filter((p) => p.life < p.max);
-  }
-  function drawConfetti() {
-    const cv = $('fx');
-    const dpr = fxCanvasFit();
-    const ctx = cv.getContext('2d');
-    ctx.clearRect(0, 0, cv.width, cv.height);
-    for (const p of state.confetti) {
-      const alpha = Math.min(1, (p.max - p.life) / 0.6);
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, alpha);
-      ctx.translate(p.x * dpr, p.y * dpr);
-      ctx.rotate(p.rot);
-      ctx.fillStyle = p.color;
-      if (p.round) {
-        ctx.beginPath();
-        ctx.arc(0, 0, p.w * 0.5 * dpr, 0, TAU);
-        ctx.fill();
-      } else {
-        ctx.fillRect((-p.w / 2) * dpr, (-p.h / 2) * dpr, p.w * dpr, p.h * dpr);
+    const lineH = 42;
+    const rowH = (r) => Math.max(60, r.lines.length * lineH + 22);
+    const pages = [];
+    let cur = { rows: [], h: 0, entries: 0 };
+    for (const r of rows) {
+      const first = !r.cont;
+      const need = rowH(r);
+      if (cur.rows.length > 0 && (cur.h + need > SUMMARY_PAGE_BODY || (first && cur.entries + r.total > SUMMARY_PAGE_ENTRIES))) {
+        pages.push(cur);
+        cur = { rows: [], h: 0, entries: 0 };
       }
-      ctx.restore();
+      cur.rows.push(r);
+      cur.h += need;
+      if (first) cur.entries += r.total;
     }
-  }
-  function clearFx() {
-    state.confetti = [];
-    const cv = $('fx');
-    cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
-  }
-
-  // ---- 動きのまとめ役（回している間・当たりの演出は毎コマ、ふだんはランプだけ 0.5 秒ごと） ----
-  let reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  if (window.matchMedia) {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onChange = () => { reduced = mq.matches; };
-    if (mq.addEventListener) mq.addEventListener('change', onChange);
-  }
-  let lastIdle = 0;
-  let lastNow = performance.now();
-  function frame(now) {
-    requestAnimationFrame(frame);
-    const dt = Math.min(0.05, (now - lastNow) / 1000);
-    lastNow = now;
-    if (document.hidden) return;
-    const spinning = !!state.anim;
-    if (spinning) stepSpin(now);
-    const celebrating = state.confetti.length > 0 || now < state.celebrateUntil;
-    if (!state.anim && !celebrating) {
-      if (state.tilt !== 0) { state.tilt = 0; redraw(); }
-      if (reduced || now - lastIdle < 500) return;
-      lastIdle = now;
-      state.bulb = (state.bulb + 1) % 2;
-      redraw();
-      return;
-    }
-    state.bulb = reduced ? 0 : Math.floor(now / (spinning ? 70 : 150)) % 2;
-    if (state.confetti.length > 0) {
-      stepConfetti(dt);
-      drawConfetti();
-      if (state.confetti.length === 0) clearFx();
-    }
-    redraw();
-  }
-
-  // ---- 回す ----
-  function setSpinning(on) {
-    $('spin').disabled = on;
-    $('wheel').classList.toggle('is-spinning', on);
-  }
-  function spin() {
-    if (state.anim) return;
-    const w = cur();
-    const idx = pickIndex(w.items, randomUnit);
-    if (idx === null) {
-      setStatus('回せる項目がありません。名前を入れて、重みを 0 より大きくしてください。');
-      return;
-    }
-    setStatus('');
-    $('share').hidden = true;
-    $('preview').hidden = true;
-    const res = $('result');
-    res.classList.remove('pop');
-    res.textContent = '…';
-    state.winnerIdx = null;
-    state.celebrateUntil = 0;
-    clearFx();
-    const entry = layoutOf(w.items).find((e) => e.index === idx);
-    const from = state.rot;
-    state.anim = {
-      from,
-      to: targetRotation(from, entry, randomUnit, SPIN_TURNS),
-      t0: performance.now(),
-      dur: reduced ? SPIN_MS_REDUCED : SPIN_MS,
-      idx,
-      label: w.items[idx].label,
-      snapshot: w.items.map((it) => ({ label: it.label, weight: it.weight })),
-    };
-    setSpinning(true);
-    countEvent('roulette-spin', 'ルーレットを回した');
-  }
-  function stepSpin(now) {
-    const a = state.anim;
-    const t = Math.min(1, Math.max(0, (now - a.t0) / a.dur));   // コマの時刻が回し始めより少し前になることがあるので、0 未満にしない
-    state.rot = a.from + (a.to - a.from) * (1 - Math.pow(1 - t, 4));
-    state.tilt = reduced || t >= 1 ? 0 : pointerTilt(a.snapshot, state.rot, 1);
-    if (t >= 1) {
-      state.rot = a.to % TAU;
-      state.anim = null;
-      finish(a, now);
-    }
-  }
-  function finish(a, now) {
-    const w = cur();
-    const text = a.label.trim();
-    state.last = { name: w.name, items: a.snapshot, rot: state.rot, text, winner: a.idx, at: Date.now() };
-    w.history.unshift({ at: state.last.at, result: a.label });
-    w.history.length = Math.min(w.history.length, HISTORY_KEEP);
-    state.winnerIdx = a.idx;
-    if (w.removePicked) {
-      w.items.splice(a.idx, 1);
-      state.winnerIdx = null;
-    }
-    save();
-    setSpinning(false);
-    const res = $('result');
-    res.textContent = text;
-    if (!reduced) {
-      void res.offsetWidth;
-      res.classList.add('pop');
-      state.celebrateUntil = now + 1800;
-      spawnConfetti();
-    }
-    $('share').hidden = false;
-    renderHistory();
-    if (w.removePicked) renderItems();
-    redraw();
+    if (cur.rows.length > 0 || pages.length === 0) pages.push(cur);
+    return pages.map((pg, pi) => {
+      const H = 170 + 56 + pg.h + 80;
+      const c = document.createElement('canvas');
+      c.width = W;
+      c.height = H;
+      const x = c.getContext('2d');
+      paintBackdrop(x, W, H, scopeName + pi, false);
+      x.textAlign = 'left';
+      x.textBaseline = 'alphabetic';
+      x.font = `800 56px ${ff}`;
+      x.lineJoin = 'round';
+      x.lineWidth = 9;
+      x.strokeStyle = 'rgba(40, 10, 70, 0.75)';
+      const title = fitText(x, scopeName, W - 300);
+      x.strokeText(title, 60, 100);
+      x.fillStyle = goldGradient(x, 50, 110);
+      x.fillText(title, 60, 100);
+      x.fillStyle = '#d9ccff';
+      x.font = `600 26px ${ff}`;
+      x.fillText(`${summary.groups.length} 人・${summary.entries} 件`, 60, 146);
+      if (pages.length > 1) {
+        x.textAlign = 'right';
+        x.fillStyle = '#ffd23f';
+        x.font = `800 34px ${ff}`;
+        x.fillText(`${pi + 1} / ${pages.length}`, W - 60, 100);
+        x.textAlign = 'left';
+      }
+      // 表の見出し
+      x.fillStyle = 'rgba(246, 196, 69, 0.95)';
+      x.fillRect(40, 170, W - 80, 52);
+      x.fillStyle = '#3a1a00';
+      x.font = `800 28px ${ff}`;
+      x.fillText('当てた人', 64, 207);
+      x.fillText('当たったもの', 400, 207);
+      let y = 226;
+      pg.rows.forEach((r, i) => {
+        const hh = rowH(r);
+        if (i % 2 === 0) {
+          x.fillStyle = 'rgba(255, 255, 255, 0.08)';
+          x.fillRect(40, y, W - 80, hh);
+        }
+        x.fillStyle = r.who === NO_WHO ? '#c4b4f0' : '#ffd23f';
+        x.font = `800 34px ${ff}`;
+        x.fillText(fitText(x, r.cont ? `${r.who}（つづき）` : r.who, 320), 64, y + 44);
+        x.fillStyle = '#ffffff';
+        x.font = `600 32px ${ff}`;
+        r.lines.forEach((l, k) => x.fillText(l, 400, y + 44 + k * lineH));
+        y += hh;
+      });
+      const d = new Date();
+      x.fillStyle = '#c4b4f0';
+      x.font = `600 24px ${ff}`;
+      x.textAlign = 'right';
+      x.fillText(`${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}　IriDock ルーレット`, W - 60, H - 26);
+      return c;
+    });
   }
 
   // ---- 画像のコピー・共有（API は使わない） ----
-  const textFor = () => (data.settings.template || DEFAULT_TEMPLATE).split('{result}').join(state.last.text);
-  function showPreview(canvas) {
-    const img = $('preview');
-    img.src = canvas.toDataURL('image/png');   // CSP は data: を許している。長押しで保存できるよう、画面にも出す
-    img.hidden = false;
-  }
   function download(blob, name) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -767,7 +725,7 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
   }
   // クリックの直後に呼ぶ。画像は同期で作り（ブラウザの「クリックされた直後」の許可を使い切る前に書き込みを始める）、クリップボードへ。
-  // 使えない環境では、ファイルとして保存する。結果の画像と履歴の画像の両方で使う。
+  // 使えない環境では、ファイルとして保存する。
   async function copyCanvas(canvas, fileName) {
     const blobPromise = new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     if (navigator.clipboard && window.ClipboardItem) {
@@ -779,392 +737,682 @@
     download(await blobPromise, fileName);
     return 'downloaded';
   }
-  function copyCard() {
-    const canvas = makeCard(state.last);
-    showPreview(canvas);
-    return copyCanvas(canvas, 'iridock-roulette.png');
-  }
-  function onCopy() {
-    if (!state.last) return;
-    countEvent('roulette-copy', '結果の画像をコピーした');
-    copyCard().then((r) => setStatus(r === 'copied' ? '画像をコピーしました。X や Discord などに貼り付けて使えます。' : 'コピーできなかったので、画像を保存しました。'));
-  }
-  // 共有メニュー（X・Discord などのアプリを選べる）。画像と文面を一緒に渡す。
-  async function onShareNative() {
-    if (!state.last) return;
-    countEvent('roulette-share', '結果の画像を共有した');
-    const canvas = makeCard(state.last);
-    showPreview(canvas);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    const payload = { files: [new File([blob], 'iridock-roulette.png', { type: 'image/png' })], text: textFor() };
+  const canShareFiles = () => {
+    try {
+      return !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'a.png', { type: 'image/png' })] }));
+    } catch (e) {
+      return false;
+    }
+  };
+  const toBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  // 共有メニュー（X・Discord などのアプリを選べる）。画像（複数枚も可）と文面を一緒に渡す。
+  async function shareImages(canvases, baseName, text, onError) {
+    const files = [];
+    for (let i = 0; i < canvases.length; i++) {
+      files.push(new File([await toBlob(canvases[i])], canvases.length > 1 ? `${baseName}-${i + 1}.png` : `${baseName}.png`, { type: 'image/png' }));
+    }
+    const payload = { files, text };
     try {
       if (navigator.canShare && navigator.canShare(payload)) await navigator.share(payload);
     } catch (e) {
-      if (e && e.name !== 'AbortError') setStatus('共有できませんでした。「画像をコピー」を使ってください。');
+      if (e && e.name !== 'AbortError') onError('共有できませんでした。「画像をコピー」を使ってください。');
     }
   }
+  const textFor = (last) => (data.settings.template || DEFAULT_TEMPLATE).split('{result}').join(last.text).split('{who}').join(last.who || '');
 
-  // ---- 履歴の共有（利用者の指示、2026-10-30「履歴も共有できるようにして」）。画像（新しい 10 件の一覧）と文面を、結果と同じ「画像をコピー」「共有」で ----
-  const pad2 = (n) => String(n).padStart(2, '0');
-  const stampOf = (ms) => { const d = new Date(ms); return `${d.getMonth() + 1}/${d.getDate()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
-  const historyEntries = () => cur().history.slice(0, HISTORY_SHOW);
-  const historyText = () => `${cur().name} の履歴\n` + historyEntries().map((h, i) => `${i + 1}. ${h.result.trim() || '（名前なし）'}（${stampOf(h.at)}）`).join('\n');
-  function makeHistoryCard(name, entries) {
-    const W = 1200;
-    const rowH = 46;
-    const H = 190 + Math.max(1, entries.length) * rowH + 70;
-    const c = document.createElement('canvas');
-    c.width = W;
-    c.height = H;
-    const x = c.getContext('2d');
-    const ff = fontFamily();
-    const bg = x.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, '#1b1450');
-    bg.addColorStop(0.55, '#41187a');
-    bg.addColorStop(1, '#0f2f5c');
-    x.fillStyle = bg;
-    x.fillRect(0, 0, W, H);
-    let seed = 11;
-    for (const ch of Array.from(name)) seed = (seed * 31 + ch.charCodeAt(0)) % 100003;
-    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-    for (let i = 0; i < 40; i++) {
-      const sx = 20 + rnd() * (W - 40), sy = 14 + rnd() * (H - 28), sr = 2 + rnd() * 5;
-      x.fillStyle = `rgba(255, 240, 190, ${0.2 + rnd() * 0.45})`;
-      if (i % 3 === 0) {
-        starPath(x, sx, sy, sr * 1.8);
-        x.fill();
-      } else {
-        x.beginPath();
-        x.arc(sx, sy, sr * 0.6, 0, TAU);
-        x.fill();
+  // ---- 動きのまとめ役（回している間・当たりの演出は毎コマ、ふだんはランプだけ 0.5 秒ごと） ----
+  let reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (window.matchMedia) {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = () => { reduced = mq.matches; };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+  }
+  let lastNow = performance.now();
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - lastNow) / 1000);
+    lastNow = now;
+    if (document.hidden) return;
+    for (const v of views) v.frame(now, dt);
+  }
+
+  // ---- ルーレット 1 つぶんの画面（円盤・結果・項目と重み・履歴） ----
+  function createView(wheel) {
+    const v = { w: wheel, rot: 0, anim: null, tilt: 0, bulb: 0, winnerIdx: null, celebrateUntil: 0, confetti: [], last: null, lastIdle: 0 };
+
+    // DOM
+    const el = h('article', 'panel rl-card');
+    const head = h('div', 'rl-card-head');
+    const title = h('input', 'rl-title');
+    title.type = 'text';
+    title.maxLength = 30;
+    title.value = wheel.name;
+    title.autocomplete = 'off';
+    title.setAttribute('aria-label', 'ルーレットの名前');
+    const delWheel = h('button', 'rl-btn', '削除');
+    delWheel.type = 'button';
+    head.append(title, delWheel);
+    const body = h('div', 'rl-card-body');
+
+    const stage = h('div', 'rl-stage');
+    const box = h('div', 'rl-wheelbox');
+    const canvas = h('canvas', 'rl-wheel');
+    canvas.setAttribute('role', 'img');
+    box.append(canvas);
+    const result = h('p', 'rl-result', '　');
+    result.setAttribute('role', 'status');
+    result.setAttribute('aria-live', 'polite');
+    const actions = h('div', 'rl-actions');
+    const spinBtn = h('button', 'rl-primary', '回す');
+    spinBtn.type = 'button';
+    const fsBtn = h('button', 'rl-btn', '全画面');
+    fsBtn.type = 'button';
+    fsBtn.hidden = true;
+    actions.append(spinBtn, fsBtn);
+    const share = h('div', 'rl-share');
+    share.hidden = true;
+    const copyBtn = h('button', 'rl-btn', '画像をコピー');
+    copyBtn.type = 'button';
+    const shareBtn = h('button', 'rl-btn', '共有');
+    shareBtn.type = 'button';
+    shareBtn.hidden = !canShareFiles();
+    share.append(copyBtn, shareBtn);
+    const status = h('p', 'rl-status');
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    const preview = h('img', 'rl-preview');
+    preview.hidden = true;
+    const fx = h('canvas', 'rl-fx');
+    fx.setAttribute('aria-hidden', 'true');
+    stage.append(box, result, actions, share, status, preview, fx);
+
+    const edit = h('div', 'rl-edit');
+    // 項目と重み
+    const itemsBox = h('details', 'rl-more');
+    itemsBox.open = true;
+    itemsBox.append(h('summary', null, '項目と重み'));
+    itemsBox.append(h('p', 'rl-note', '重みが大きいほど当たりやすくなります（0 は当たりません）'));
+    const ul = h('ul', 'rl-items');
+    ul.setAttribute('aria-label', '項目の一覧');
+    const addRow = h('div', 'rl-row');
+    const addBtn = h('button', 'rl-btn', '項目を足す');
+    addBtn.type = 'button';
+    const count = h('span', 'rl-count');
+    addRow.append(addBtn, count);
+    const bulkBox = h('details', 'rl-more');
+    bulkBox.append(h('summary', null, 'まとめて追加'));
+    const bulk = h('textarea');
+    bulk.rows = 4;
+    bulk.placeholder = '1 行に 1 つ。「名前,重み」でも入れられます（例: ゲーム,2）';
+    const bulkBtn = h('button', 'rl-btn', '追加する');
+    bulkBtn.type = 'button';
+    bulkBox.append(bulk, bulkBtn);
+    const opts = h('div', 'rl-options');
+    const removeLabel = h('label');
+    const removeCheck = h('input');
+    removeCheck.type = 'checkbox';
+    removeCheck.checked = wheel.removePicked;
+    removeLabel.append(removeCheck, document.createTextNode(' 当たった項目を一覧から除く'));
+    opts.append(removeLabel);
+    itemsBox.append(ul, addRow, bulkBox, opts);
+    // 履歴（全部表示）
+    const histBox = h('details', 'rl-more');
+    histBox.open = true;
+    const histSum = h('summary');
+    histBox.append(histSum);
+    const histWrap = h('div', 'rl-histwrap');
+    const histTable = h('table', 'rl-hist');
+    const thead = h('thead');
+    const hr = h('tr');
+    for (const t of ['日時', '当てた人', '結果']) hr.append(h('th', null, t));
+    thead.append(hr);
+    const tbody = h('tbody');
+    histTable.append(thead, tbody);
+    histWrap.append(histTable);
+    const histEmpty = h('p', 'rl-note', 'まだありません');
+    const histClear = h('button', 'rl-btn', '履歴を消す');
+    histClear.type = 'button';
+    histBox.append(histWrap, histEmpty, histClear);
+    edit.append(itemsBox, histBox);
+    body.append(stage, edit);
+    el.append(head, body);
+    v.el = el;
+    v.title = title;
+
+    const setStatus = (t) => { status.textContent = t || ''; };
+    const displayItems = () => (v.anim ? v.anim.snapshot : wheel.items);
+    // 項目や重みを直したら、当たりの強調は消す（円盤の切れ目が変わるため）
+    const touch = () => { v.winnerIdx = null; };
+
+    // 円盤を描く
+    function redraw() {
+      const S = Math.max(160, Math.round(box.clientWidth * Math.min(window.devicePixelRatio || 1, 3)));
+      if (canvas.width !== S || canvas.height !== S) {
+        canvas.width = S;
+        canvas.height = S;
+      }
+      canvas.setAttribute('aria-label', `ルーレットの円盤（${wheel.name}）。押すと回ります`);
+      drawWheel(canvas.getContext('2d'), S, v.rot, displayItems(), fontFamily(), { bulb: v.bulb, winner: v.winnerIdx, tilt: v.tilt });
+    }
+    v.redraw = redraw;
+
+    // 紙吹雪（当たりの演出。「動きを減らす」設定のときは出さない）
+    function fxFit() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.round(stage.clientWidth * dpr), hgt = Math.round(stage.clientHeight * dpr);
+      if (fx.width !== w || fx.height !== hgt) {
+        fx.width = w;
+        fx.height = hgt;
+      }
+      return dpr;
+    }
+    function spawnConfetti() {
+      const sr = stage.getBoundingClientRect();
+      const wr = canvas.getBoundingClientRect();
+      const ox = wr.left - sr.left + wr.width / 2;
+      const oy = wr.top - sr.top + wr.height * 0.52;
+      const unit = Math.max(260, wr.width);
+      v.confetti = [];
+      for (let i = 0; i < 170; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.15;
+        const sp = unit * (0.7 + Math.random() * 1.1);
+        v.confetti.push({
+          x: ox, y: oy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+          rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 14,
+          w: 6 + Math.random() * 7, h: 10 + Math.random() * 9,
+          color: PALETTE[Math.floor(Math.random() * PALETTE.length)][0],
+          life: 0, max: 2.2 + Math.random() * 1.4, round: Math.random() < 0.25,
+        });
       }
     }
-    x.textAlign = 'left';
-    x.textBaseline = 'alphabetic';
-    const gold = x.createLinearGradient(0, 60, 0, 120);
-    gold.addColorStop(0, '#fff6c8');
-    gold.addColorStop(0.5, '#ffd23f');
-    gold.addColorStop(1, '#ff9f1c');
-    x.font = `800 56px ${ff}`;
-    x.lineJoin = 'round';
-    x.lineWidth = 9;
-    x.strokeStyle = 'rgba(40, 10, 70, 0.75)';
-    const title = fitText(x, `${name} の履歴`, W - 120);
-    x.strokeText(title, 60, 112);
-    x.fillStyle = gold;
-    x.fillText(title, 60, 112);
-    x.fillStyle = '#d9ccff';
-    x.font = `600 26px ${ff}`;
-    x.fillText(`新しい順に ${entries.length} 件`, 60, 156);
-    entries.forEach((h, i) => {
-      const y = 190 + i * rowH + 34;
-      x.fillStyle = 'rgba(255, 255, 255, 0.07)';
-      if (i % 2 === 0) x.fillRect(40, y - 34, W - 80, rowH);
-      x.fillStyle = i === 0 ? '#ffd23f' : '#c4b4f0';
-      x.font = `700 28px ${ff}`;
-      x.fillText(`${i + 1}`, 64, y);
-      x.font = `600 26px ${ff}`;
-      x.fillText(stampOf(h.at), 120, y);
-      x.fillStyle = i === 0 ? '#ffd23f' : '#ffffff';
-      x.font = `800 34px ${ff}`;
-      x.fillText(fitText(x, h.result.trim() || '（名前なし）', W - 420), 380, y);
-    });
-    const d = new Date();
-    x.fillStyle = '#c4b4f0';
-    x.font = `600 24px ${ff}`;
-    x.textAlign = 'right';
-    x.fillText(`${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}　IriDock ルーレット`, W - 60, H - 24);
-    return c;
-  }
-  const setHistoryStatus = (text) => { $('history-status').textContent = text || ''; };
-  function showHistoryPreview(canvas) {
-    const img = $('history-preview');
-    img.src = canvas.toDataURL('image/png');
-    img.hidden = false;
-  }
-  function onHistoryCopy() {
-    const entries = historyEntries();
-    if (entries.length === 0) {
-      setHistoryStatus('履歴がありません。');
-      return;
+    function stepConfetti(dt) {
+      const g = Math.max(260, canvas.clientWidth) * 2.6;
+      for (const p of v.confetti) {
+        p.life += dt;
+        p.vy += g * dt;
+        p.vx *= 1 - 0.6 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vr * dt;
+      }
+      v.confetti = v.confetti.filter((p) => p.life < p.max);
     }
-    countEvent('roulette-history-copy', '履歴の画像をコピーした');
-    const canvas = makeHistoryCard(cur().name, entries);
-    showHistoryPreview(canvas);
-    copyCanvas(canvas, 'iridock-roulette-history.png').then((r) => setHistoryStatus(r === 'copied' ? '履歴の画像をコピーしました。貼り付けて使えます。' : 'コピーできなかったので、画像を保存しました。'));
-  }
-  async function onHistoryShare() {
-    const entries = historyEntries();
-    if (entries.length === 0) {
-      setHistoryStatus('履歴がありません。');
-      return;
+    function drawConfetti() {
+      const dpr = fxFit();
+      const ctx = fx.getContext('2d');
+      ctx.clearRect(0, 0, fx.width, fx.height);
+      for (const p of v.confetti) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, (p.max - p.life) / 0.6));
+        ctx.translate(p.x * dpr, p.y * dpr);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        if (p.round) {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.w * 0.5 * dpr, 0, TAU);
+          ctx.fill();
+        } else {
+          ctx.fillRect((-p.w / 2) * dpr, (-p.h / 2) * dpr, p.w * dpr, p.h * dpr);
+        }
+        ctx.restore();
+      }
     }
-    countEvent('roulette-history-share', '履歴を共有した');
-    const canvas = makeHistoryCard(cur().name, entries);
-    showHistoryPreview(canvas);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    const payload = { files: [new File([blob], 'iridock-roulette-history.png', { type: 'image/png' })], text: historyText() };
-    try {
-      if (navigator.canShare && navigator.canShare(payload)) await navigator.share(payload);
-    } catch (e) {
-      if (e && e.name !== 'AbortError') setHistoryStatus('共有できませんでした。「画像をコピー」を使ってください。');
+    function clearFx() {
+      v.confetti = [];
+      fx.getContext('2d').clearRect(0, 0, fx.width, fx.height);
     }
-  }
 
-  // ---- 画面（項目・ルーレットの切り替え・履歴・設定） ----
-  // 項目や重みを直したら、当たりの強調は消す（円盤の切れ目が変わるため）
-  const touch = () => { state.winnerIdx = null; };
-  function updatePercents() {
-    const w = cur();
-    const total = w.items.reduce((s, it) => s + (isLive(it) ? it.weight : 0), 0);
-    const spans = $('items').querySelectorAll('.rl-pc');
-    w.items.forEach((it, i) => {
-      if (spans[i]) spans[i].textContent = isLive(it) && total > 0 ? `${((it.weight / total) * 100).toFixed(1)}%` : '—';
-    });
-  }
-  function renderItems() {
-    const w = cur();
-    const ul = $('items');
-    ul.replaceChildren();
-    w.items.forEach((it, i) => {
-      const li = document.createElement('li');
-      const dot = document.createElement('span');
-      dot.className = 'rl-dot';
-      dot.style.background = sliceColor(i, w.items.length);
-      const lab = document.createElement('input');
-      lab.type = 'text';
-      lab.maxLength = 40;
-      lab.value = it.label;
-      lab.placeholder = '項目の名前';
-      lab.setAttribute('aria-label', `項目 ${i + 1} の名前`);
-      lab.addEventListener('input', () => { it.label = lab.value; touch(); save(); updatePercents(); redraw(); });
-      const wt = document.createElement('input');
-      wt.type = 'number';
-      wt.min = '0';
-      wt.max = String(MAX_WEIGHT);
-      wt.step = '0.1';
-      wt.inputMode = 'decimal';
-      wt.value = String(it.weight);
-      wt.setAttribute('aria-label', `項目 ${i + 1} の重み`);
-      wt.addEventListener('input', () => {
-        const n = parseFloat(wt.value);
-        if (!Number.isFinite(n)) return;   // 入力の途中（空など）では、いまの重みのまま
-        it.weight = cleanWeight(n);
-        touch();
-        save();
-        updatePercents();
-        redraw();
-      });
-      wt.addEventListener('change', () => { wt.value = String(it.weight); });
-      const pc = document.createElement('span');
-      pc.className = 'rl-pc';
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'rl-del';
-      del.textContent = '×';
-      del.setAttribute('aria-label', `項目 ${i + 1} を消す`);
-      del.addEventListener('click', () => { w.items.splice(i, 1); touch(); save(); renderItems(); });
-      li.append(dot, lab, wt, pc, del);
-      ul.append(li);
-    });
-    $('item-count').textContent = `${w.items.length} / ${MAX_ITEMS} 件`;
-    $('item-add').disabled = w.items.length >= MAX_ITEMS;
-    updatePercents();
-    redraw();
-  }
-  function renderWheels() {
-    const sel = $('wheel-select');
-    sel.replaceChildren();
-    for (const w of data.wheels) {
-      const o = document.createElement('option');
-      o.value = w.id;
-      o.textContent = w.name || 'ルーレット';
-      sel.append(o);
+    // 回す
+    function setSpinning(on) {
+      spinBtn.disabled = on;
+      canvas.classList.toggle('is-spinning', on);
     }
-    sel.value = data.currentId;
-    $('wheel-name').value = cur().name;
-    $('opt-remove').checked = cur().removePicked;
-  }
-  function renderHistory() {
-    const ol = $('history');
-    ol.replaceChildren();
-    const list = historyEntries();
-    for (const b of ['history-copy', 'history-share', 'history-clear']) $(b).disabled = list.length === 0;
-    $('history-preview').hidden = true;
-    setHistoryStatus('');
-    if (list.length === 0) {
-      const li = document.createElement('li');
-      li.textContent = 'まだありません';
-      ol.append(li);
-      return;
-    }
-    for (const h of list) {
-      const li = document.createElement('li');
-      const at = document.createElement('span');
-      at.className = 'at';
-      at.textContent = stampOf(h.at);
-      li.append(at, document.createTextNode(h.result.trim() || '（名前なし）'));
-      ol.append(li);
-    }
-  }
-  function renderAll() {
-    renderWheels();
-    renderItems();
-    renderHistory();
-    $('template').value = data.settings.template;
-  }
-  function selectWheel(id) {
-    if (state.anim) return;
-    data.currentId = id;
-    state.last = null;
-    touch();
-    clearFx();
-    $('result').textContent = '　';
-    $('result').classList.remove('pop');
-    $('share').hidden = true;
-    $('preview').hidden = true;
-    setStatus('');
-    save();
-    renderAll();
-  }
-  function parseBulk(text) {
-    return text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((line) => {
-      const m = line.match(/^(.*?)[,，\t]\s*(\d+(?:\.\d+)?)\s*$/);
-      return m && m[1].trim() ? { label: m[1].trim().slice(0, 40), weight: cleanWeight(m[2]) } : { label: line.slice(0, 40), weight: 1 };
-    });
-  }
-  function exportData() {
-    const d = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    download(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `iridock-roulette-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`);
-  }
-  async function importFile(file) {
-    try {
-      const d = sanitizeData(JSON.parse(await file.text()));
-      if (!d) {
-        setStatus('読み込めませんでした（このルーレットの書き出しではないようです）。');
+    function spin() {
+      if (v.anim) return;
+      const idx = pickIndex(wheel.items, randomUnit);
+      if (idx === null) {
+        setStatus('回せる項目がありません。名前を入れて、重みを 0 より大きくしてください。');
         return;
       }
-      if (!window.confirm(`今のルーレットを、読み込んだ ${d.wheels.length} 件に入れ替えます。よろしいですか？`)) return;
-      data = d;
-      state.last = null;
-      touch();
-      save();
-      renderAll();
-      setStatus(`読み込みました（${d.wheels.length} 件）。`);
-    } catch (e) {
-      setStatus('読み込めませんでした（ファイルを読めません）。');
+      setStatus('');
+      share.hidden = true;
+      preview.hidden = true;
+      result.classList.remove('pop');
+      result.textContent = '…';
+      v.winnerIdx = null;
+      v.celebrateUntil = 0;
+      clearFx();
+      const entry = layoutOf(wheel.items).find((e) => e.index === idx);
+      const from = v.rot;
+      v.anim = {
+        from,
+        to: targetRotation(from, entry, randomUnit, SPIN_TURNS),
+        t0: performance.now(),
+        dur: reduced ? SPIN_MS_REDUCED : SPIN_MS,
+        idx,
+        label: wheel.items[idx].label,
+        who: currentWho(),   // 回し始めの名前の欄の中身（回している間に直しても、この回は変わらない）
+        snapshot: wheel.items.map((it) => ({ label: it.label, weight: it.weight })),
+      };
+      setSpinning(true);
+      countEvent('roulette-spin', 'ルーレットを回した');
     }
-  }
-
-  function bind() {
-    $('spin').addEventListener('click', spin);
-    $('wheel').addEventListener('click', spin);   // 円盤を押しても回る
-    $('copy-image').addEventListener('click', onCopy);
-    $('share-native').addEventListener('click', onShareNative);
-    $('wheel-select').addEventListener('change', (e) => selectWheel(e.target.value));
-    $('wheel-name').addEventListener('input', (e) => {
-      cur().name = e.target.value.slice(0, 30);
-      const opt = $('wheel-select').selectedOptions[0];
-      if (opt) opt.textContent = cur().name || 'ルーレット';
-      save();
-    });
-    $('wheel-name').addEventListener('change', (e) => {
-      if (!e.target.value.trim()) {
-        cur().name = 'ルーレット';
-        e.target.value = cur().name;
-        renderWheels();
-        save();
+    function finish(a, now) {
+      const text = a.label.trim();
+      v.last = { name: wheel.name, items: a.snapshot, rot: v.rot, text, winner: a.idx, who: a.who, at: Date.now() };
+      wheel.history.unshift({ at: v.last.at, result: a.label, who: a.who });
+      wheel.history.length = Math.min(wheel.history.length, HISTORY_KEEP);
+      v.winnerIdx = a.idx;
+      if (wheel.removePicked) {
+        wheel.items.splice(a.idx, 1);
+        v.winnerIdx = null;
       }
+      save();
+      setSpinning(false);
+      result.textContent = a.who ? `${text}（${a.who} さん）` : text;
+      if (!reduced) {
+        void result.offsetWidth;
+        result.classList.add('pop');
+        v.celebrateUntil = now + 1800;
+        spawnConfetti();
+      }
+      share.hidden = false;
+      renderHistory();
+      if (wheel.removePicked) renderItems();
+      redraw();
+      renderSummary();
+    }
+    function stepSpin(now) {
+      const a = v.anim;
+      const t = Math.min(1, Math.max(0, (now - a.t0) / a.dur));   // コマの時刻が回し始めより少し前になることがあるので、0 未満にしない
+      v.rot = a.from + (a.to - a.from) * (1 - Math.pow(1 - t, 4));
+      v.tilt = reduced || t >= 1 ? 0 : pointerTilt(a.snapshot, v.rot);
+      if (t >= 1) {
+        v.rot = a.to % TAU;
+        v.anim = null;
+        finish(a, now);
+      }
+    }
+    v.frame = (now, dt) => {
+      const spinning = !!v.anim;
+      if (spinning) stepSpin(now);
+      const celebrating = v.confetti.length > 0 || now < v.celebrateUntil;
+      if (!v.anim && !celebrating) {
+        if (v.tilt !== 0) { v.tilt = 0; redraw(); }
+        if (reduced || now - v.lastIdle < 500) return;
+        v.lastIdle = now;
+        v.bulb = (v.bulb + 1) % 2;
+        redraw();
+        return;
+      }
+      v.bulb = reduced ? 0 : Math.floor(now / (spinning ? 70 : 150)) % 2;
+      if (v.confetti.length > 0) {
+        stepConfetti(dt);
+        drawConfetti();
+        if (v.confetti.length === 0) clearFx();
+      }
+      redraw();
+    };
+
+    // 結果の画像のコピー・共有
+    function showPreview(c) {
+      preview.src = c.toDataURL('image/png');   // CSP は data: を許している。長押しで保存できるよう、画面にも出す
+      preview.alt = '結果の画像（長押しで保存できます）';
+      preview.hidden = false;
+    }
+    copyBtn.addEventListener('click', () => {
+      if (!v.last) return;
+      countEvent('roulette-copy', '結果の画像をコピーした');
+      const c = makeCard(v.last);
+      showPreview(c);
+      copyCanvas(c, 'iridock-roulette.png').then((r) => setStatus(r === 'copied' ? '画像をコピーしました。X や Discord などに貼り付けて使えます。' : 'コピーできなかったので、画像を保存しました。'));
     });
-    $('wheel-add').addEventListener('click', () => {
-      if (state.anim || data.wheels.length >= 30) return;
-      const w = { id: newId(), name: `ルーレット ${data.wheels.length + 1}`, items: [], removePicked: false, history: [] };
-      data.wheels.push(w);
-      selectWheel(w.id);
+    shareBtn.addEventListener('click', async () => {
+      if (!v.last) return;
+      countEvent('roulette-share', '結果の画像を共有した');
+      const c = makeCard(v.last);
+      showPreview(c);
+      await shareImages([c], 'iridock-roulette', textFor(v.last), setStatus);
     });
-    $('wheel-del').addEventListener('click', () => {
-      if (state.anim) return;
-      if (!window.confirm(`「${cur().name}」を消します。項目と履歴もなくなります。よろしいですか？`)) return;
-      data.wheels = data.wheels.filter((w) => w.id !== data.currentId);
-      if (data.wheels.length === 0) data.wheels.push(sampleWheel());
-      selectWheel(data.wheels[0].id);
-    });
-    $('item-add').addEventListener('click', () => {
-      const w = cur();
-      if (w.items.length >= MAX_ITEMS) return;
-      w.items.push({ label: '', weight: 1 });
+
+    // 項目と重みの編集
+    function updatePercents() {
+      const total = wheel.items.reduce((s, it) => s + (isLive(it) ? it.weight : 0), 0);
+      const spans = ul.querySelectorAll('.rl-pc');
+      wheel.items.forEach((it, i) => {
+        if (spans[i]) spans[i].textContent = isLive(it) && total > 0 ? `${((it.weight / total) * 100).toFixed(1)}%` : '—';
+      });
+    }
+    function renderItems() {
+      ul.replaceChildren();
+      wheel.items.forEach((it, i) => {
+        const li = document.createElement('li');
+        const dot = h('span', 'rl-dot');
+        dot.style.background = sliceColor(i, wheel.items.length);
+        const lab = h('input');
+        lab.type = 'text';
+        lab.maxLength = 40;
+        lab.value = it.label;
+        lab.placeholder = '項目の名前';
+        lab.setAttribute('aria-label', `項目 ${i + 1} の名前`);
+        lab.addEventListener('input', () => { it.label = lab.value; touch(); save(); updatePercents(); redraw(); });
+        const wt = h('input');
+        wt.type = 'number';
+        wt.min = '0';
+        wt.max = String(MAX_WEIGHT);
+        wt.step = '0.1';
+        wt.inputMode = 'decimal';
+        wt.value = String(it.weight);
+        wt.setAttribute('aria-label', `項目 ${i + 1} の重み`);
+        wt.addEventListener('input', () => {
+          const n = parseFloat(wt.value);
+          if (!Number.isFinite(n)) return;   // 入力の途中（空など）では、いまの重みのまま
+          it.weight = cleanWeight(n);
+          touch();
+          save();
+          updatePercents();
+          redraw();
+        });
+        wt.addEventListener('change', () => { wt.value = String(it.weight); });
+        const pc = h('span', 'rl-pc');
+        const del = h('button', 'rl-del', '×');
+        del.type = 'button';
+        del.setAttribute('aria-label', `項目 ${i + 1} を消す`);
+        del.addEventListener('click', () => { wheel.items.splice(i, 1); touch(); save(); renderItems(); });
+        li.append(dot, lab, wt, pc, del);
+        ul.append(li);
+      });
+      count.textContent = `${wheel.items.length} / ${MAX_ITEMS} 件`;
+      addBtn.disabled = wheel.items.length >= MAX_ITEMS;
+      updatePercents();
+      redraw();
+    }
+    addBtn.addEventListener('click', () => {
+      if (wheel.items.length >= MAX_ITEMS) return;
+      wheel.items.push({ label: '', weight: 1 });
       touch();
       save();
       renderItems();
-      const inputs = $('items').querySelectorAll('input[type="text"]');
+      const inputs = ul.querySelectorAll('input[type="text"]');
       if (inputs.length) inputs[inputs.length - 1].focus();
     });
-    $('bulk-add').addEventListener('click', () => {
-      const w = cur();
-      const rows = parseBulk($('bulk').value);
-      const room = MAX_ITEMS - w.items.length;
-      w.items.push(...rows.slice(0, Math.max(0, room)));
-      $('bulk').value = '';
+    function parseBulk(text) {
+      return text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((line) => {
+        const m = line.match(/^(.*?)[,，\t]\s*(\d+(?:\.\d+)?)\s*$/);
+        return m && m[1].trim() ? { label: m[1].trim().slice(0, 40), weight: cleanWeight(m[2]) } : { label: line.slice(0, 40), weight: 1 };
+      });
+    }
+    bulkBtn.addEventListener('click', () => {
+      const rows = parseBulk(bulk.value);
+      const room = MAX_ITEMS - wheel.items.length;
+      wheel.items.push(...rows.slice(0, Math.max(0, room)));
+      bulk.value = '';
       setStatus(rows.length > room ? `${MAX_ITEMS} 件までなので、${Math.max(0, room)} 件だけ足しました。` : `${rows.length} 件を足しました。`);
       touch();
       save();
       renderItems();
     });
-    $('opt-remove').addEventListener('change', (e) => { cur().removePicked = e.target.checked; save(); });
-    $('history-copy').addEventListener('click', onHistoryCopy);
-    $('history-share').addEventListener('click', onHistoryShare);
+    removeCheck.addEventListener('change', () => { wheel.removePicked = removeCheck.checked; save(); });
+
+    // 履歴（全部表示。「当てた人」はあとから直せる）
+    function renderHistory() {
+      tbody.replaceChildren();
+      histSum.textContent = `履歴（${wheel.history.length} 件。保存は ${HISTORY_KEEP} 件まで）`;
+      histWrap.hidden = wheel.history.length === 0;
+      histEmpty.hidden = wheel.history.length > 0;
+      histClear.disabled = wheel.history.length === 0;
+      wheel.history.forEach((entry, i) => {
+        const tr = document.createElement('tr');
+        const t = h('td', 'at', stampOf(entry.at));
+        const who = document.createElement('td');
+        const input = h('input');
+        input.type = 'text';
+        input.maxLength = MAX_WHO;
+        input.value = entry.who || '';
+        input.placeholder = '名前なし';
+        input.setAttribute('aria-label', `履歴 ${i + 1} の当てた人`);
+        input.addEventListener('input', () => { entry.who = input.value.slice(0, MAX_WHO); save(); renderSummary(); });
+        who.append(input);
+        const r = h('td', null, entry.result.trim() || NO_WHO);
+        tr.append(t, who, r);
+        tbody.append(tr);
+      });
+    }
     // 履歴を消す前に確認する（利用者の指示、2026-10-30「履歴を消す際に確認がでるようにして」）
-    $('history-clear').addEventListener('click', () => {
-      const n = cur().history.length;
+    histClear.addEventListener('click', () => {
+      const n = wheel.history.length;
       if (n === 0) return;
-      if (!window.confirm(`「${cur().name}」の履歴 ${n} 件を消します。元には戻せません。よろしいですか？`)) return;
-      cur().history = [];
+      if (!window.confirm(`「${wheel.name}」の履歴 ${n} 件を消します。元には戻せません。よろしいですか？`)) return;
+      wheel.history = [];
       save();
       renderHistory();
+      renderSummary();
     });
-    $('template').addEventListener('input', (e) => { data.settings.template = e.target.value.slice(0, 200) || DEFAULT_TEMPLATE; save(); });
-    $('export').addEventListener('click', exportData);
-    $('import').addEventListener('click', () => $('import-file').click());
-    $('import-file').addEventListener('change', (e) => {
-      const f = e.target.files && e.target.files[0];
-      e.target.value = '';
-      if (f) importFile(f);
+
+    // 名前・削除・回す・全画面
+    title.addEventListener('input', () => { wheel.name = title.value.slice(0, 30); el.setAttribute('aria-label', wheel.name || 'ルーレット'); save(); renderScope(); renderSummary(); });
+    title.addEventListener('change', () => {
+      if (!title.value.trim()) {
+        wheel.name = 'ルーレット';
+        title.value = wheel.name;
+        save();
+        renderScope();
+        renderSummary();
+      }
     });
-    // 全画面（配信の画面共有用）。使えないブラウザ（iPhone の Safari など）ではボタンを出さない
-    if (document.fullscreenEnabled && $('stage').requestFullscreen) {
-      $('fullscreen').hidden = false;
-      $('fullscreen').addEventListener('click', () => {
+    delWheel.addEventListener('click', () => {
+      if (v.anim) return;
+      if (!window.confirm(`「${wheel.name}」を消します。項目と履歴もなくなります。よろしいですか？`)) return;
+      removeWheel(v);
+    });
+    spinBtn.addEventListener('click', spin);
+    canvas.addEventListener('click', spin);   // 円盤を押しても回る
+    if (document.fullscreenEnabled && stage.requestFullscreen) {
+      fsBtn.hidden = false;
+      fsBtn.addEventListener('click', () => {
         if (document.fullscreenElement) document.exitFullscreen();
-        else $('stage').requestFullscreen();
+        else stage.requestFullscreen();
       });
       document.addEventListener('fullscreenchange', () => setTimeout(redraw, 50));
     }
-    // 画像つきの共有メニューが使える端末（おもにスマホ）だけ「共有」を出す
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [new File(['x'], 'a.png', { type: 'image/png' })] })) {
-        $('share-native').hidden = false;
-        $('history-share').hidden = false;
-      }
-    } catch (e) { /* 出さない */ }
-    if (window.ResizeObserver) new ResizeObserver(() => { redraw(); fxCanvasFit(); }).observe($('stage'));
-    else window.addEventListener('resize', redraw);
+    if (window.ResizeObserver) v.ro = new ResizeObserver(() => { redraw(); fxFit(); }), v.ro.observe(stage);
+
+    v.destroy = () => { if (v.ro) v.ro.disconnect(); };
+    el.setAttribute('aria-label', wheel.name || 'ルーレット');
+    renderItems();
+    renderHistory();
+    return v;
   }
+
+  // ---- ルーレットの追加・削除 ----
+  function addWheel(wheel) {
+    const v = createView(wheel);
+    views.push(v);
+    $('wheels').append(v.el);
+    v.redraw();
+    return v;
+  }
+  function removeWheel(v) {
+    data.wheels = data.wheels.filter((w) => w !== v.w);
+    v.destroy();
+    v.el.remove();
+    views.splice(views.indexOf(v), 1);
+    if (data.wheels.length === 0) {   // 1 つも無いと、画面に何も出ないので、空のルーレットを 1 つ置く
+      const w = newWheel('ルーレット 1');
+      data.wheels.push(w);
+      addWheel(w);
+    }
+    save();
+    renderScope();
+    renderSummary();
+  }
+  $('wheel-add').addEventListener('click', () => {
+    if (data.wheels.length >= MAX_WHEELS) {
+      $('add-note').textContent = `ルーレットは ${MAX_WHEELS} 個までです。`;
+      return;
+    }
+    $('add-note').textContent = '';
+    const w = newWheel(`ルーレット ${data.wheels.length + 1}`);
+    data.wheels.push(w);
+    const v = addWheel(w);
+    save();
+    renderScope();
+    renderSummary();
+    countEvent('roulette-add', 'ルーレットを追加した');
+    v.el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+    v.title.focus();
+    v.title.select();
+  });
+
+  // ---- まとめ（誰が何を当てたか。表の画像で共有する） ----
+  function renderScope() {
+    const sel = $('summary-scope');
+    const keep = sel.value || 'all';
+    sel.replaceChildren();
+    const all = h('option', null, '全部のルーレット');
+    all.value = 'all';
+    sel.append(all);
+    for (const w of data.wheels) {
+      const o = h('option', null, w.name || 'ルーレット');
+      o.value = w.id;
+      sel.append(o);
+    }
+    sel.value = data.wheels.some((w) => w.id === keep) ? keep : 'all';
+  }
+  const summaryScope = () => $('summary-scope').value || 'all';
+  const summaryTitle = () => {
+    const s = summaryScope();
+    const w = data.wheels.find((x) => x.id === s);
+    return w ? `${w.name} の結果` : '誰が何を当てたか';
+  };
+  const showWheelNames = () => summaryScope() === 'all' && data.wheels.length > 1;
+  function renderSummary() {
+    const s = summarize(data.wheels, summaryScope());
+    const tbody = $('summary-body');
+    tbody.replaceChildren();
+    const show = showWheelNames();
+    for (const g of s.groups) {
+      const tr = document.createElement('tr');
+      tr.append(h('td', 'who', g.who));
+      const td = document.createElement('td');
+      for (const l of summaryLines(g, show)) td.append(h('div', null, l));
+      tr.append(td);
+      tbody.append(tr);
+    }
+    $('summary-wrap').hidden = s.groups.length === 0;
+    $('summary-empty').hidden = s.groups.length > 0;
+    $('summary-count').textContent = s.groups.length ? `${s.groups.length} 人・${s.entries} 件` : '';
+    $('summary-copy').disabled = $('summary-share').disabled = s.groups.length === 0;
+    $('summary-pages').replaceChildren();
+    $('summary-status').textContent = '';
+  }
+  // 画像を作る（複数枚のときは、枚ごとに下見とコピーのボタンを出す）
+  function buildSummaryPages() {
+    const s = summarize(data.wheels, summaryScope());
+    const pages = makeSummaryPages(s, summaryTitle(), showWheelNames());
+    const box = $('summary-pages');
+    box.replaceChildren();
+    pages.forEach((c, i) => {
+      const fig = h('figure', 'rl-page');
+      const img = h('img');
+      img.src = c.toDataURL('image/png');
+      img.alt = `まとめの画像 ${i + 1} 枚目（長押しで保存できます）`;
+      fig.append(img);
+      if (pages.length > 1) {
+        const b = h('button', 'rl-btn', `${i + 1} 枚目をコピー`);
+        b.type = 'button';
+        b.addEventListener('click', () => {
+          countEvent('roulette-summary-copy', 'まとめの画像をコピーした');
+          copyCanvas(c, `iridock-roulette-summary-${i + 1}.png`).then((r) => { $('summary-status').textContent = r === 'copied' ? `${i + 1} 枚目をコピーしました。` : `コピーできなかったので、${i + 1} 枚目を保存しました。`; });
+        });
+        fig.append(b);
+      }
+      box.append(fig);
+    });
+    return { pages, summary: s };
+  }
+  $('summary-scope').addEventListener('change', renderSummary);
+  $('summary-copy').addEventListener('click', () => {
+    countEvent('roulette-summary-copy', 'まとめの画像をコピーした');
+    const { pages } = buildSummaryPages();
+    copyCanvas(pages[0], 'iridock-roulette-summary.png').then((r) => {
+      const more = pages.length > 1 ? `（全 ${pages.length} 枚のうち 1 枚目。ほかの枚は下のボタンでコピーできます）` : '';
+      $('summary-status').textContent = r === 'copied' ? `画像をコピーしました。貼り付けて使えます。${more}` : 'コピーできなかったので、画像を保存しました。';
+    });
+  });
+  $('summary-share').addEventListener('click', async () => {
+    countEvent('roulette-summary-share', 'まとめの画像を共有した');
+    const { pages, summary } = buildSummaryPages();
+    await shareImages(pages, 'iridock-roulette-summary', `${summaryTitle()}（${summary.groups.length} 人・${summary.entries} 件）`, (t) => { $('summary-status').textContent = t; });
+  });
+  if (canShareFiles()) $('summary-share').hidden = false;
+
+  // ---- 設定・書き出し・読み込み ----
+  function exportData() {
+    const d = new Date();
+    download(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `iridock-roulette-${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}.json`);
+  }
+  async function importFile(file) {
+    const note = $('settings-status');
+    try {
+      const d = sanitizeData(JSON.parse(await file.text()));
+      if (!d) {
+        note.textContent = '読み込めませんでした（このルーレットの書き出しではないようです）。';
+        return;
+      }
+      if (views.some((v) => v.anim)) {
+        note.textContent = '回している最中は読み込めません。';
+        return;
+      }
+      if (!window.confirm(`今のルーレットを、読み込んだ ${d.wheels.length} 件に入れ替えます。よろしいですか？`)) return;
+      data = d;
+      rebuild();
+      save();
+      note.textContent = `読み込みました（${d.wheels.length} 件）。`;
+    } catch (e) {
+      note.textContent = '読み込めませんでした（ファイルを読めません）。';
+    }
+  }
+  function rebuild() {
+    for (const v of views.splice(0)) {
+      v.destroy();
+      v.el.remove();
+    }
+    $('who').value = data.settings.who;
+    $('template').value = data.settings.template;
+    for (const w of data.wheels) addWheel(w);
+    renderScope();
+    renderSummary();
+  }
+  $('who').addEventListener('input', (e) => { data.settings.who = e.target.value.slice(0, MAX_WHO); save(); });
+  $('template').addEventListener('input', (e) => { data.settings.template = e.target.value.slice(0, 200) || DEFAULT_TEMPLATE; save(); });
+  $('export').addEventListener('click', exportData);
+  $('import').addEventListener('click', () => $('import-file').click());
+  $('import-file').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (f) importFile(f);
+  });
 
   // 確かめの道具から呼ぶ（画面の見た目に関わらない部分と、状態の読み出し）
   window.IriRoulette = {
-    pickIndex, layoutOf, indexAtPointer, targetRotation, randomUnit, cleanWeight, sanitizeData, sliceColor, pointerTilt,
-    state: () => ({ rot: state.rot, spinning: !!state.anim, last: state.last, data, winner: state.winnerIdx, confetti: state.confetti.length, tilt: state.tilt }),
-    makeCard: () => makeCard(state.last || { name: cur().name, items: cur().items, rot: state.rot, text: '見本', winner: null, at: Date.now() }),
-    makeHistoryCard: () => makeHistoryCard(cur().name, historyEntries()),
-    historyText,
+    pickIndex, layoutOf, indexAtPointer, targetRotation, randomUnit, cleanWeight, sanitizeData, sliceColor, pointerTilt, summarize, summaryLines,
+    state: () => ({
+      data,
+      who: $('who').value,
+      views: views.map((v) => ({ id: v.w.id, rot: v.rot, spinning: !!v.anim, last: v.last, winner: v.winnerIdx, confetti: v.confetti.length, tilt: v.tilt })),
+    }),
+    makeCard: (i) => {
+      const v = views[i || 0];
+      return makeCard(v.last || { name: v.w.name, items: v.w.items, rot: v.rot, text: '見本', winner: null, who: '', at: Date.now() });
+    },
+    makeSummaryPages: () => makeSummaryPages(summarize(data.wheels, summaryScope()), summaryTitle(), showWheelNames()),
   };
 
-  bind();
-  renderAll();
+  rebuild();
   requestAnimationFrame(frame);
   // 書体（Noto Sans JP・Inter）は、使うまで読み込まれない。読み込めたら円盤を描き直す。
   if (document.fonts && document.fonts.load) {
-    Promise.all(['800 20px "Noto Sans JP"', '700 20px "Noto Sans JP"', '700 20px Inter'].map((f) => document.fonts.load(f, 'あA'))).then(redraw).catch(() => {});
+    Promise.all(['800 20px "Noto Sans JP"', '700 20px "Noto Sans JP"', '700 20px Inter'].map((f) => document.fonts.load(f, 'あA'))).then(() => views.forEach((v) => v.redraw())).catch(() => {});
   }
 })();
