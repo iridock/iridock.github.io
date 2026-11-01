@@ -132,7 +132,7 @@ function renderUpdated() {
   const at = new Date(state.forecasts.generatedAt);
   const jst = new Date(at.getTime() + 9 * 3600000);
   const text = `${jst.getUTCMonth() + 1}/${jst.getUTCDate()} ${String(jst.getUTCHours()).padStart(2, '0')}:${String(jst.getUTCMinutes()).padStart(2, '0')}`;
-  $('updated').textContent = `${text} 更新（毎日お昼ごろに更新）`;
+  $('updated').textContent = `${text} 更新（記録が入ると、1日に数回更新されます）`;
   const hours = (Date.now() - at.getTime()) / 3600000;
   if (hours > STALE_HOURS) notice(`データの更新が止まっているようです（最後の更新は ${text}）。ボーダー予想が古いかもしれません。`);
   else notice('');
