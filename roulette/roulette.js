@@ -1459,6 +1459,7 @@
         t0: performance.now(),
         dur: reduced ? SPIN_MS_REDUCED : eff.spinMs,
         idx,
+        item: wheel.items[idx],   // 回している間に項目を消す・足すと添字がずれる。止まったときは、この項目そのものの今の位置を探す
         label: wheel.items[idx].label,
         who: wheel.useWho ? (wheel.who || '').trim().slice(0, MAX_WHO) : '',   // 回し始めの名前の欄の中身（回している間に直しても、この回は変わらない）。なしのルーレットは空
         snapshot: wheel.items.map((it) => ({ label: it.label, weight: it.weight })),
@@ -1471,9 +1472,11 @@
       v.last = { name: wheel.name, items: a.snapshot, rot: v.rot, text, winner: a.idx, who: a.who, look: currentLook(), at: Date.now() };
       wheel.history.unshift({ at: v.last.at, result: a.label, who: a.who });
       wheel.history.length = Math.min(wheel.history.length, HISTORY_KEEP);
-      v.winnerIdx = a.idx;
-      if (wheel.removePicked) {
-        wheel.items.splice(a.idx, 1);
+      // 回している間に項目を直した場合、当たった項目の位置は回し始めから動いている。消されていれば、強調も除去もしない
+      const livePos = wheel.items.indexOf(a.item);
+      v.winnerIdx = livePos >= 0 ? livePos : null;
+      if (wheel.removePicked && livePos >= 0) {
+        wheel.items.splice(livePos, 1);
         v.winnerIdx = null;
       }
       save();

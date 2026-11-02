@@ -6,6 +6,15 @@
 //   forecasts.json … 予想（今日から1週間）、actuals.json … 実績（直近1年）、results.json … 過去分の結果（予想の答え合わせ）。
 
 const $ = (id) => document.getElementById(id);
+// URL の # の後ろ。X などで途中で切れたリンク（%E0%A4%A のような壊れたパーセント表記）だと decodeURIComponent が例外を投げ、
+// 読み込みの途中で止まって予想が1枚も出なくなる。壊れていたら空として扱う（洗い直し、2026-11-02）。
+const hashName = () => {
+  try {
+    return decodeURIComponent(location.hash.slice(1));
+  } catch (e) {
+    return '';
+  }
+};
 const SVG = 'http://www.w3.org/2000/svg';
 const DOW = ['日', '月', '火', '水', '木', '金', '土'];
 const SCORES = [2, 4, 6];
@@ -123,7 +132,7 @@ async function load() {
   // 開き直したときは、前に選んでいた帯を先に使う（利用者の指示、2026-10-16「再度開いたときに指定してたランク…は記憶しておいてほしい」）。
   // 前は URL の #帯 を先にしていたので、#S1 付きで保存したブックマークやホーム画面のアイコンから開くと、いつも S1 に戻っていた。
   // 覚えた帯が無い人（はじめての人・共有された #帯 のリンク）には #帯 を使う。開いている間の #帯 の切り替えは hashchange が受け持つ。
-  const fromHash = decodeURIComponent(location.hash.slice(1));
+  const fromHash = hashName();
   const pick = [state.band, store.get('band'), fromHash, names[0]].find((n) => n && names.includes(n));
   selectBand(pick);
 }
@@ -204,7 +213,7 @@ function selectBand(name) {
   state.band = name;
   countBand(name);
   store.set('band', name);
-  if (decodeURIComponent(location.hash.slice(1)) !== name) history.replaceState(null, '', '#' + encodeURIComponent(name));
+  if (hashName() !== name) history.replaceState(null, '', '#' + encodeURIComponent(name));
   $('band').value = name;
   $('bar-band').value = name;   // 上の帯（下まで読んでも、どの帯を見ているか分かり、押せば選び直せる）
   // 実績（actuals.json）は最初に全部の帯をまとめて読んでいる（前は帯を開くたびに読んでいた）。
@@ -1132,7 +1141,7 @@ document.querySelector('#actual thead').addEventListener('click', (e) => {
 });
 
 window.addEventListener('hashchange', () => {
-  const name = decodeURIComponent(location.hash.slice(1));
+  const name = hashName();
   if (state.forecasts && name && name !== state.band && state.forecasts.classes.some((c) => c.rankClass === name)) selectBand(name);
 });
 
