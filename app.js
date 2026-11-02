@@ -594,7 +594,7 @@ function renderWeek() {
   $('week-rows').replaceChildren(...forecastDays().map((d) => {
     const cards = cls.forecasts[d.date] || [];
     const on = d.date === state.day;
-    const tr = el('tr', { 'data-day': d.date, class: on ? 'on' : '', tabindex: '0', 'aria-current': String(on) });
+    const tr = el('tr', { 'data-day': d.date, class: on ? 'on' : '', tabindex: '0', 'aria-current': String(on) });   // 行は中身（日付・+2/+4/+6）がそのまま読み上げられるので、名前は付けない（付けると中身より先に名前だけ読まれる）
     const th = el('th', { scope: 'row' });
     th.append(el('span', { class: 'wd' }, mdw(d.date)));
     const word = ['今日', '明日', 'あさって'][dayNumber(d.date) - dayNumber(jstToday())];
@@ -816,7 +816,13 @@ function renderHeat() {
         if (alpha >= flip) td.classList.add('dark');
         td.title = `${mdw(c.iso)} ${c.forecast ? 'のボーダー予想' : 'の実際のボーダー'} +${score}: ${fmt(c.value)} pt`;
       }
-      if (c.forecast) { td.dataset.day = c.iso; td.tabIndex = 0; }
+      if (c.forecast) {
+        td.dataset.day = c.iso;
+        td.tabIndex = 0;
+        // 押せてフォーカスもできるが、名前が title だけだと読み上げに伝わらない（洗い直し、2026-11-02）。ボタンとして名前を付ける
+        td.setAttribute('role', 'button');
+        td.setAttribute('aria-label', `${mdw(c.iso)} の予想を上に出す${c.value != null ? `（+${score}: ${fmt(c.value)} pt）` : ''}`);
+      }
       td.append(el('span', { class: 'hd' }, md(c.iso)), el('span', { class: 'hv' }, c.value == null ? (c.n >= today ? '' : '—') : short(c.value)));
       tr.append(td);
     }

@@ -198,8 +198,10 @@
       for (let i = w.history.length - 1; i >= 0; i--) {
         const hs = w.history[i];
         const who = (hs.who || '').trim() || NO_WHO;
-        if (!byWho.has(who)) byWho.set(who, { who, first: hs.at, wheels: new Map(), total: 0 });
-        const g = byWho.get(who);
+        // 全角・半角の違い（「ＴＡＲＯ」と「TARO」）は同じ人として数える。表に出す名前は、いちばん古い履歴のもの
+        const key = who.normalize('NFKC');
+        if (!byWho.has(key)) byWho.set(key, { who, first: hs.at, wheels: new Map(), total: 0 });
+        const g = byWho.get(key);
         g.first = Math.min(g.first, hs.at);
         if (!g.wheels.has(w.id)) g.wheels.set(w.id, { name: w.name, items: new Map() });
         const prizes = g.wheels.get(w.id).items;
@@ -290,7 +292,7 @@
     if (!w || typeof w !== 'object') return null;
     const items = sanitizeItems(w.items);
     const history = Array.isArray(w.history)
-      ? w.history.filter((x) => x && typeof x.result === 'string' && Number.isFinite(x.at)).slice(0, HISTORY_KEEP)
+      ? w.history.filter((x) => x && typeof x.result === 'string' && Number.isFinite(x.at) && x.at > 0 && x.at < 8.64e15).slice(0, HISTORY_KEEP)   // Date で表せる範囲だけ（1e300 などは日付が NaN/NaN になる）
         .map((x) => ({ at: x.at, result: x.result.slice(0, 40), who: typeof x.who === 'string' ? x.who.slice(0, MAX_WHO) : '' }))
       : [];
     return {
@@ -308,6 +310,12 @@
     if (!d || typeof d !== 'object' || !Array.isArray(d.wheels)) return null;
     const wheels = d.wheels.slice(0, MAX_WHEELS).map(sanitizeWheel).filter(Boolean);
     if (wheels.length === 0) return null;
+    // 同じ id のルーレットが並ぶと、まとめの集計（id ごと）が混ざる。あとのものに新しい id を付ける
+    const seenIds = new Set();
+    for (const w of wheels) {
+      if (seenIds.has(w.id)) w.id = newId();
+      seenIds.add(w.id);
+    }
     const s = d.settings && typeof d.settings === 'object' ? d.settings : {};
     return {
       version: 1,
@@ -1736,11 +1744,17 @@
         if (document.fullscreenElement) document.exitFullscreen();
         else stage.requestFullscreen();
       });
-      document.addEventListener('fullscreenchange', () => setTimeout(redraw, 50));
+      // document に付けるので、ルーレットを消したときに外さないと、消すたび・読み込むたびに増え続ける（洗い直し、2026-11-02）
+      v.onFullscreen = () => setTimeout(redraw, 50);
+      document.addEventListener('fullscreenchange', v.onFullscreen);
     }
     if (window.ResizeObserver) v.ro = new ResizeObserver(() => { redraw(); fxFit(); }), v.ro.observe(stage);
 
-    v.destroy = () => { if (v.ro) v.ro.disconnect(); whoPicker.destroy(); };
+    v.destroy = () => {
+      if (v.ro) v.ro.disconnect();
+      if (v.onFullscreen) document.removeEventListener('fullscreenchange', v.onFullscreen);
+      whoPicker.destroy();
+    };
     v.setWho = (name) => {   // 確かめの道具から呼ぶ（候補に無い名前も入れられる。選んだのと同じ動き）
       if (name && !whoPicker.options[name]) whoPicker.addOption({ value: name, text: name });
       if (name) whoPicker.setValue(name); else whoPicker.clear();
