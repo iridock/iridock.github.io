@@ -14,9 +14,10 @@
 <link rel="icon" href="../icon.png" type="image/png">
 <link rel="apple-touch-icon" href="../icon.png">
 <script src="../theme.js?v=2cd238f2"></script>
-<link rel="stylesheet" href="../style.css?v=a4fea5d9">
+<script src="../help.js?v=9d187b94" defer></script>
+<link rel="stylesheet" href="../style.css?v=c8169531">
 <link rel="stylesheet" href="vendor/tom-select/tom-select.css?v=9927adfd">
-<link rel="stylesheet" href="roulette.css?v=588c8688">
+<link rel="stylesheet" href="roulette.css?v=2f41cf46">
 <title>IriDock ルーレット</title>
 </head>
 <body>
@@ -42,12 +43,16 @@
 
   <!-- ルーレットの追加。保存したテンプレート（項目と重み・色合い・演出・当てた人のあり／なし）から作れる。当てた人の名前は、ルーレットごとのカードで入れる -->
   <section class="panel rl-top" aria-label="ルーレットの追加">
-    <label class="rl-field rl-who">新しいルーレットのもと（ルーレットの「設定」で保存したテンプレートを選べます）
+    <label class="rl-field rl-who"><span>新しいルーレットのもと<button type="button" class="help-btn" aria-controls="help-new" aria-expanded="false" aria-label="新しいルーレットのもとの説明" title="説明"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9.2a3 3 0 1 1 4.4 2.6c-.9.5-1.4 1.1-1.4 2.1v.5"/><circle cx="12" cy="17.8" r="1.2"/></svg></button></span>
       <select id="new-template" aria-label="新しいルーレットのもと"></select>
     </label>
     <div class="rl-addwrap">
       <button id="wheel-add" type="button" class="rl-btn rl-add">＋ ルーレットを追加</button>
       <span id="add-note" class="rl-count" role="status"></span>
+    </div>
+    <!-- 説明はヘルプ（? ボタン）に入れ、ふだんは閉じておく（2026-11-20。共通の作りは ../help.js） -->
+    <div id="help-new" class="help rl-help-row" hidden>
+      <p>ルーレットの「設定」で保存したテンプレートを選んで追加すると、その項目・重み・リスナーの設定で作れます。</p>
     </div>
   </section>
 
@@ -56,7 +61,11 @@
 
   <!-- まとめ: 全部のルーレットの履歴を合わせて、誰が何を当てたかを表にする。共有は表の画像（文章だと文字数の制限に引っかかるため。長いときは複数枚） -->
   <section id="summary" class="panel rl-wide" aria-labelledby="summary-title">
-    <div class="panel-head"><h2 id="summary-title">まとめ <small>誰が何を当てたか（履歴の「リスナー」から作ります）</small></h2></div>
+    <div class="panel-head"><h2 id="summary-title">まとめ<button type="button" class="help-btn" aria-controls="help-summary" aria-expanded="false" aria-label="まとめの説明" title="説明"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9.2a3 3 0 1 1 4.4 2.6c-.9.5-1.4 1.1-1.4 2.1v.5"/><circle cx="12" cy="17.8" r="1.2"/></svg></button> <small>誰が何を当てたか</small></h2></div>
+    <div id="help-summary" class="help" hidden>
+      <p>全部（または選んだ 1 つ）のルーレットの履歴の「リスナー」から、誰が何を当てたかを人ごとの表にします。</p>
+      <p>共有は表の画像です（文章だと文字数の制限に引っかかるため）。長いときは、25 件ほどずつ何枚かに分けます。</p>
+    </div>
     <div class="rl-row">
       <label class="rl-field">対象
         <select id="summary-scope" aria-label="まとめに入れるルーレット"></select>
@@ -81,12 +90,18 @@
   </section>
 
   <section class="panel rl-wide" aria-labelledby="settings-title">
-    <div class="panel-head"><h2 id="settings-title">設定</h2></div>
+    <div class="panel-head"><h2 id="settings-title">設定<button type="button" class="help-btn" aria-controls="help-settings" aria-expanded="false" aria-label="設定の説明" title="説明"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9.2a3 3 0 1 1 4.4 2.6c-.9.5-1.4 1.1-1.4 2.1v.5"/><circle cx="12" cy="17.8" r="1.2"/></svg></button></h2></div>
+    <!-- 前に消した説明のうち、今もある機能のもの（「共有」の使い方の詳しい形・iPhone の Safari で消えることがある）は、ここに戻した（2026-11-20「もしこれまでので減らした説明みたいなのあればそれは戻して」） -->
+    <div id="help-settings" class="help" hidden>
+      <p>色合い・演出・絵柄は、全部のルーレットにまとめて反映されます。</p>
+      <p>「X に投稿」「Discord」は、画像をコピーしてから、投稿画面・チャンネルを開きます。開いたら貼り付けてください（PC は Ctrl+V、スマホは長押しして「ペースト」）。Discord のチャンネルのリンクを入れておくと、「Discord」ボタンでそのチャンネルを開きます。</p>
+      <p>「共有」は、スマホなどの共有メニューから X や Discord のアプリを選ぶと、画像つきで送れます（使えない端末では出ません）。</p>
+      <p>ルーレット・項目・重み・履歴は、このブラウザの中だけに保存します（サーバーには送りません）。閲覧データを消すと、なくなります。iPhone の Safari は、しばらく使わないと消えることがあるので、ときどき書き出しておくと安心です。</p>
+    </div>
 
     <!-- ルーレットの見た目（利用者の指示、2026-10-30。色合い・演出・絵柄は、ルーレットごとではなく、ここで全部のルーレットにまとめて決める） -->
     <div class="rl-block">
       <h3 class="rl-h3">ルーレットの見た目</h3>
-      <p class="rl-note">色合い・演出・絵柄は、全部のルーレットにまとめて反映されます。</p>
       <div class="rl-row">
         <label class="rl-field">色合い
           <select id="look-theme"></select>
@@ -147,7 +162,7 @@
     <label class="rl-field">共有時に入れる文面（{result} が結果、{who} がリスナーになります）
       <input id="template" type="text" maxlength="200" autocomplete="off">
     </label>
-    <label class="rl-field">Discord のチャンネルのリンク（任意。「Discord」ボタンで、画像をコピーしてこのチャンネルを開きます）
+    <label class="rl-field">Discord のチャンネルのリンク（任意）
       <input id="discord-link" type="url" inputmode="url" placeholder="https://discord.com/channels/…" autocomplete="off">
     </label>
     <div class="rl-row">
@@ -156,7 +171,6 @@
       <input id="import-file" type="file" accept="application/json,.json" hidden>
     </div>
     <p id="settings-status" class="rl-status" role="status" aria-live="polite"></p>
-    <p class="hint">「X に投稿」「Discord」は、画像をコピーしてから、投稿画面・チャンネルを開きます。開いたら貼り付けてください（PC は Ctrl+V、スマホは長押しして「ペースト」）。「共有」は、使える端末だけに出ます。ルーレット・項目・重み・履歴は、このブラウザの中だけに保存します。閲覧データを消すと、なくなります。ときどき書き出しておくと安心です。</p>
   </section>
 </main>
 
@@ -169,6 +183,6 @@
         crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
 <!-- 当てた人の欄の部品（Tom Select。Apache License 2.0。サイトに同梱している。vendor/tom-select/README.md） -->
 <script src="vendor/tom-select/tom-select.complete.min.js?v=8f9d7d34"></script>
-<script src="roulette.js?v=626768a8"></script>
+<script src="roulette.js?v=49075d2b"></script>
 </body>
 </html>

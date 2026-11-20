@@ -44,6 +44,35 @@
     if (text != null) e.textContent = text;
     return e;
   }
+  // ヘルプ（? ボタンと、押すと開く説明の箱。開け閉めは ../help.js。2026-11-20「全体的に説明みたいなのは各セクションにヘルプボタンみたいなのつくってそこおしたら表示されるようにしようか」）。
+  // カードは何枚も作るので、id は通し番号で分ける。
+  let helpSeq = 0;
+  function helpPair(label, texts) {
+    const id = `help-card-${++helpSeq}`;
+    const button = h('button', 'help-btn');
+    button.type = 'button';
+    button.title = '説明';
+    button.setAttribute('aria-controls', id);
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-label', `${label}の説明`);
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M9 9.2a3 3 0 1 1 4.4 2.6c-.9.5-1.4 1.1-1.4 2.1v.5');
+    const dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('cx', '12');
+    dot.setAttribute('cy', '17.8');
+    dot.setAttribute('r', '1.2');
+    svg.append(path, dot);
+    button.append(svg);
+    const box = h('div', 'help');
+    box.id = id;
+    box.hidden = true;
+    for (const t of texts) box.append(h('p', null, t));
+    return [button, box];
+  }
   // 色合い（設定でまとめて選ぶ。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」「色合いとか演出も共通のところもっていって」。種類は色合いと演出で、見た目は円盤だけ）。
   // palette = 切れ目の色（明るい色・暗い色）。切れ目の中は、中心が暗く外側が明るいグラデーションにして立体感を出す。隣どうしが同じ色にならないよう順に使う。
   // rim = 縁の金属の色（4 色のグラデーション）、bulb = ランプ（点灯・光・消灯）、pointer = 針（明・中・暗）。文字は、どの色合いでも白の太字に濃いふちどり。
@@ -1286,8 +1315,10 @@
     // 項目と重み
     const itemsBox = h('details', 'rl-more');
     itemsBox.open = true;
-    itemsBox.append(h('summary', null, '項目と重み'));
-    itemsBox.append(h('p', 'rl-note', '重みが大きいほど当たりやすくなります（0 は当たりません）'));
+    const itemsSum = h('summary', null, '項目と重み');
+    const [itemsHelpBtn, itemsHelp] = helpPair('項目と重み', ['重みが大きいほど当たりやすくなります（0 は当たりません）。']);
+    itemsSum.append(itemsHelpBtn);
+    itemsBox.append(itemsSum, itemsHelp);
     const ul = h('ul', 'rl-items');
     ul.setAttribute('aria-label', '項目の一覧');
     const addRow = h('div', 'rl-row');
@@ -1314,7 +1345,13 @@
     // このルーレットの設定（ルーレットごとに選べる。利用者の指示、2026-10-30「ルーレットの種類みたいなのを設定毎に選べるようにしよう」）:
     // 色合い・演出・当てた人を記録するか・テンプレートに保存
     const lookBox = h('details', 'rl-more');
-    lookBox.append(h('summary', null, '設定'));
+    const lookSum = h('summary', null, '設定');
+    const [lookHelpBtn, lookHelp] = helpPair('このルーレットの設定', [
+      '「リスナーを記録する」をなしにすると、名前の欄・履歴の「リスナー」・まとめに出しません（罰ゲームなど）。',
+      'テンプレートに保存すると、「＋ ルーレットを追加」で、このルーレットの項目・重み・リスナーの設定から作れます。',
+    ]);
+    lookSum.append(lookHelpBtn);
+    lookBox.append(lookSum, lookHelp);
     const useWhoRow = h('div', 'rl-options');
     const useWhoLabel = h('label');
     const useWhoCheck = h('input');
@@ -1322,14 +1359,15 @@
     useWhoCheck.checked = wheel.useWho;
     useWhoLabel.append(useWhoCheck, document.createTextNode(' リスナーを記録する'));
     useWhoRow.append(useWhoLabel);
-    const useWhoNote = h('p', 'rl-note', 'なしにすると、名前の欄・履歴の「リスナー」・まとめに出しません（罰ゲームなど）。');
     const saveTplRow = h('div', 'rl-row');
     const saveTplBtn = h('button', 'rl-btn', 'このルーレットをテンプレートに保存');
     saveTplBtn.type = 'button';
     saveTplRow.append(saveTplBtn);
-    const saveTplNote = h('p', 'rl-note', '保存すると、「＋ ルーレットを追加」で、このルーレットの項目・重み・リスナーの設定から作れます。');
+    // 保存した結果の文を出す欄（ふだんは空。説明の文は上のヘルプ（? ボタン）に移した）
+    const saveTplNote = h('p', 'rl-note');
+    saveTplNote.setAttribute('role', 'status');
     // 「当たった項目を一覧から除く」も、ここに入れた（利用者の指示「当たった項目…は設定の中に入れちゃって」）
-    lookBox.append(useWhoRow, useWhoNote, opts, saveTplRow, saveTplNote);
+    lookBox.append(useWhoRow, opts, saveTplRow, saveTplNote);
     // 履歴（全部表示）
     const histBox = h('details', 'rl-more');
     histBox.open = true;

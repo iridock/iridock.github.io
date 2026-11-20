@@ -15,7 +15,8 @@
 <link rel="icon" href="../icon.png" type="image/png">
 <link rel="apple-touch-icon" href="../icon.png">
 <script src="../theme.js?v=2cd238f2"></script>
-<link rel="stylesheet" href="../style.css?v=a4fea5d9">
+<script src="../help.js?v=9d187b94" defer></script>
+<link rel="stylesheet" href="../style.css?v=c8169531">
 <link rel="stylesheet" href="events.css?v=b7d9579c">
 <title>IriDock イベント予想</title>
 </head>
@@ -45,15 +46,15 @@
   <p id="notice" class="notice" role="status" hidden></p>
 
   <section class="hero" aria-labelledby="ev-title">
-    <h1 id="ev-title">イベントの入賞予想</h1>
-    <p class="sub">開催中・これから始まるイベントの、1位と入賞の最下位のポイントの目安です。イベントを押すと、過去の回の名前とポイントが見られます。</p>
-    <p class="hint">
-      予想は、同じシリーズの前の回（記録のある全部の回）の 1位と入賞の最下位のポイントから計算した目安で、<strong>実際の数字ではありません</strong>。
-      1位のポイントは回ごとに大きく動き、<strong>予想より 4 割ほど上下することはふつうにあります</strong>。
-      <strong>入賞の最下位</strong>は、ポイントの記録がある最後の順位（多くは 3 位か 5 位）で、入賞ラインの目安です。
-      <strong>安全圏</strong>は、ここまで上げておけば、ふつうの回なら 5 回に 4 回は、その順位に届くポイントで、予想より高めに引いてあります。
-      前の回の1位の記録が 3 回に満たないイベント（初めての企画や、順位を競わない企画を含む）は、予想を出しません。
-    </p>
+    <h1 id="ev-title">イベントの入賞予想<button type="button" class="help-btn" aria-controls="help-ev" aria-expanded="false" aria-label="イベントの入賞予想の説明" title="説明"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9.2a3 3 0 1 1 4.4 2.6c-.9.5-1.4 1.1-1.4 2.1v.5"/><circle cx="12" cy="17.8" r="1.2"/></svg></button></h1>
+    <p class="sub">開催中・これから始まるイベントの、1位と入賞の最下位のポイントの目安です。</p>
+    <!-- 説明はヘルプ（? ボタン）に入れ、ふだんは閉じておく（2026-11-20。共通の作りは ../help.js） -->
+    <div id="help-ev" class="help" hidden>
+      <p>予想は、同じシリーズの前の回（記録のある全部の回）の 1位と入賞の最下位のポイントから計算した目安で、<strong>実際の数字ではありません</strong>。1位のポイントは回ごとに大きく動き、<strong>予想より 4 割ほど上下することはふつうにあります</strong>。</p>
+      <p><strong>入賞の最下位</strong>は、ポイントの記録がある最後の順位（多くは 3 位か 5 位）で、入賞ラインの目安です。<strong>安全圏</strong>は、ここまで上げておけば、ふつうの回なら 5 回に 4 回は、その順位に届くポイントで、予想より高めに引いてあります。</p>
+      <p>前の回の1位の記録が 3 回に満たないイベント（初めての企画や、順位を競わない企画を含む）は、予想を出しません。</p>
+      <p>イベントを押すと、同じシリーズの過去の回の名前と、記録のある全部の順位のポイントが見られます（太字は予想に使う 1位と入賞の最下位）。</p>
+    </div>
   </section>
 
   <section class="panel" aria-labelledby="list-title">

@@ -15,6 +15,10 @@
 /* 上の欄: 当てた人の名前と、ルーレットの追加 */
 .rl-top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
 .rl-top .rl-who { flex: 1 1 280px; margin-top: 0; }
+.rl-top .rl-help-row { flex: 1 1 100%; margin: 0; }   /* ヘルプは上の欄の下に横いっぱい（2026-11-20） */
+.rl-more > summary .help-btn { margin-left: 8px; }
+.rl-more > .help { margin-top: 6px; }
+.rl-note:empty { display: none; }   /* 結果の文を出す欄は、空のあいだ場所を取らない */
 .rl-addwrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .rl-add { padding: 7px 16px; background: var(--accent); color: var(--panel); font-size: 15px; font-weight: 700; }
 .rl-add:hover:not(:disabled) { opacity: 0.85; }

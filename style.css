@@ -816,6 +816,45 @@ main {
 .layout-list .move svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .settings-foot { margin: 18px 0 0; text-align: center; }
 @media (max-width: 420px) { .theme-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* ---- ヘルプ（見出しの横の ? ボタン。2026-11-20「全体的に説明みたいなのは各セクションにヘルプボタンみたいなのつくってそこおしたら表示されるようにしようか」）。
+   開け閉めは help.js。説明はふだん閉じておき、押すと見出しのすぐ下に開く。開け閉めのアイコン（.fold）と同じ、薄い丸の上の印 ---- */
+.help-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--muted);
+  vertical-align: 0.12em;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.help-btn:hover { opacity: 0.75; }
+.help-btn[aria-expanded="true"] { background: var(--tint); color: var(--accent); }
+.help-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.help-btn svg circle { fill: currentColor; stroke: none; }
+.hero .help-btn { width: 26px; height: 26px; vertical-align: 0.2em; background: var(--on-bg-fill); color: var(--on-bg); }
+.hero .help-btn[aria-expanded="true"] { background: var(--panel); color: var(--accent); }
+.help {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.help[hidden] { display: none; }
+.help p { margin: 0; }
+.help p + p { margin-top: 4px; }
+.help strong { color: var(--text); }
+.hero .help { background: var(--panel); }   /* 地の上では、パネルの色を敷いて読みやすく */
+.folded .help-btn { display: none; }
+
 .panel.folded > :not(.panel-head), .hero.folded > :not(.hero-head) { display: none; }
 .panel.folded .panel-head > :not(h2):not(.fold) { display: none; }
 .panel.folded .panel-head, .hero.folded .hero-head { margin-bottom: 0; }
