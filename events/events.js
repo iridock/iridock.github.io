@@ -85,22 +85,39 @@
     }
   }
 
-  // 前の回の実際の小さな表（列は回の終わった日、行は1位と入賞の最下位）。前は「前の回の1位 11/16 23,713 11/9 …」の文で、スマホでは折り返して崩れた。
+  // 数字か「低い〜高い」の幅を node に入れる。幅は「〜」のあとで折り返せる（数字の途中では折り返さない）。
+  function putValue(node, value, low, high) {
+    if (low != null && high != null) {
+      node.append(el('span', 'ev-n', yen(low)), '〜', document.createElement('wbr'), el('span', 'ev-n', yen(high)));
+    } else {
+      node.append(value == null ? '—' : yen(value));
+    }
+  }
+
+  // 前の回の実際の小さな表（1 回が 1 行。列は日付・1位・入賞の最下位）。
+  // 前は日付を列にして横に 4 回並べたが、幅 320 の iPhone では 6 桁の数字が収まらず、カードごと横にはみ出した（2026-11-21「スマホで横がはみ出す」）。
+  // グループに分かれた回は、グループ1の数字でなく全グループの「低い〜高い」を出す（「過去データに幅がないし見ずらい」）。
   function recentTable(e, hasPrize) {
     const showPrize = hasPrize && e.recent.some((r) => r.prize != null);
     const table = el('table', 'ev-rtable');
     const head = el('tr');
-    head.append(el('th', 'ev-rlabel', '前の回'));
-    for (const r of e.recent) head.append(el('th', 'ev-rdate', day(r.date)));
+    head.append(el('th', 'ev-rlabel', '前の回'), el('th', 'ev-rhead', '1位'));
+    if (showPrize) head.append(el('th', 'ev-rhead', `${e.prizeRank}位`));
     const thead = el('thead');
     thead.append(head);
     const body = el('tbody');
-    const rows = [['1位', (r) => r.top]];
-    if (showPrize) rows.push([`${e.prizeRank}位`, (r) => r.prize]);
-    for (const [label, pick] of rows) {
+    for (const r of e.recent) {
       const tr = el('tr');
-      tr.append(el('th', 'ev-rlabel', label));
-      for (const r of e.recent) tr.append(el('td', '', pick(r) == null ? '—' : yen(pick(r))));
+      const date = el('th', 'ev-rlabel', day(r.date));
+      if (r.groups >= 2) date.append(el('span', 'ev-rg', `${r.groups}グループ`));
+      const top = el('td');
+      putValue(top, r.top, r.topLow, r.topHigh);
+      tr.append(date, top);
+      if (showPrize) {
+        const prize = el('td');
+        putValue(prize, r.prize, r.prizeLow, r.prizeHigh);
+        tr.append(prize);
+      }
       body.append(tr);
     }
     table.append(thead, body);
@@ -142,10 +159,15 @@
       const head = el('div', 'ev-phead');
       head.append(el('span', 'ev-pdate', `${dayWithYear(p.start)}〜${dayWithYear(p.end)}`), el('span', 'ev-pname', p.name));
       const pts = el('div', 'ev-ppts');
+      // グループに分かれた回は、順位ごとに全グループの「低い〜高い」（2026-11-21「過去データに幅がない」）。グループ1だけの数字は、たまたまの1グループなので出さない
+      const multi = p.groups >= 2 && Array.isArray(p.lows);
+      if (multi) pts.append(el('span', 'ev-pgroups', `${p.groups}グループ`));
       p.points.forEach((v, i) => {
         const rank = i + 1;
         const cell = el('span', rank === 1 || rank === e.prizeRank ? 'ev-pt ev-key' : 'ev-pt', `${rank}位 `);
-        cell.append(el('b', '', yen(v)));
+        const b = el('b');
+        putValue(b, v, multi ? p.lows[i] : null, multi ? p.highs[i] : null);
+        cell.append(b);
         pts.append(cell);
       });
       row.append(head, pts);

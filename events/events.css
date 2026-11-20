@@ -76,17 +76,22 @@
 
 /* 入るグループで変わる幅（2026-11-21）。その順位の行のすぐ下に、予想と安全圏の2列にまたがって小さく右寄せで置く */
 .ev-corner { align-self: end; font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; }
-.ev-gspread { grid-column: 2 / -1; margin: -3px 0 3px; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* 幅 320 の iPhone では1行に収まらないので折り返す（「〜」のあとで折れる。数字の途中では折らない） */
+.ev-gspread { grid-column: 2 / -1; margin: -3px 0 3px; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .ev-gspread b { font-weight: 600; color: var(--text); }
+.ev-n { white-space: nowrap; }
 
-/* 前の回の実際の小さな表（列は回の終わった日、行は1位と入賞の最下位）。数字は右寄せで桁をそろえる */
+/* 前の回の実際の小さな表（1 回が 1 行。列は日付・1位・入賞の最下位）。数字は右寄せで桁をそろえる。
+   前は日付を列にして横に 4 回並べ、幅 320 の iPhone でカードごとはみ出した（2026-11-21） */
 .ev-rtable { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
-.ev-rtable th, .ev-rtable td { padding: 1px 0 1px 8px; text-align: right; white-space: nowrap; }
-.ev-rtable .ev-rlabel { padding-left: 0; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); width: 1%; }
-.ev-rtable .ev-rdate { font-size: 12px; font-weight: 500; color: var(--muted); }
+.ev-rtable th, .ev-rtable td { padding: 2px 0 2px 10px; text-align: right; vertical-align: top; }
+.ev-rtable .ev-rlabel { padding-left: 0; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; width: 1%; }
+.ev-rtable .ev-rhead { font-size: 12px; font-weight: 600; color: var(--muted); }
+.ev-rg { display: block; font-size: 10px; font-weight: 500; }
 /* サイト全体の表の見出し（上に貼り付き、パネルの色で塗る。../style.css）は、この小さな表では帯に見えて重いので外す */
 .ev-rtable thead th { position: static; background: none; border-bottom: 0.5px solid var(--line-2); }
 .ev-rtable td, .ev-rtable tbody th { border-bottom: 0; }
+.ev-rtable tbody tr + tr > * { border-top: 0.5px solid var(--line); }
 .ev-rtable td { font-weight: 600; color: var(--text); }
 
 .ev-empty { margin: 8px 2px 0; color: var(--muted); font-size: 14px; }
@@ -124,6 +129,7 @@
 .ev-pname { min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
 .ev-ppts { display: flex; flex-wrap: wrap; gap: 0 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .ev-pt { white-space: nowrap; }
+.ev-pgroups { flex-basis: 100%; font-size: 12px; font-weight: 600; color: var(--muted); }   /* グループに分かれた回（その下の数字は全グループの「低い〜高い」） */
 .ev-pt b { font-weight: 500; color: var(--text); }
 .ev-pt.ev-key b { font-weight: 700; }   /* 予想に使う順位（1位と入賞の最下位）。名前を key にすると ../style.css の凡例（.key::before の線）が付く */
 
