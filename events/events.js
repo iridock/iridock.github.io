@@ -66,13 +66,17 @@
     return node;
   }
 
-  function numberBox(label, value, className) {
-    const box = el('div', `ev-num ${className}`);
-    box.append(el('span', 'label', label));
-    const v = el('span', 'value', yen(value));
-    v.append(el('small', '', 'pt'));
-    box.append(v);
-    return box;
+  // 予想と安全圏の表。1行目は見出し、あとは順位ごとの行（1位・入賞の最下位）。数字は桁がそろうよう、決まった列に置く。
+  function numberRow(grid, rankText, note, forecast, safe) {
+    const rank = el('div', 'ev-rank');
+    rank.append(el('b', '', rankText));
+    if (note) rank.append(el('small', '', note));
+    grid.append(rank);
+    for (const [value, className] of [[forecast, 'ev-forecast'], [safe, 'ev-safe']]) {
+      const cell = el('div', `ev-val ${className}`, yen(value));
+      cell.append(el('small', '', 'pt'));
+      grid.append(cell);
+    }
   }
 
   // 予想を出さない理由。前の回が全く無い（初めての企画）／前の回はあるが 1位のポイントの記録が無い（順位を競わない企画など）／記録が 3 回に満たない
@@ -108,9 +112,13 @@
       head.append(titles, el('span', `ev-tag ${e.status}`, e.status === 'live' ? '開催中' : 'これから'));
       item.append(head);
 
-      if (e.forecast != null && e.safe != null) {
+      const hasTop = e.forecast != null && e.safe != null;
+      const hasPrize = e.prizeRank > 1 && e.prizeForecast != null && e.prizeSafe != null;
+      if (hasTop || hasPrize) {
         const nums = el('div', 'ev-nums');
-        nums.append(numberBox('1位の予想', e.forecast, 'ev-forecast'), numberBox('安全圏', e.safe, 'ev-safe'));
+        nums.append(el('div', 'ev-corner'), el('div', 'ev-colhead ev-forecast', '予想'), el('div', 'ev-colhead ev-safe', '安全圏'));
+        if (hasTop) numberRow(nums, '1位', '', e.forecast, e.safe);
+        if (hasPrize) numberRow(nums, `${e.prizeRank}位`, '入賞の最下位', e.prizeForecast, e.prizeSafe);
         item.append(nums);
       } else {
         item.append(el('p', 'ev-none', noForecastText(e)));
@@ -125,6 +133,17 @@
           recent.append(run);
         }
         item.append(recent);
+        if (hasPrize && e.recent.some((r) => r.prize != null)) {
+          const prize = el('p', 'ev-recent');
+          prize.append(el('span', 'label', `前の回の${e.prizeRank}位`));
+          for (const r of e.recent) {
+            if (r.prize == null) continue;
+            const run = el('span', 'run', `${day(r.date)} `);
+            run.append(el('b', '', yen(r.prize)));
+            prize.append(run);
+          }
+          item.append(prize);
+        }
       }
       list.append(item);
     }
@@ -179,7 +198,7 @@
       const res = await fetch('../data/events.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
-      if (data.version !== 1 || !Array.isArray(data.events)) throw new Error('形が違います');
+      if (data.version !== 2 || !Array.isArray(data.events)) throw new Error('形が違います');
       events = data.events;
       const t = new Date(data.generatedAt);
       if (!Number.isNaN(t.getTime())) {
