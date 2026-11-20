@@ -179,6 +179,22 @@
         if (hasTop) numberRow(nums, '1位', '', e.forecast, e.safe);
         if (hasPrize) numberRow(nums, `${e.prizeRank}位`, '入賞の最下位', e.prizeForecast, e.prizeSafe);
         item.append(nums);
+
+        // 入るグループによって変わる幅（2026-11-21「幅だけたすか」。設計書 17 の 2a）。どのグループに入るかはくじ引きで、
+        // グループごとの1位は大きく違うので、前の回のいちばん低い・高いグループの目安を並べる。数字の作りはバッチ側（EventSiteExport.GroupSpread）。
+        const spreads = [];
+        if (hasTop && e.topLow != null && e.topHigh != null) spreads.push(['1位', e.topLow, e.topHigh]);
+        if (hasPrize && e.prizeLow != null && e.prizeHigh != null) spreads.push([`${e.prizeRank}位`, e.prizeLow, e.prizeHigh]);
+        if (spreads.length > 0) {
+          const line = el('p', 'ev-spread');
+          line.append(el('span', 'label', e.groups >= 2 ? `入るグループで変わる幅（前の回 ${e.groups} グループ）` : '入るグループで変わる幅'));
+          for (const [rank, low, high] of spreads) {
+            const run = el('span', 'run', `${rank} `);
+            run.append(el('b', '', `${yen(low)}〜${yen(high)}`));
+            line.append(run);
+          }
+          item.append(line);
+        }
       } else {
         item.append(el('p', 'ev-none', noForecastText(e)));
       }
@@ -282,8 +298,8 @@
       const res = await fetch('../data/events.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
-      // 3 で過去の回（past）を足した。2 は過去の回の無い前の形（公開の切り替わりの間だけ読むことがある）
-      if (![2, 3].includes(data.version) || !Array.isArray(data.events)) throw new Error('形が違います');
+      // 4 でグループの数と幅、3 で過去の回（past）を足した。2・3 は前の形（公開の切り替わりの間だけ読むことがある）
+      if (![2, 3, 4].includes(data.version) || !Array.isArray(data.events)) throw new Error('形が違います');
       events = data.events;
       const t = new Date(data.generatedAt);
       if (!Number.isNaN(t.getTime())) {

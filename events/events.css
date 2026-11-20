@@ -74,10 +74,10 @@
 .ev-val small { margin-left: 3px; font-size: 11px; font-weight: 500; color: var(--muted); }
 .ev-none { margin: 0; padding: 6px 10px; border-radius: var(--r-sm); background: var(--fill); font-size: 13px; color: var(--muted); }
 
-.ev-recent { margin: 0; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0 14px; }
-.ev-recent .label { font-weight: 600; }
-.ev-recent .run { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ev-recent .run b { font-weight: 600; color: var(--text); }
+.ev-recent, .ev-spread { margin: 0; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0 14px; }
+.ev-recent .label, .ev-spread .label { font-weight: 600; }
+.ev-recent .run, .ev-spread .run { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ev-recent .run b, .ev-spread .run b { font-weight: 600; color: var(--text); }
 
 .ev-empty { margin: 8px 2px 0; color: var(--muted); font-size: 14px; }
 
@@ -122,6 +122,6 @@
   .ev-item { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; gap: 4px 14px; }
   .ev-head { grid-column: 1; }
   .ev-nums, .ev-none { grid-column: 2; grid-row: 1 / span 3; align-self: start; }
-  .ev-recent { grid-column: 1; }
+  .ev-recent, .ev-spread { grid-column: 1; }
   .ev-more, .ev-past { grid-column: 1 / -1; }
 }
