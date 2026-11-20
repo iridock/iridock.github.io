@@ -5,8 +5,11 @@
   --radius: 18px;    /* iPhone のカード・ウィジェットのように大きく丸く（2026-10-16「カードや入力パーツのデザインもiphoneふうに」。和モダンのときは 6px） */
   --r-md: 12px;      /* 表・一覧の入れ物・注意の箱 */
   --r-sm: 9px;       /* 入力欄・切り替え・ボタン */
-  --gutter: 16px;
+  --gutter: 16px;    /* スマホの幅（640px 以下）では 10px */
 }
+/* 余白は詰めた形が基本（2026-11-20、利用者の言葉「webをもっと全体的にスキマを少なくしたい。文字サイズ等は変えずに表示をもっと多くしたくて」）。
+   カード 10/14px・パネル 10/12px・カードやパネルの間 8px・表の行 5px（スマホは 8/12・8/10・6・5px）。文字の大きさは変えていない。
+   部品を足すときは、この詰めた値にそろえる（前の 16〜20px の余白に戻さない）。 */
 
 /* ---- 配色（利用者の指示、2026-10-16「色の設定…色は和のイメージの色でお願い」）----
    設定で選ぶと、theme.js / app.js が <html data-theme="…"> を付け替える。設定の画面の見本にも同じ data-theme を付けて、その配色で描く。
@@ -430,7 +433,7 @@ body {
   color: var(--text);
   font-family: var(--font-ui);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
@@ -444,7 +447,7 @@ button, select, input { font: inherit; color: inherit; }
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 10px max(var(--gutter), env(safe-area-inset-left));
+  padding: 6px max(var(--gutter), env(safe-area-inset-left));
   background: var(--bar-bg);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -454,11 +457,11 @@ button, select, input { font: inherit; color: inherit; }
 
 /* 上の帯は2段: 1段目（ブランドと右の道具）と、2段目の機能の行き来（2026-10-30。機能が増えても並べられるよう、横に流せる） */
 .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.sitenav { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; scrollbar-width: none; }
+.sitenav { display: flex; gap: 6px; margin-top: 5px; overflow-x: auto; scrollbar-width: none; }
 .sitenav::-webkit-scrollbar { display: none; }
 .sitenav a {
   flex: none;
-  padding: 4px 14px;
+  padding: 3px 14px;
   border-radius: 999px;
   background: var(--on-bg-fill);
   color: var(--on-bg);
@@ -521,12 +524,12 @@ button, select, input { font: inherit; color: inherit; }
 main {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 18px var(--gutter) 40px;
+  padding: 10px var(--gutter) 24px;
 }
 
 .notice {
-  margin: 0 0 14px;
-  padding: 12px 16px;
+  margin: 0 0 8px;
+  padding: 8px 14px;
   border-radius: var(--r-md);
   background: var(--panel);
   color: var(--warn);
@@ -544,29 +547,29 @@ main {
 }
 
 /* ---- 予想の大きな数字（iPhone のウィジェットのように、枠なし・大きな角丸・色のついた題・太い数字） ---- */
-.hero { margin-bottom: 20px; }
+.hero { margin-bottom: 10px; }
 .hero-head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 /* iPhone の大きな題（Large Title） */
 .hero h1 { color: var(--on-bg); margin: 0; font-size: clamp(26px, 6vw, 34px); font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; }
-.sub { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+.sub { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
 
 .cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 8px;
 }
 
 .card {
   position: relative;
   overflow: hidden;
-  padding: 16px 18px;
+  padding: 10px 14px;
   border-radius: var(--radius);
   background: var(--panel);
   box-shadow: var(--elev);
@@ -586,7 +589,7 @@ main {
 .tag-forecast { font-size: 13px; color: var(--muted); }
 
 .big {
-  margin: 6px 0 0;
+  margin: 2px 0 0;
   font-size: clamp(34px, 7vw, 46px);
   font-weight: 700;
   line-height: 1.1;
@@ -600,8 +603,8 @@ main {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 0.5px solid var(--line-2);
   font-size: 13px;
   color: var(--muted);
@@ -609,12 +612,12 @@ main {
 .safe b { color: var(--text); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* iPhone の進み具合の線（丸い端の 4px） */
-.meter { position: relative; height: 4px; margin-top: 12px; border-radius: 4px; background: var(--fill); }
+.meter { position: relative; height: 4px; margin-top: 8px; border-radius: 4px; background: var(--fill); }
 .meter span { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--score-color); }
 
 .caution {
-  margin: 10px 0 0;
-  padding: 8px 12px;
+  margin: 6px 0 0;
+  padding: 6px 10px;
   border-radius: var(--r-sm);
   background: var(--warn-bg);
   color: var(--warn);
@@ -625,10 +628,10 @@ main {
 .caution.trend { background: var(--tint); color: var(--accent); }
 .caution.trend b { font-weight: 700; }
 
-.shared { margin-top: 12px; }
+.shared { margin-top: 8px; }
 .shared .stale {
-  margin: 0 0 8px;
-  padding: 10px 14px;
+  margin: 0 0 6px;
+  padding: 6px 12px;
   border-radius: var(--r-md);
   background: var(--warn-bg);
   color: var(--warn);
@@ -636,9 +639,9 @@ main {
 }
 .shared .caution { display: inline-block; margin: 0 0 6px; }
 
-.empty { color: var(--muted); padding: 20px; border-radius: var(--r-md); background: var(--fill); }
+.empty { color: var(--muted); padding: 12px 14px; border-radius: var(--r-md); background: var(--fill); }
 
-.hint { margin: 12px 4px 0; font-size: 13px; color: var(--faint); }
+.hint { margin: 6px 4px 0; font-size: 13px; color: var(--faint); }
 .hint strong { color: var(--muted); }
 /* 背景（名前の色）の上に直接書く文字は --on-bg 系（2026-10-16「背景色を指定のメイン色に」）。パネルの上の --muted・--faint では薄すぎた。
    予想の下の注意の箱は、背景の色が透けると読みにくいので、パネルの地を敷く。 */
@@ -675,7 +678,7 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
   grid-auto-flow: row dense;
-  gap: 14px;
+  gap: 8px;
 }
 .panels > .panel { grid-column: 1 / -1; }
 .panels > .panel.side-wide { grid-column: 1; }
@@ -683,7 +686,7 @@ main {
 
 /* パネルは iPhone の角丸のまとまりのように、枠なし・大きな角丸 */
 .panel {
-  padding: 16px;
+  padding: 10px 12px;
   border-radius: var(--radius);
   background: var(--panel);
   box-shadow: var(--elev);
@@ -695,7 +698,7 @@ main {
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 /* 見出しは iPhone の見出し（17px の太字）。横の説明は、見出しの下の行に分けて出す
    （2026-10-16「画面を小さくしたときにカードタイトルの横の説明が変に開業するのをやめてほしい」。横に並べると、説明が見出しの続きで折れ、
@@ -732,7 +735,7 @@ main {
 /* パネルのボタンは右上に固定する（流れに入れると、スマホの幅で見出しの次の行に落ち、閉じても高さを取った）。 */
 .panel { position: relative; }
 .panel > .panel-head { padding-right: 40px; }
-.panel > .panel-head > .fold { position: absolute; top: 14px; right: 14px; }
+.panel > .panel-head > .fold { position: absolute; top: 8px; right: 10px; }
 
 /* ---- 設定（2026-10-16）。ヘッダの歯車から開く。選んだものはすぐ画面に当てる ----
    iPhone の設定画面のように: 角丸の一覧に細い区切り線、表示のオン・オフはスイッチ。スマホでは下から出るシート。 */
@@ -849,7 +852,7 @@ main {
 .tip b { display: block; margin-bottom: 2px; }
 .tip .row { display: flex; justify-content: space-between; gap: 12px; }
 
-.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
 .key::before {
   content: "";
   display: inline-block;
@@ -907,9 +910,9 @@ table.answers .trendtag, table.week .trendtag { background: var(--tint); color: 
 table.answers .risky .short, table.week .risky .short, table.answers .trendtag .short, table.week .trendtag .short { display: none; }
 
 /* 答え合わせの統計（2026-10-26）。数字のタイル。デスクトップは4列、スマホは2列。 */
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 14px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0 0 8px; }
 .stats[hidden] { display: none; }
-.stat { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: var(--r-md); background: var(--fill); min-width: 0; }
+.stat { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; border-radius: var(--r-md); background: var(--fill); min-width: 0; }
 .stat .sl { font-size: 12px; color: var(--muted); }
 .stat .sv { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
 .stat .ss { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
@@ -919,8 +922,8 @@ table.answers .risky .short, table.week .risky .short, table.answers .trendtag .
    色は、配色ごとの1つの色（--heat-rgb。藍なら藍）の濃淡（2026-10-16）。前は +2/+4/+6 の色を 85% まで濃く塗っていて、
    鮮やかな色の塊になり「曜日毎のカードの色の濃さのところだけ見た目浮いちゃっている」と言われた。 */
 .heatwrap { overflow-x: auto; }
-table.heat { table-layout: fixed; border-collapse: separate; border-spacing: 3px; min-width: 290px; }
-table.heat th, table.heat td { padding: 4px 1px; text-align: center; white-space: nowrap; }
+table.heat { table-layout: fixed; border-collapse: separate; border-spacing: 2px; min-width: 290px; }
+table.heat th, table.heat td { padding: 2px 1px; text-align: center; white-space: nowrap; }
 table.heat thead th { position: static; background: none; border: 0; }
 table.heat .hw { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
 table.heat th.sat .hw { color: var(--sat); }   /* 土曜は青（+2 の色は配色ごとに青とは限らない） */
@@ -928,7 +931,7 @@ table.heat th.sun .hw { color: var(--sun); }
 table.heat .ha { display: block; font-size: 11px; font-weight: 600; color: var(--faint); }
 table.heat tbody tr { border: 0; }
 table.heat tbody tr:hover { background: none; }
-table.heat td { height: 46px; border-radius: 7px; background: var(--cell); }
+table.heat td { height: 40px; border-radius: 7px; background: var(--cell); }
 table.heat td .hd { display: block; font-size: 10.5px; line-height: 1.3; color: var(--muted); }
 table.heat td .hv { display: block; font-size: 13px; line-height: 1.3; font-weight: 600; }
 table.heat td.dark .hd, table.heat td.dark .hv { color: var(--on-strong); }
@@ -941,7 +944,7 @@ table.heat td.on { outline: 2px solid var(--accent); outline-offset: -3px; }
 table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 
 /* ---- 全ランク帯の一覧 ---- */
-.overview { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 340px; overflow-y: auto; }
+.overview { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 340px; overflow-y: auto; }
 .overview li { margin: 0; }
 .overview button {
   width: 100%;
@@ -949,7 +952,7 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
   grid-template-columns: 40px minmax(0, 1fr) 76px;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 4px 10px;
   border: 1px solid transparent;
   border-radius: var(--r-sm);
   background: transparent;
@@ -971,14 +974,14 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 .overview svg polyline { fill: none; stroke: var(--c2); stroke-width: 1.6; stroke-linejoin: round; }
 
 /* ---- 表 ---- */
-.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-bottom: 6px; }
 /* 期間（から〜まで）。日付はカレンダーから選ぶ（2026-10-14「日付の検索をもっと楽に。範囲でできるように」） */
 .range-pick { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .flabel { font-size: 13px; color: var(--muted); }
 .tilde { color: var(--faint); }
 .filters input[type="date"] {
   min-width: 0;
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: var(--r-sm);
   border: 0;
   background: var(--fill);
@@ -991,7 +994,7 @@ table.heat td.fc:focus-visible { outline: 2px solid var(--accent); }
 .filters select, .pager select {
   appearance: none;
   -webkit-appearance: none;
-  padding: 6px 30px 6px 12px;
+  padding: 4px 30px 4px 12px;
   border-radius: var(--r-sm);
   border: 0;
   background: var(--fill) var(--pick-arrow-panel) no-repeat right 11px center / 7px auto;
@@ -1013,7 +1016,7 @@ button.ghost:hover { background: var(--fill); }
 
 .tablewrap { overflow-x: auto; border-radius: var(--r-md); }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th, td { padding: 8px 12px; text-align: left; white-space: nowrap; }
+th, td { padding: 5px 10px; text-align: left; white-space: nowrap; }
 thead th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-size: 13px; font-weight: 600; border-bottom: 0.5px solid var(--line-2); }
 tbody tr { border-bottom: 0.5px solid var(--line); }
 tbody tr:last-child { border-bottom: 0; }
@@ -1025,7 +1028,7 @@ th .sort { border: 0; background: none; padding: 0; color: inherit; font-weight:
 th .sort[aria-sort="ascending"]::after { content: " ▲"; font-size: 0.8em; }
 th .sort[aria-sort="descending"]::after { content: " ▼"; font-size: 0.8em; }
 /* ページ送り（2026-10-17）。左に件数、右に最初・前・ページ・次・最後 */
-.pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 .pager .per { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .pages { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
 .page-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--fill); color: var(--accent); cursor: pointer; }
@@ -1038,12 +1041,12 @@ th .sort[aria-sort="descending"]::after { content: " ▼"; font-size: 0.8em; }
 .foot {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 20px var(--gutter) 40px;
+  padding: 10px var(--gutter) 24px;
   border-top: 1px solid var(--on-bg-line);
   color: var(--on-bg-muted);
   font-size: 12.5px;
 }
-.foot p { margin: 4px 0; }
+.foot p { margin: 2px 0; }
 .foot strong { color: var(--on-bg); }
 .foot a { color: var(--on-bg); }   /* 差し色は背景の色によっては沈む（藤の地の上の藤色など） */
 
@@ -1059,22 +1062,23 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .overview { max-height: none; }
 }
 @media (max-width: 640px) {
-  .cards { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  .card { padding: 14px 16px; }
-  .big { margin-top: 6px; }
+  :root { --gutter: 10px; }
+  .cards { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .card { padding: 8px 12px; }
+  .big { margin-top: 0; }
   #chart { height: 220px; }
   .brand .product { display: none; }
   /* スマホの幅では更新日時を出さない（利用者の指示「スマホぐらい小さくしているときは更新日時はけしていい」）。帯の札と↑ボタンを1行に収めるため。 */
   .updated { display: none; }
-  .topbar { padding-top: 8px; padding-bottom: 8px; }
+  .topbar { padding-top: 5px; padding-bottom: 5px; }
   .topbar-row { flex-wrap: nowrap; }
   /* 表は横にはみ出さないように余白を詰める（iPhone 風の書体は少し幅広で、1週間の表が 390px の幅で 14px はみ出し、+6 の列が切れた） */
-  .panel { padding: 14px; }
-  table.week th, table.week td { padding: 8px 5px; }
+  .panel { padding: 8px 10px; }
+  table.week th, table.week td { padding: 5px 4px; }
   table.week th:first-child, table.week td:first-child { padding-left: 8px; }
   table.week .rel, table.week .kind { display: block; margin-left: 0; }
   table.week td .wf { font-size: 15px; }
-  table.answers th, table.answers td { padding: 8px 5px; }
+  table.answers th, table.answers td { padding: 5px 4px; }
   table.answers th:first-child, table.answers td:first-child { padding-left: 8px; }
   table.answers td .wd { display: block; }   /* 予想との差は次の行に（1行だと表が右へはみ出した） */
   table.answers td .wl, table.answers td .wn { font-size: 11px; }
