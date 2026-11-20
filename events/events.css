@@ -74,10 +74,20 @@
 .ev-val small { margin-left: 3px; font-size: 11px; font-weight: 500; color: var(--muted); }
 .ev-none { margin: 0; padding: 6px 10px; border-radius: var(--r-sm); background: var(--fill); font-size: 13px; color: var(--muted); }
 
-.ev-recent, .ev-spread { margin: 0; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0 14px; }
-.ev-recent .label, .ev-spread .label { font-weight: 600; }
-.ev-recent .run, .ev-spread .run { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ev-recent .run b, .ev-spread .run b { font-weight: 600; color: var(--text); }
+/* 入るグループで変わる幅（2026-11-21）。その順位の行のすぐ下に、予想と安全圏の2列にまたがって小さく右寄せで置く */
+.ev-corner { align-self: end; font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.ev-gspread { grid-column: 2 / -1; margin: -3px 0 3px; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ev-gspread b { font-weight: 600; color: var(--text); }
+
+/* 前の回の実際の小さな表（列は回の終わった日、行は1位と入賞の最下位）。数字は右寄せで桁をそろえる */
+.ev-rtable { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.ev-rtable th, .ev-rtable td { padding: 1px 0 1px 8px; text-align: right; white-space: nowrap; }
+.ev-rtable .ev-rlabel { padding-left: 0; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); width: 1%; }
+.ev-rtable .ev-rdate { font-size: 12px; font-weight: 500; color: var(--muted); }
+/* サイト全体の表の見出し（上に貼り付き、パネルの色で塗る。../style.css）は、この小さな表では帯に見えて重いので外す */
+.ev-rtable thead th { position: static; background: none; border-bottom: 0.5px solid var(--line-2); }
+.ev-rtable td, .ev-rtable tbody th { border-bottom: 0; }
+.ev-rtable td { font-weight: 600; color: var(--text); }
 
 .ev-empty { margin: 8px 2px 0; color: var(--muted); font-size: 14px; }
 
@@ -122,6 +132,6 @@
   .ev-item { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; gap: 4px 14px; }
   .ev-head { grid-column: 1; }
   .ev-nums, .ev-none { grid-column: 2; grid-row: 1 / span 3; align-self: start; }
-  .ev-recent, .ev-spread { grid-column: 1; }
+  .ev-rtable { grid-column: 1; }
   .ev-more, .ev-past { grid-column: 1 / -1; }
 }

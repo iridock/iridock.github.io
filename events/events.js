@@ -67,7 +67,8 @@
   }
 
   // 予想と安全圏の表。1行目は見出し、あとは順位ごとの行（1位・入賞の最下位）。数字は桁がそろうよう、決まった列に置く。
-  function numberRow(grid, rankText, note, forecast, safe) {
+  // 入るグループで変わる幅（2026-11-21「幅だけたすか」）は、その順位の行のすぐ下に小さく置く（スマホで別の行に離すと、どの順位の幅か追いにくかった）。
+  function numberRow(grid, rankText, note, forecast, safe, low, high) {
     const rank = el('div', 'ev-rank');
     rank.append(el('b', '', rankText));
     if (note) rank.append(el('small', '', note));
@@ -77,6 +78,33 @@
       cell.append(el('small', '', 'pt'));
       grid.append(cell);
     }
+    if (low != null && high != null) {
+      const spread = el('div', 'ev-gspread', '入るグループで ');
+      spread.append(el('b', '', `${yen(low)}〜${yen(high)}`));
+      grid.append(spread);
+    }
+  }
+
+  // 前の回の実際の小さな表（列は回の終わった日、行は1位と入賞の最下位）。前は「前の回の1位 11/16 23,713 11/9 …」の文で、スマホでは折り返して崩れた。
+  function recentTable(e, hasPrize) {
+    const showPrize = hasPrize && e.recent.some((r) => r.prize != null);
+    const table = el('table', 'ev-rtable');
+    const head = el('tr');
+    head.append(el('th', 'ev-rlabel', '前の回'));
+    for (const r of e.recent) head.append(el('th', 'ev-rdate', day(r.date)));
+    const thead = el('thead');
+    thead.append(head);
+    const body = el('tbody');
+    const rows = [['1位', (r) => r.top]];
+    if (showPrize) rows.push([`${e.prizeRank}位`, (r) => r.prize]);
+    for (const [label, pick] of rows) {
+      const tr = el('tr');
+      tr.append(el('th', 'ev-rlabel', label));
+      for (const r of e.recent) tr.append(el('td', '', pick(r) == null ? '—' : yen(pick(r))));
+      body.append(tr);
+    }
+    table.append(thead, body);
+    return table;
   }
 
   // 開いている「過去の回」（名前と始まりで覚える。絞り込みで描き直しても開いたまま。ブラウザには保存しない）
@@ -175,51 +203,21 @@
       const hasPrize = e.prizeRank > 1 && e.prizeForecast != null && e.prizeSafe != null;
       if (hasTop || hasPrize) {
         const nums = el('div', 'ev-nums');
-        nums.append(el('div', 'ev-corner'), el('div', 'ev-colhead ev-forecast', '予想'), el('div', 'ev-colhead ev-safe', '安全圏'));
-        if (hasTop) numberRow(nums, '1位', '', e.forecast, e.safe);
-        if (hasPrize) numberRow(nums, `${e.prizeRank}位`, '入賞の最下位', e.prizeForecast, e.prizeSafe);
-        item.append(nums);
-
         // 入るグループによって変わる幅（2026-11-21「幅だけたすか」。設計書 17 の 2a）。どのグループに入るかはくじ引きで、
-        // グループごとの1位は大きく違うので、前の回のいちばん低い・高いグループの目安を並べる。数字の作りはバッチ側（EventSiteExport.GroupSpread）。
-        const spreads = [];
-        if (hasTop && e.topLow != null && e.topHigh != null) spreads.push(['1位', e.topLow, e.topHigh]);
-        if (hasPrize && e.prizeLow != null && e.prizeHigh != null) spreads.push([`${e.prizeRank}位`, e.prizeLow, e.prizeHigh]);
-        if (spreads.length > 0) {
-          const line = el('p', 'ev-spread');
-          line.append(el('span', 'label', e.groups >= 2 ? `入るグループで変わる幅（前の回 ${e.groups} グループ）` : '入るグループで変わる幅'));
-          for (const [rank, low, high] of spreads) {
-            const run = el('span', 'run', `${rank} `);
-            run.append(el('b', '', `${yen(low)}〜${yen(high)}`));
-            line.append(run);
-          }
-          item.append(line);
-        }
+        // グループごとの1位は大きく違うので、前の回のいちばん低い・高いグループの目安を各順位の行の下に出す（数字の作りはバッチ側の EventSiteExport.GroupSpread）。
+        // グループの数は、表の左上の空いている所に置く。
+        const topSpread = hasTop && e.topLow != null && e.topHigh != null;
+        const prizeSpread = hasPrize && e.prizeLow != null && e.prizeHigh != null;
+        const corner = el('div', 'ev-corner', (topSpread || prizeSpread) && e.groups >= 2 ? `${e.groups}グループ` : '');
+        nums.append(corner, el('div', 'ev-colhead ev-forecast', '予想'), el('div', 'ev-colhead ev-safe', '安全圏'));
+        if (hasTop) numberRow(nums, '1位', '', e.forecast, e.safe, topSpread ? e.topLow : null, topSpread ? e.topHigh : null);
+        if (hasPrize) numberRow(nums, `${e.prizeRank}位`, '入賞の最下位', e.prizeForecast, e.prizeSafe, prizeSpread ? e.prizeLow : null, prizeSpread ? e.prizeHigh : null);
+        item.append(nums);
       } else {
         item.append(el('p', 'ev-none', noForecastText(e)));
       }
 
-      if (e.recent && e.recent.length > 0) {
-        const recent = el('p', 'ev-recent');
-        recent.append(el('span', 'label', '前の回の1位'));
-        for (const r of e.recent) {
-          const run = el('span', 'run', `${day(r.date)} `);
-          run.append(el('b', '', yen(r.top)));
-          recent.append(run);
-        }
-        item.append(recent);
-        if (hasPrize && e.recent.some((r) => r.prize != null)) {
-          const prize = el('p', 'ev-recent');
-          prize.append(el('span', 'label', `前の回の${e.prizeRank}位`));
-          for (const r of e.recent) {
-            if (r.prize == null) continue;
-            const run = el('span', 'run', `${day(r.date)} `);
-            run.append(el('b', '', yen(r.prize)));
-            prize.append(run);
-          }
-          item.append(prize);
-        }
-      }
+      if (e.recent && e.recent.length > 0) item.append(recentTable(e, hasPrize));
 
       // 過去の回の帯。押せることが一目で分かるよう、文字と山形の帯にする（利用者の選択「下に「過去の回を見る」の帯」）。
       // イベントのどこを押しても開け閉めできる（「イベントを押下したら…」）。開いた一覧の中を押しても閉じない。
