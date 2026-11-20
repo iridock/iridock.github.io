@@ -1,0 +1,196 @@
+// イベント予想（利用者の指示、2026-11-20。設計書 17）。data/events.json（毎日のバッチが作る）を読んで並べるだけで、計算はしない。
+// ボーダー予想のデータには頼らない。保存するのは、選んだ帯と開催の状態だけ（ブラウザの localStorage。使えなくても動く）。
+(() => {
+  'use strict';
+
+  // 帯の並びは上から（S3 がいちばん上、D がいちばん下）。イベントの帯は「S1〜S3」のような範囲で、間の帯も含む。
+  const BANDS = ['S3', 'S2', 'S1', 'A3', 'A2', 'A1', 'B3', 'B2', 'B1', 'C5', 'C4', 'C3', 'C2', 'C1', 'D'];
+  const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+  const $ = (id) => document.getElementById(id);
+
+  const store = {
+    get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+    set(key, value) { try { localStorage.setItem(key, value); } catch { /* 保存できなくても動く */ } },
+  };
+
+  const state = {
+    band: store.get('eventBand') || 'all',
+    status: store.get('eventStatus') || 'all',
+    query: '',
+  };
+  let events = [];
+
+  function showNotice(text) {
+    const el = $('notice');
+    el.textContent = text;
+    el.hidden = !text;
+  }
+
+  const yen = (n) => Number(n).toLocaleString('ja-JP');
+
+  // '2026-11-24T19:00' → '11/24（火）19:00'。ブラウザの時刻に直さず、書いてある日本時間のまま出す。
+  function when(text) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(text);
+    if (!m) return text;
+    const weekday = WEEKDAYS[new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getDay()];
+    return `${Number(m[2])}/${Number(m[3])}（${weekday}）${m[4]}:${m[5]}`;
+  }
+
+  function day(text) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+    return m ? `${Number(m[2])}/${Number(m[3])}` : text;
+  }
+
+  // 日本時間の「いま」を '2026-11-24T19:00' の形で。見ている人の端末の時刻帯に左右されないよう、UTC から +9 時間で作る。
+  function nowJst() {
+    return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 16);
+  }
+
+  function coversBand(ranks, band) {
+    if (!ranks || ranks.length === 0) return true;
+    const at = BANDS.indexOf(band);
+    const indexes = ranks.map((r) => BANDS.indexOf(r)).filter((i) => i >= 0);
+    if (at < 0 || indexes.length === 0) return true;
+    return at >= Math.min(...indexes) && at <= Math.max(...indexes);
+  }
+
+  function rangeText(ranks) {
+    if (!ranks || ranks.length === 0) return '全ランク帯';
+    return ranks.length === 1 ? ranks[0] : `${ranks[0]}〜${ranks[ranks.length - 1]}`;
+  }
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function numberBox(label, value, className) {
+    const box = el('div', `ev-num ${className}`);
+    box.append(el('span', 'label', label));
+    const v = el('span', 'value', yen(value));
+    v.append(el('small', '', 'pt'));
+    box.append(v);
+    return box;
+  }
+
+  // 予想を出さない理由。前の回が全く無い（初めての企画）／前の回はあるが 1位のポイントの記録が無い（順位を競わない企画など）／記録が 3 回に満たない
+  function noForecastText(e) {
+    if (e.seen === 0) return '前の回がないため、予想は出せません（初めての企画のようです）。';
+    if (e.runs === 0) return `前の ${e.seen} 回の結果に、1位のポイントの記録がないため、予想は出せません。`;
+    return `前の回の1位の記録が ${e.runs} 回しかないため、予想は出せません（3 回から出します）。`;
+  }
+
+  function render() {
+    const now = nowJst();
+    const text = state.query.trim().toLowerCase();
+    const shown = events
+      .filter((e) => e.end >= now)
+      .map((e) => ({ ...e, status: e.start <= now ? 'live' : 'soon' }))
+      .filter((e) => state.status === 'all' || e.status === state.status)
+      .filter((e) => state.band === 'all' || coversBand(e.ranks, state.band))
+      .filter((e) => !text || e.name.toLowerCase().includes(text))
+      .sort((a, b) => (a.status === b.status ? (a.status === 'live' ? a.end.localeCompare(b.end) : a.start.localeCompare(b.start)) : (a.status === 'live' ? -1 : 1)) || a.name.localeCompare(b.name, 'ja'));
+
+    const list = $('ev-list');
+    list.replaceChildren();
+    for (const e of shown) {
+      const item = el('li', 'ev-item');
+
+      const head = el('div', 'ev-head');
+      const titles = el('div');
+      titles.append(el('h3', 'ev-name', e.name));
+      const meta = el('p', 'ev-meta');
+      const range = el('b', '', rangeText(e.ranks));
+      meta.append(range, ` ・ ${when(e.start)} 〜 ${when(e.end)}`);
+      titles.append(meta);
+      head.append(titles, el('span', `ev-tag ${e.status}`, e.status === 'live' ? '開催中' : 'これから'));
+      item.append(head);
+
+      if (e.forecast != null && e.safe != null) {
+        const nums = el('div', 'ev-nums');
+        nums.append(numberBox('1位の予想', e.forecast, 'ev-forecast'), numberBox('安全圏', e.safe, 'ev-safe'));
+        item.append(nums);
+      } else {
+        item.append(el('p', 'ev-none', noForecastText(e)));
+      }
+
+      if (e.recent && e.recent.length > 0) {
+        const recent = el('p', 'ev-recent');
+        recent.append(el('span', 'label', '前の回の1位'));
+        for (const r of e.recent) {
+          const run = el('span', 'run', `${day(r.date)} `);
+          run.append(el('b', '', yen(r.top)));
+          recent.append(run);
+        }
+        item.append(recent);
+      }
+      list.append(item);
+    }
+
+    $('ev-empty').hidden = shown.length > 0;
+    const live = shown.filter((e) => e.status === 'live').length;
+    $('list-count').textContent = `${shown.length} 件（開催中 ${live} 件・これから ${shown.length - live} 件）`;
+  }
+
+  function setupControls() {
+    const select = $('ev-band');
+    const all = el('option', '', 'すべての帯');
+    all.value = 'all';
+    select.append(all);
+    for (const band of BANDS) {
+      const o = el('option', '', band);
+      o.value = band;
+      select.append(o);
+    }
+    if (state.band !== 'all' && !BANDS.includes(state.band)) state.band = 'all';
+    select.value = state.band;
+    select.addEventListener('change', () => {
+      state.band = select.value;
+      store.set('eventBand', state.band);
+      render();
+    });
+
+    const seg = $('ev-status');
+    const press = () => {
+      for (const b of seg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.status === state.status));
+    };
+    if (!['all', 'live', 'soon'].includes(state.status)) state.status = 'all';
+    press();
+    seg.addEventListener('click', (ev) => {
+      const button = ev.target.closest('button[data-status]');
+      if (!button) return;
+      state.status = button.dataset.status;
+      store.set('eventStatus', state.status);
+      press();
+      render();
+    });
+
+    $('ev-q').addEventListener('input', (ev) => {
+      state.query = ev.target.value;
+      render();
+    });
+  }
+
+  async function load() {
+    setupControls();
+    try {
+      const res = await fetch('../data/events.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      if (data.version !== 1 || !Array.isArray(data.events)) throw new Error('形が違います');
+      events = data.events;
+      const t = new Date(data.generatedAt);
+      if (!Number.isNaN(t.getTime())) {
+        $('updated').textContent = `${t.toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} 更新`;
+      }
+      showNotice('');
+    } catch {
+      showNotice('イベントのデータを読み込めませんでした。しばらくしてからもう一度開いてください。');
+    }
+    render();
+  }
+
+  load();
+})();

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0e16">
+<!-- ボーダー予想のページと同じ決まり。ページの中のスクリプト・スタイルは使えない。外への通信は GoatCounter（アクセス数）だけ -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; style-src 'self'; img-src 'self' data: https://iridock.goatcounter.com; connect-src 'self' https://iridock.goatcounter.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="開催中・これから始まるイベントの、1位のポイントの目安。同じシリーズの前の回から計算して、毎日更新します。">
+<meta property="og:title" content="IriDock イベント予想">
+<meta property="og:description" content="イベントの1位のポイントの目安と安全圏。毎日更新。">
+<meta property="og:type" content="website">
+<link rel="icon" href="../icon.png" type="image/png">
+<link rel="apple-touch-icon" href="../icon.png">
+<script src="../theme.js?v=2cd238f2"></script>
+<link rel="stylesheet" href="../style.css?v=262d1bb2">
+<link rel="stylesheet" href="events.css?v=d4030cb8">
+<title>IriDock イベント予想</title>
+</head>
+<body>
+<!-- イベントの1位の予想（利用者の指示、2026-11-20。設計書 17）。ボーダー予想のデータには頼らない（data/events.json だけを読む）。 -->
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="brand">
+      <img src="../icon.png" alt="" width="28" height="28">
+      <span class="name">IriDock</span>
+      <span class="product">イベント予想</span>
+    </div>
+    <div class="bar-right">
+      <p id="updated" class="updated"></p>
+    </div>
+  </div>
+  <!-- 機能の行き来。機能を足したら、index.html・roulette/index.html・ここの同じ所に足す -->
+  <nav class="sitenav" aria-label="機能">
+    <a href="../">ボーダー予想</a>
+    <a href="./" aria-current="page">イベント予想</a>
+    <a href="../roulette/">ルーレット</a>
+  </nav>
+</header>
+
+<main class="ev">
+  <noscript><p class="notice">イベント予想は JavaScript が必要です。</p></noscript>
+  <p id="notice" class="notice" role="status" hidden></p>
+
+  <section class="hero" aria-labelledby="ev-title">
+    <h1 id="ev-title">イベントの1位の予想</h1>
+    <p class="sub">開催中・これから始まるイベントの、1位のポイントの目安です。</p>
+    <p class="hint">
+      予想は、同じシリーズの前の回（直近 8 回まで）の 1位のポイントから計算した目安で、<strong>実際の数字ではありません</strong>。
+      1位のポイントは回ごとに大きく動き、<strong>予想より 4 割ほど上下することはふつうにあります</strong>。
+      <strong>安全圏</strong>は、ここまで上げておけば、ふつうの回なら 5 回に 4 回は 1位に届くポイントで、予想より高めに引いてあります。
+      前の回の1位の記録が 3 回に満たないイベント（初めての企画や、順位を競わない企画を含む）は、予想を出しません。
+    </p>
+  </section>
+
+  <section class="panel" aria-labelledby="list-title">
+    <div class="panel-head">
+      <h2 id="list-title">イベント一覧 <small id="list-count" role="status"></small></h2>
+    </div>
+    <div class="ev-filters">
+      <label>ランク帯
+        <select id="ev-band" aria-label="ランク帯で絞る"></select>
+      </label>
+      <div class="seg small" id="ev-status" role="group" aria-label="開催の状態で絞る">
+        <button type="button" data-status="all" aria-pressed="true">すべて</button>
+        <button type="button" data-status="live" aria-pressed="false">開催中</button>
+        <button type="button" data-status="soon" aria-pressed="false">これから</button>
+      </div>
+      <label class="ev-search">名前
+        <input id="ev-q" type="search" placeholder="イベント名で探す" autocomplete="off" aria-label="イベント名で探す">
+      </label>
+    </div>
+    <ul id="ev-list" class="ev-list"></ul>
+    <p id="ev-empty" class="ev-empty" hidden>条件に合うイベントはありません。</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>イベントの予想は目安です。外れることがあります。</p>
+  <p>お問い合わせ・掲載についてのご連絡: <a href="mailto:iridock.support@gmail.com">iridock.support@gmail.com</a></p>
+  <p>アクセス数を数えるために <a href="https://www.goatcounter.com/">GoatCounter</a> を使っています（Cookie は使いません）。</p>
+</footer>
+<!-- アクセス解析（GoatCounter。ボーダー予想のページと同じ。版を固定し、改ざん防止の印（integrity）を付ける。版を上げるときは全部のページの印を取り直す） -->
+<script data-goatcounter="https://iridock.goatcounter.com/count" async src="https://gc.zgo.at/count.v5.js"
+        crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
+<script src="events.js?v=8c39e1ca"></script>
+</body>
+</html>

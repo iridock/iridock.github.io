@@ -1,0 +1,81 @@
+/* イベント予想（2026-11-20、設計書 17）。色・角の丸め・余白は ../style.css の変数だけを使う（配色の設定にそのまま付いてくる）。 */
+
+.ev .hero { margin-bottom: 18px; }
+.ev .hero .sub { margin-top: 6px; }
+
+/* ---- 絞り込み（パネルの中。選ぶ欄・入力欄は ../style.css の .filters と同じ形） ---- */
+.ev-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; }
+.ev-filters label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.ev-filters select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 6px 30px 6px 12px;
+  border-radius: var(--r-sm);
+  border: 0;
+  background: var(--fill) var(--pick-arrow-panel) no-repeat right 11px center / 7px auto;
+  color: var(--text);
+  cursor: pointer;
+}
+.ev-filters select option { background: var(--panel); color: var(--text); }
+.ev-filters input[type="search"] {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 15em;
+  max-width: 100%;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+  color: var(--text);
+}
+.ev-search { flex: 1 1 14em; }
+.ev-search input { flex: 1 1 auto; }
+
+/* ---- 一覧（1件ずつの行。薄い下地の上に、名前・帯と期間・予想の数字・直近の実際） ---- */
+.ev-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ev-item {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--cell);
+}
+.ev-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ev-name { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.4; color: var(--text); overflow-wrap: anywhere; }
+.ev-meta { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ev-meta b { font-weight: 700; color: var(--text); }
+.ev-tag {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ev-tag.live { background: var(--tint); color: var(--accent); }
+
+/* 予想と安全圏の数字。数字は桁がそろうように、右寄せの2つの枠に置く */
+.ev-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ev-num { padding: 8px 12px; border-radius: var(--r-sm); background: var(--fill); }
+.ev-num .label { display: block; font-size: 12px; font-weight: 600; color: var(--c2); }
+.ev-num.ev-safe .label { color: var(--c6); }
+.ev-num .value { display: block; margin-top: 2px; font-size: clamp(18px, 4.6vw, 22px); font-weight: 700; letter-spacing: -0.01em; color: var(--text); font-variant-numeric: tabular-nums; }
+.ev-num .value small { margin-left: 3px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.ev-none { margin: 0; padding: 8px 12px; border-radius: var(--r-sm); background: var(--fill); font-size: 13px; color: var(--muted); }
+
+.ev-recent { margin: 0; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.ev-recent .label { font-weight: 600; }
+.ev-recent .run { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ev-recent .run b { font-weight: 600; color: var(--text); }
+
+.ev-empty { margin: 8px 2px 0; color: var(--muted); font-size: 14px; }
+
+@media (min-width: 760px) {
+  /* 広い画面では、名前の行と数字を横に並べる */
+  .ev-item { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; gap: 8px 18px; }
+  .ev-head { grid-column: 1; }
+  .ev-nums, .ev-none { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+  .ev-recent { grid-column: 1; }
+}
