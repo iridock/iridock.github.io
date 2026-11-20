@@ -79,6 +79,65 @@
     }
   }
 
+  // 開いている「過去の回」（名前と始まりで覚える。絞り込みで描き直しても開いたまま。ブラウザには保存しない）
+  const opened = new Set();
+  const keyOf = (e) => `${e.name}|${e.start}|${(e.ranks || []).join('/')}`;
+  const thisYear = nowJst().slice(0, 4);
+
+  // '2026-11-13' → '11/13'。今年でなければ年も付ける（材料は 2026 年 3 月からで、年をまたぐと見分けが要る）
+  function dayWithYear(text) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+    if (!m) return text;
+    return m[1] === thisYear ? `${Number(m[2])}/${Number(m[3])}` : `${m[1]}/${Number(m[2])}/${Number(m[3])}`;
+  }
+
+  // 下向きの山形（開くと回して上向き）。ボーダー予想のパネルの開け閉めと同じ形
+  function chevron() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M6 9l6 6 6-6');
+    svg.append(path);
+    return svg;
+  }
+
+  // 押すと開く過去の回（2026-11-20「イベントを押下したら過去のイベント名や点数などがみれるようにしてほしい」）。
+  // 記録のある全部の回を新しい順に、名前・期間・記録のある全部の順位のポイント。予想に使う 1位と入賞の最下位は太字で目立たせる。
+  function pastList(e, id) {
+    const box = el('div', 'ev-past');
+    box.id = id;
+    const list = el('ol', 'ev-plist');
+    for (const p of e.past) {
+      const row = el('li', 'ev-prow');
+      const head = el('div', 'ev-phead');
+      head.append(el('span', 'ev-pdate', `${dayWithYear(p.start)}〜${dayWithYear(p.end)}`), el('span', 'ev-pname', p.name));
+      const pts = el('div', 'ev-ppts');
+      p.points.forEach((v, i) => {
+        const rank = i + 1;
+        const cell = el('span', rank === 1 || rank === e.prizeRank ? 'ev-pt ev-key' : 'ev-pt', `${rank}位 `);
+        cell.append(el('b', '', yen(v)));
+        pts.append(cell);
+      });
+      row.append(head, pts);
+      list.append(row);
+    }
+    box.append(list);
+    return box;
+  }
+
+  function setOpen(item, open) {
+    const button = item.querySelector('.ev-more');
+    const box = item.querySelector('.ev-past');
+    if (!button || !box) return;
+    box.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+    button.querySelector('.ev-more-text').textContent = open ? '過去の回を閉じる' : `過去の回を見る（${button.dataset.count}回）`;
+    item.classList.toggle('open', open);
+    if (open) opened.add(item.dataset.key); else opened.delete(item.dataset.key);
+  }
+
   // 予想を出さない理由。前の回が全く無い（初めての企画）／前の回はあるが 1位のポイントの記録が無い（順位を競わない企画など）／記録が 3 回に満たない
   function noForecastText(e) {
     if (e.seen === 0) return '前の回がないため、予想は出せません（初めての企画のようです）。';
@@ -145,6 +204,21 @@
           item.append(prize);
         }
       }
+
+      // 過去の回の帯。押せることが一目で分かるよう、文字と山形の帯にする（利用者の選択「下に「過去の回を見る」の帯」）。
+      // イベントのどこを押しても開け閉めできる（「イベントを押下したら…」）。開いた一覧の中を押しても閉じない。
+      if (e.past && e.past.length > 0) {
+        const id = `ev-past-${shown.indexOf(e)}`;
+        item.classList.add('has-past');
+        item.dataset.key = keyOf(e);
+        const button = el('button', 'ev-more');
+        button.type = 'button';
+        button.dataset.count = String(e.past.length);
+        button.setAttribute('aria-controls', id);
+        button.append(el('span', 'ev-more-text'), chevron());
+        item.append(button, pastList(e, id));
+        setOpen(item, opened.has(item.dataset.key));
+      }
       list.append(item);
     }
 
@@ -190,6 +264,16 @@
       state.query = ev.target.value;
       render();
     });
+
+    // イベントを押すと過去の回を開け閉めする。開いた一覧の中・文字を選んでいる途中は、開け閉めしない
+    $('ev-list').addEventListener('click', (ev) => {
+      const item = ev.target.closest('.ev-item.has-past');
+      if (!item) return;
+      if (!ev.target.closest('.ev-more') && ev.target.closest('.ev-past')) return;
+      const selected = window.getSelection ? String(window.getSelection()) : '';
+      if (selected && !ev.target.closest('.ev-more')) return;
+      setOpen(item, !item.classList.contains('open'));
+    });
   }
 
   async function load() {
@@ -198,7 +282,8 @@
       const res = await fetch('../data/events.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
-      if (data.version !== 2 || !Array.isArray(data.events)) throw new Error('形が違います');
+      // 3 で過去の回（past）を足した。2 は過去の回の無い前の形（公開の切り替わりの間だけ読むことがある）
+      if (![2, 3].includes(data.version) || !Array.isArray(data.events)) throw new Error('形が違います');
       events = data.events;
       const t = new Date(data.generatedAt);
       if (!Number.isNaN(t.getTime())) {

@@ -81,10 +81,47 @@
 
 .ev-empty { margin: 8px 2px 0; color: var(--muted); font-size: 14px; }
 
+/* ---- 押すと開く過去の回（2026-11-20「イベントを押下したら過去のイベント名や点数などがみれるようにしてほしい。それと押せますよってことをわかり易く表現してほしい」） ----
+   押せるイベントは、指を置くと差し色の枠が付き、下の端に「過去の回を見る（N回）」の帯（差し色の文字と山形）がある。開くと山形が上を向き、帯の下に一覧が出る。 */
+.ev-item.has-past { cursor: pointer; transition: box-shadow 0.15s; }
+.ev-item.has-past:hover, .ev-item.has-past.open { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ev-item.has-past .ev-past { cursor: default; }
+.ev-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--tint);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ev-more:hover { filter: brightness(1.12); }
+.ev-more svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+.ev-more[aria-expanded="true"] svg { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .ev-more svg, .ev-item.has-past { transition: none; } }
+
+.ev-plist { list-style: none; margin: 0; padding: 0; border-radius: var(--r-sm); background: var(--fill); }
+.ev-prow { padding: 5px 10px; border-top: 0.5px solid var(--line); }
+.ev-prow:first-child { border-top: 0; }
+.ev-phead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; }
+.ev-pdate { flex: none; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ev-pname { min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.ev-ppts { display: flex; flex-wrap: wrap; gap: 0 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ev-pt { white-space: nowrap; }
+.ev-pt b { font-weight: 500; color: var(--text); }
+.ev-pt.ev-key b { font-weight: 700; }   /* 予想に使う順位（1位と入賞の最下位）。名前を key にすると ../style.css の凡例（.key::before の線）が付く */
+
 @media (min-width: 760px) {
   /* 広い画面では、名前の行と数字を横に並べる */
   .ev-item { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; gap: 4px 14px; }
   .ev-head { grid-column: 1; }
   .ev-nums, .ev-none { grid-column: 2; grid-row: 1 / span 3; align-self: start; }
   .ev-recent { grid-column: 1; }
+  .ev-more, .ev-past { grid-column: 1 / -1; }
 }
