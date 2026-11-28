@@ -17,7 +17,7 @@
 <script src="../theme.js?v=2cd238f2"></script>
 <script src="../help.js?v=9d187b94" defer></script>
 <link rel="stylesheet" href="../style.css?v=c8169531">
-<link rel="stylesheet" href="events.css?v=2a072dc6">
+<link rel="stylesheet" href="events.css?v=17cfa9de">
 <title>IriDock イベント予想</title>
 </head>
 <body>
@@ -57,6 +57,7 @@
       <p>えきポス！は、回ごとの駅がある都道府県の人口が多いほど 1位や入賞のポイントが高くなる傾向があるので、その人口の分だけ予想を直しています。</p>
       <p>前の回の1位の記録が 3 回に満たないイベント（初めての企画や、順位を競わない企画を含む）は、予想を出しません。</p>
       <p>イベントを押すと、同じシリーズの過去の回の名前と、記録のある全部の順位のポイントが見られます（太字は予想に使う 1位と入賞の最下位）。</p>
+      <p>一覧は、<strong>開催日</strong>（入れた日付の間に 1 日でも開催しているもの）と、選んだ<strong>ポイント</strong>の以上・以下でも絞れます。片方だけ入れても使えます。予想が出ていないイベントは、ポイントで絞っても一覧に残ります。</p>
     </div>
   </section>
 
@@ -76,6 +77,23 @@
       <label class="ev-search">名前
         <input id="ev-q" type="search" placeholder="イベント名で探す" autocomplete="off" aria-label="イベント名で探す">
       </label>
+      <!-- 開催日とポイントで絞る（2026-11-28「イベント期間で絞り込みできるようにするのと、イベントの予想ポイントで絞れるようにしてほしい。以下も以上も」。
+           期間は「開催する日付」、ポイントは見る数字を選べる形、予想の無いイベントは絞っても残す、を利用者が選んだ） -->
+      <div class="ev-range" role="group" aria-label="開催する日付で絞る">
+        <span class="ev-rname">開催日</span>
+        <span class="ev-pair"><input id="ev-from" type="date" aria-label="この日から開催しているもの"><span>〜</span><input id="ev-to" type="date" aria-label="この日までに開催しているもの"></span>
+      </div>
+      <div class="ev-range" role="group" aria-label="ポイントで絞る">
+        <select id="ev-metric" aria-label="絞りに使うポイント">
+          <option value="forecast">1位の予想</option>
+          <option value="safe">1位の安全圏</option>
+          <option value="prizeForecast">入賞の最下位の予想</option>
+          <option value="prizeSafe">入賞の最下位の安全圏</option>
+        </select>
+        <span class="ev-pair"><input id="ev-min" type="number" inputmode="numeric" min="0" step="1000" placeholder="下限" aria-label="このポイント以上"><span>pt 以上 〜</span></span>
+        <span class="ev-pair"><input id="ev-max" type="number" inputmode="numeric" min="0" step="1000" placeholder="上限" aria-label="このポイント以下"><span>pt 以下</span></span>
+      </div>
+      <button type="button" id="ev-clear" class="ev-clear" hidden>開催日・ポイントの条件を消す</button>
     </div>
     <ul id="ev-list" class="ev-list"></ul>
     <p id="ev-empty" class="ev-empty" hidden>条件に合うイベントはありません。</p>
@@ -92,6 +110,6 @@
 <!-- アクセス解析（GoatCounter。ボーダー予想のページと同じ。版を固定し、改ざん防止の印（integrity）を付ける。版を上げるときは全部のページの印を取り直す） -->
 <script data-goatcounter="https://iridock.goatcounter.com/count" async src="https://gc.zgo.at/count.v5.js"
         crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
-<script src="events.js?v=cc8b1fdf"></script>
+<script src="events.js?v=d2943538"></script>
 </body>
 </html>

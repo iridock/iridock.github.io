@@ -31,6 +31,33 @@
 .ev-search { flex: 1 1 14em; }
 .ev-search input { flex: 1 1 auto; }
 
+/* 開催日とポイントの絞り込み（2026-11-28）。幅 320 の iPhone では、日付の組・以上・以下の組ごとに折り返す */
+.ev-range { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; color: var(--muted); }
+.ev-pair { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ev-filters input[type="date"],
+.ev-filters input[type="number"] {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.ev-filters input[type="date"] { width: 9.6em; }
+.ev-filters input[type="number"] { width: 7.5em; }
+.ev-clear {
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
 /* ---- 一覧（1件ずつの行。薄い下地の上に、名前・帯と期間・予想の数字・直近の実際） ---- */
 .ev-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .ev-item {

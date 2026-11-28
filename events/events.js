@@ -1,5 +1,5 @@
 // イベント予想（利用者の指示、2026-11-20。設計書 17）。data/events.json（毎日のバッチが作る）を読んで並べるだけで、計算はしない。
-// ボーダー予想のデータには頼らない。保存するのは、選んだ帯と開催の状態だけ（ブラウザの localStorage。使えなくても動く）。
+// ボーダー予想のデータには頼らない。保存するのは、選んだ帯・開催の状態・絞りに使うポイントの種類だけ（ブラウザの localStorage。使えなくても動く）。
 (() => {
   'use strict';
 
@@ -17,7 +17,36 @@
     band: store.get('eventBand') || 'all',
     status: store.get('eventStatus') || 'all',
     query: '',
+    // 開催日（'2026-11-30' の形。空なら絞らない）とポイントの以上・以下（数。null なら絞らない）。
+    // 日付と数は覚えない（日付は日がたつと古くなり、開き直したときに件数が減った理由が分かりにくい）。見る数字の種類だけ覚える
+    from: '',
+    to: '',
+    metric: store.get('eventMetric') || 'forecast',
+    min: null,
+    max: null,
   };
+  // 絞りに使える数字。入賞の最下位は、入賞の順位が 2 位以下のときだけ（1位だけの企画は入賞の最下位を出さない）
+  const METRICS = {
+    forecast: (e) => (e.forecast != null && e.safe != null ? e.forecast : null),
+    safe: (e) => (e.forecast != null && e.safe != null ? e.safe : null),
+    prizeForecast: (e) => (e.prizeRank > 1 && e.prizeForecast != null && e.prizeSafe != null ? e.prizeForecast : null),
+    prizeSafe: (e) => (e.prizeRank > 1 && e.prizeForecast != null && e.prizeSafe != null ? e.prizeSafe : null),
+  };
+
+  // 開催日の条件。入れた日付の間に 1 日でも開催していれば残す（始まりが「まで」の日の終わりより前、終わりが「から」の日の始まりより後）
+  function inDates(e) {
+    if (state.from && e.end < `${state.from}T00:00`) return false;
+    if (state.to && e.start > `${state.to}T23:59`) return false;
+    return true;
+  }
+
+  // ポイントの条件。予想が出ていないイベント（選んだ数字が無いもの）は残す（利用者の選択「残して出す」）
+  function inPoints(e) {
+    if (state.min == null && state.max == null) return true;
+    const v = METRICS[state.metric](e);
+    if (v == null) return true;
+    return (state.min == null || v >= state.min) && (state.max == null || v <= state.max);
+  }
   let events = [];
 
   function showNotice(text) {
@@ -204,6 +233,8 @@
       .filter((e) => state.status === 'all' || e.status === state.status)
       .filter((e) => state.band === 'all' || coversBand(e.ranks, state.band))
       .filter((e) => !text || e.name.toLowerCase().includes(text))
+      .filter(inDates)
+      .filter(inPoints)
       .sort((a, b) => (a.status === b.status ? (a.status === 'live' ? a.end.localeCompare(b.end) : a.start.localeCompare(b.start)) : (a.status === 'live' ? -1 : 1)) || a.name.localeCompare(b.name, 'ja'));
 
     const list = $('ev-list');
@@ -298,6 +329,45 @@
 
     $('ev-q').addEventListener('input', (ev) => {
       state.query = ev.target.value;
+      render();
+    });
+
+    // 開催日とポイント。「から」が「まで」より後・下限が上限より上でも入れ替えず、そのまま絞る（0 件になれば、その旨の文が出る）
+    const clear = $('ev-clear');
+    const number = (text) => {
+      const n = Number(String(text).replace(/[,，\s]/g, ''));
+      return text === '' || !Number.isFinite(n) ? null : n;
+    };
+    const syncClear = () => {
+      clear.hidden = !(state.from || state.to || state.min != null || state.max != null);
+    };
+    const metric = $('ev-metric');
+    if (!METRICS[state.metric]) state.metric = 'forecast';
+    metric.value = state.metric;
+    metric.addEventListener('change', () => {
+      state.metric = metric.value;
+      store.set('eventMetric', state.metric);
+      render();
+    });
+    for (const [id, apply] of [
+      ['ev-from', (v) => { state.from = v; }],
+      ['ev-to', (v) => { state.to = v; }],
+      ['ev-min', (v) => { state.min = number(v); }],
+      ['ev-max', (v) => { state.max = number(v); }],
+    ]) {
+      // iPhone の Safari の日付の欄は、選び終えたときに change だけを送ることがあるので両方で拾う
+      for (const type of ['input', 'change']) {
+        $(id).addEventListener(type, (ev) => {
+          apply(ev.target.value);
+          syncClear();
+          render();
+        });
+      }
+    }
+    clear.addEventListener('click', () => {
+      for (const id of ['ev-from', 'ev-to', 'ev-min', 'ev-max']) $(id).value = '';
+      Object.assign(state, { from: '', to: '', min: null, max: null });
+      syncClear();
       render();
     });
 
